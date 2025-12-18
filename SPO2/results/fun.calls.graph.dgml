@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml">
+ <Nodes>
+ <Node Id="calc" Label="calc" />
+ <Node Id="condition" Label="condition" />
+ <Node Id="function_call" Label="function_call" />
+ <Node Id="blockTest" Label="blockTest" />
+ <Node Id="inline_func" Label="inline_func" />
+ <Node Id="callTest" Label="callTest" />
+ <Node Id="loopTest" Label="loopTest" />
+ <Node Id="repeatTest" Label="repeatTest" />
+ </Nodes>
+ <Links>
+ <Link Source="blockTest" Target="inline_func" />
+ <Link Source="callTest" Target="calc" />
+ </Links>
+</DirectedGraph>
