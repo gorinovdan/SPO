@@ -15,3 +15,6 @@ vm-demo: build
 
 vm-test:
 	./tools/run_vm_tests.sh
+
+vm-input: build
+	./tools/run_vm.sh ./tests/input.txt ./results/output_input.asm ./results/output_input.bin

@@ -3,11 +3,11 @@
 
 .const
 k0: .int 3
-k1: .string "Resilt of math op. is "
-k2: .int 0
-k3: .int 225
-k4: .int 2
-k5: .int 1
+k1: .int 1
+k2: .string "Resilt of math op. is "
+k3: .int 0
+k4: .int 225
+k5: .int 2
 k6: .int 5
 k7: .int 100
 k8: .int 50
@@ -33,10 +33,12 @@ v_blockTest_b: .word 0
 v_blockTest_counter: .word 0
 v_inline_func_arr: .space 28
 v_inline_func_counter: .word 0
+v_callTest_tmp: .space 8
 v_callTest_x: .word 0
 v_loopTest_a: .word 0
 v_loopTest_b: .word 0
 v_repeatTest_a: .word 0
+v_main_tmp: .space 8
 
 .code
 calc:
@@ -53,14 +55,18 @@ calc_B2:
   MUL
   LOAD v_calc_a
   LOAD v_calc_a
+  PUSH_CONST k1
+  ADD
   REM
+  PUSH_CONST k1
+  ADD
   DIV
   SUB
   STORE v_calc_x
   JMP calc_B3
 
 calc_B3:
-  PUSH_CONST k1
+  PUSH_CONST k2
   STORE v_calc_y
   JMP calc_B4
 
@@ -72,7 +78,7 @@ calc_B4:
   JMP calc_exit
 
 calc_exit:
-  PUSH_CONST k2
+  PUSH_CONST k3
   LEAVE
   RET
 
@@ -97,12 +103,12 @@ condition_B3:
   JMP condition_B4
 
 condition_B5:
-  PUSH_CONST k3
+  PUSH_CONST k4
   POP
   JMP condition_B6
 
 condition_B4:
-  PUSH_CONST k3
+  PUSH_CONST k4
   NEG
   POP
   JMP condition_B6
@@ -128,7 +134,7 @@ function_call:
   JMP function_call_B2
 
 function_call_B2:
-  PUSH_CONST k4
+  PUSH_CONST k5
   STORE v_function_call_a
   JMP function_call_B3
 
@@ -144,17 +150,17 @@ function_call_B4:
 
 function_call_B5:
   PUSH_ADDR v_function_call_myArr
-  PUSH_CONST k2
+  PUSH_CONST k3
   INDEX
-  PUSH_CONST k2
+  PUSH_CONST k3
   STORE_IND
   JMP function_call_B6
 
 function_call_B6:
   PUSH_ADDR v_function_call_myArr
-  PUSH_CONST k5
+  PUSH_CONST k1
   INDEX
-  PUSH_CONST k5
+  PUSH_CONST k1
   STORE_IND
   JMP function_call_B7
 
@@ -186,7 +192,7 @@ function_call_B8:
 
 function_call_B9:
   PUSH_ADDR v_function_call_myArr
-  PUSH_CONST k4
+  PUSH_CONST k5
   PUSH_CONST k6
   RANGE
   INDEX
@@ -195,7 +201,7 @@ function_call_B9:
   JMP function_call_exit
 
 function_call_exit:
-  PUSH_CONST k2
+  PUSH_CONST k3
   LEAVE
   RET
 
@@ -204,12 +210,12 @@ blockTest:
   JMP blockTest_B2
 
 blockTest_B2:
-  PUSH_CONST k4
+  PUSH_CONST k5
   STORE v_blockTest_a
   JMP blockTest_B3
 
 blockTest_B3:
-  PUSH_CONST k0
+  PUSH_CONST k5
   STORE v_blockTest_b
   JMP blockTest_B4
 
@@ -240,7 +246,7 @@ blockTest_B8:
 blockTest_B9:
   LOAD v_blockTest_b
   NEG
-  PUSH_CONST k4
+  PUSH_CONST k5
   ADD
   POP
   JMP blockTest_B8
@@ -249,7 +255,7 @@ blockTest_B7:
   JMP blockTest_B10
 
 blockTest_B10:
-  PUSH_CONST k2
+  PUSH_CONST k3
   STORE v_blockTest_counter
   JMP blockTest_B11
 
@@ -259,7 +265,7 @@ blockTest_B11:
   JMP blockTest_exit
 
 blockTest_exit:
-  PUSH_CONST k2
+  PUSH_CONST k3
   LEAVE
   RET
 
@@ -269,11 +275,11 @@ inline_func:
 
 inline_func_B2:
   PUSH_ADDR v_inline_func_arr
-  PUSH_CONST k5
+  PUSH_CONST k1
   INDEX
   PUSH_CONST k0
   INDEX
-  PUSH_CONST k4
+  PUSH_CONST k5
   INDEX
   LOAD_IND
   PUSH_CONST k6
@@ -283,28 +289,28 @@ inline_func_B2:
 
 inline_func_B4:
   LOAD v_inline_func_counter
-  PUSH_CONST k5
+  PUSH_CONST k1
   ADD
   STORE v_inline_func_counter
   JMP inline_func_B5
 
 inline_func_B5:
   PUSH_ADDR v_inline_func_arr
-  PUSH_CONST k5
+  PUSH_CONST k1
   INDEX
   PUSH_CONST k0
   INDEX
-  PUSH_CONST k4
+  PUSH_CONST k5
   INDEX
   PUSH_ADDR v_inline_func_arr
-  PUSH_CONST k5
+  PUSH_CONST k1
   INDEX
   PUSH_CONST k0
   INDEX
-  PUSH_CONST k4
+  PUSH_CONST k5
   INDEX
   LOAD_IND
-  PUSH_CONST k5
+  PUSH_CONST k1
   ADD
   STORE_IND
   JMP inline_func_B2
@@ -313,24 +319,40 @@ inline_func_B3:
   JMP inline_func_exit
 
 inline_func_exit:
-  PUSH_CONST k2
+  PUSH_CONST k3
   LEAVE
   RET
 
 callTest:
-  ENTER 4
+  ENTER 12
   JMP callTest_B2
 
 callTest_B2:
+  PUSH_ADDR v_callTest_tmp
+  PUSH_CONST k3
+  INDEX
+  PUSH_CONST k3
+  STORE_IND
+  JMP callTest_B3
+
+callTest_B3:
+  PUSH_ADDR v_callTest_tmp
+  PUSH_CONST k1
+  INDEX
+  PUSH_CONST k1
+  STORE_IND
+  JMP callTest_B4
+
+callTest_B4:
+  PUSH_CONST k1
   PUSH_CONST k5
-  PUSH_CONST k4
-  PUSH_CONST k0
+  PUSH_ADDR v_callTest_tmp
   CALL calc, 3
   STORE v_callTest_x
   JMP callTest_exit
 
 callTest_exit:
-  PUSH_CONST k2
+  PUSH_CONST k3
   LEAVE
   RET
 
@@ -339,41 +361,56 @@ loopTest:
   JMP loopTest_B2
 
 loopTest_B2:
-  LOAD v_loopTest_a
-  LOAD v_loopTest_b
-  LT
-  JZ loopTest_B3
+  PUSH_CONST k3
+  STORE v_loopTest_a
+  JMP loopTest_B3
+
+loopTest_B3:
+  PUSH_CONST k5
+  STORE v_loopTest_b
   JMP loopTest_B4
 
 loopTest_B4:
   LOAD v_loopTest_a
-  PUSH_CONST k5
-  ADD
-  STORE v_loopTest_a
-  JMP loopTest_B2
-
-loopTest_B3:
-  JMP loopTest_B5
-
-loopTest_B5:
-  LOAD v_loopTest_a
   LOAD v_loopTest_b
   LT
-  JZ loopTest_B7
+  JZ loopTest_B5
   JMP loopTest_B6
 
-loopTest_B7:
+loopTest_B6:
   LOAD v_loopTest_a
-  PUSH_CONST k5
+  PUSH_CONST k1
   ADD
   STORE v_loopTest_a
-  JMP loopTest_B5
+  JMP loopTest_B4
 
-loopTest_B6:
+loopTest_B5:
+  JMP loopTest_B7
+
+loopTest_B7:
+  PUSH_CONST k3
+  STORE v_loopTest_a
+  JMP loopTest_B8
+
+loopTest_B8:
+  LOAD v_loopTest_a
+  LOAD v_loopTest_b
+  GE
+  JZ loopTest_B10
+  JMP loopTest_B9
+
+loopTest_B10:
+  LOAD v_loopTest_a
+  PUSH_CONST k1
+  ADD
+  STORE v_loopTest_a
+  JMP loopTest_B8
+
+loopTest_B9:
   JMP loopTest_exit
 
 loopTest_exit:
-  PUSH_CONST k2
+  PUSH_CONST k3
   LEAVE
   RET
 
@@ -382,7 +419,7 @@ repeatTest:
   JMP repeatTest_B2
 
 repeatTest_B2:
-  PUSH_CONST k2
+  PUSH_CONST k3
   STORE v_repeatTest_a
   JMP repeatTest_B5
 
@@ -395,7 +432,7 @@ repeatTest_B4:
 
 repeatTest_B5:
   LOAD v_repeatTest_a
-  PUSH_CONST k5
+  PUSH_CONST k1
   ADD
   STORE v_repeatTest_a
   JMP repeatTest_B4
@@ -404,7 +441,72 @@ repeatTest_B3:
   JMP repeatTest_exit
 
 repeatTest_exit:
-  PUSH_CONST k2
+  PUSH_CONST k3
+  LEAVE
+  RET
+
+main:
+  ENTER 8
+  JMP main_B2
+
+main_B2:
+  PUSH_ADDR v_main_tmp
+  PUSH_CONST k3
+  INDEX
+  PUSH_CONST k3
+  STORE_IND
+  JMP main_B3
+
+main_B3:
+  PUSH_ADDR v_main_tmp
+  PUSH_CONST k1
+  INDEX
+  PUSH_CONST k1
+  STORE_IND
+  JMP main_B4
+
+main_B4:
+  PUSH_CONST k1
+  PUSH_CONST k5
+  PUSH_ADDR v_main_tmp
+  CALL calc, 3
+  POP
+  JMP main_B5
+
+main_B5:
+  PUSH_CONST k1
+  PUSH_CONST k5
+  CALL condition, 2
+  POP
+  JMP main_B6
+
+main_B6:
+  CALL function_call, 0
+  POP
+  JMP main_B7
+
+main_B7:
+  CALL blockTest, 0
+  POP
+  JMP main_B8
+
+main_B8:
+  CALL callTest, 0
+  POP
+  JMP main_B9
+
+main_B9:
+  CALL loopTest, 0
+  POP
+  JMP main_B10
+
+main_B10:
+  CALL repeatTest, 0
+  POP
+  JMP main_exit
+
+main_exit:
+  PUSH_CONST k3
   LEAVE
   RET
 

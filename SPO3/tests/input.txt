@@ -5,7 +5,7 @@
 
 // math
 def calc(a, b of uint, c of int array[2]) of long
-	x = a - b * 3 / ( a % a );
+	x = a - b * 3 / ( a % (a + 1) + 1 );
 	y = "Resilt of math op. is ";
 	res = x + y;
 end
@@ -35,7 +35,7 @@ end
 // block
 def blockTest()
 	a = 2;
-	b = 3;
+	b = 2;
 	begin
 		if a == b then
 			100 + 50;
@@ -55,14 +55,19 @@ def blockTest()
 end
 
 def callTest()
-	x = calc(1, 2, 3);
+	tmp[0] = 0;
+	tmp[1] = 1;
+	x = calc(1, 2, tmp);
 end
 
 def loopTest()
+	a = 0;
+	b = 2;
 	while a < b
 		a = a + 1;
 	end
-	until a < b
+	a = 0;
+	until a >= b
 		a = a + 1;
 	end
 end
@@ -70,4 +75,16 @@ end
 def repeatTest()
 	a = 0;
 	a = a + 1; until a == 1000;
+end
+
+def main()
+	tmp[0] = 0;
+	tmp[1] = 1;
+	calc(1, 2, tmp);
+	condition(1, 2);
+	function_call();
+	blockTest();
+	callTest();
+	loopTest();
+	repeatTest();
 end
