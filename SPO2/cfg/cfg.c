@@ -256,6 +256,8 @@ static CFG_Fragment build_if(CFG_Builder* b, AST_Node* stmt, int break_target) {
 	int join_id = cfg_graph_add_block(b->graph);
 	cfg_graph_get_block(b->graph, join_id)->is_circle = 1;
 
+	/* `cfg_graph_add_block` may realloc `graph->blocks` and invalidate pointers */
+	cond_block = cfg_graph_get_block(b->graph, cond_id);
 	cond_block->true_next = (then_frag.entry != -1) ? then_frag.entry : join_id;
 	cond_block->false_next = (else_frag.entry != -1) ? else_frag.entry : join_id;
 
@@ -295,6 +297,8 @@ static CFG_Fragment build_while_until(CFG_Builder* b, AST_Node* stmt) {
 
 	int is_until = (stmt->type == AST_UNTIL);
 
+	/* `build_stmt_list` may add blocks and realloc `graph->blocks` */
+	cond_block = cfg_graph_get_block(b->graph, cond_id);
 	if (body_frag.entry != -1) {
 		if (!is_until) {
 			cond_block->true_next = body_frag.entry;
@@ -364,6 +368,8 @@ static CFG_Fragment build_repeat_loop(CFG_Builder* b, AST_Node* stmt) {
 
 	int is_until = (stmt->type == AST_REPEAT_UNTIL);
 
+	/* `build_stmt` may add blocks and realloc `graph->blocks` */
+	cond_block = cfg_graph_get_block(b->graph, cond_id);
 	if (!is_until) {
 		cond_block->true_next = body_entry;
 		cond_block->false_next = after_id;
@@ -588,6 +594,8 @@ static CFG_Graph build_cfg_for_func(CFG_Analysis* analysis, const char* filename
 		body = build_stmt_list(&builder, body_list, -1);
 	}
 
+	/* `build_stmt_list` may add blocks and realloc `graph.blocks` */
+	entry_block = cfg_graph_get_block(&graph, graph.entry_id);
 	if (body.entry != -1) {
 		entry_block->next = body.entry;
 		connect_exits_to(&builder, &body.exits, graph.exit_id);
