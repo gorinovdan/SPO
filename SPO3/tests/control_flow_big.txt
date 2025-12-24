@@ -1,0 +1,119 @@
+
+// Complex control-flow test adapted to SPO2 syntax
+
+def x()
+	a = 0;
+	b = 0;
+end
+
+def y()
+end
+
+def z()
+	printf("z\n");
+end
+
+def main(argc, argv of char array[2])
+	a = 0;
+	b = 0;
+	i = 0;
+
+	printf("1");
+
+	while 1
+		printf("2");
+
+		while 2
+			printf("3");
+
+			if 3 then
+				break;
+			else if 4 then
+				printf("continue\n");
+			else
+				begin
+					printf("labb:\n");
+					printf("4");
+				end
+		end
+
+		printf("5");
+
+		if 5 then
+			printf("break\n");
+		else if 6 then
+			printf("continue\n");
+		else
+			printf("6");
+
+		printf("7");
+
+		begin
+			printf("8");
+			if 9 then
+				break;
+		end while 10;
+
+		printf("11");
+
+		if 11 then
+			break;
+		else if 12 then
+			printf("continue\n");
+		else
+			begin
+				printf("12");
+				printf("goto labb\n");
+			end
+
+		printf("13");
+	end
+
+	printf("14");
+
+	if a > 3 then
+		begin
+			printf("1\n");
+		end
+	else
+		begin
+			printf("2\n");
+			printf("goto lab\n");
+		end
+
+	while i < 10
+		if a > b then
+			i = i + 2;
+		else if 2 * 3 then
+			begin
+				printf("break\n");
+				break;
+			end
+		else
+			begin
+				printf("continue\n");
+				i = i + 1;
+			end
+	end
+
+	if 1 then if 2 then if 3 then x(); else y(); else z();
+
+	if a > 3 then
+		begin
+			printf("1\n");
+		end
+	else
+		begin
+			printf("2\n");
+			printf("22\n");
+			printf("222\n");
+		end
+
+	while a < 3
+		printf("3\n");
+		a = a + 1;
+	end
+
+	printf("Hello!\n");
+end
+

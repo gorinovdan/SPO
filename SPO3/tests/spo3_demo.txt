@@ -1,0 +1,16 @@
+
+// SPO3 demo program (numeric-only)
+
+def sum(a of int, b of int) of int
+	result = a + b;
+end
+
+def main()
+	x = sum(2, 3);
+	y = 0;
+	while y < 2
+		y = y + 1;
+	end
+	if x > y then
+		x = x + 1;
+end

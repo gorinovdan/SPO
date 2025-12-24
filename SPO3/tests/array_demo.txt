@@ -1,0 +1,12 @@
+// Array indexing demo (variable + multi-index)
+
+def main()
+    a = 2;
+    b = 3;
+    arr[a + b] = 5;
+    arr[1, 3, 2] = 4;
+    x = arr[a + b];
+    y = arr[1, 3, 2];
+    print(x);
+    print(y);
+end

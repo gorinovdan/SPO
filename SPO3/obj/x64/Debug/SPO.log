@@ -1,0 +1,14 @@
+﻿  Validating sources
+  Copying sources remotely to '127.0.0.1'
+  Build command not configured, skipping.
+  Invoking 'make build', working directory: '/home/user/projects/SPO/'
+  cd ./ast && flex -l ./lexer.l
+  
+  #cd ./ast && bison -dv -Wcounterexamples ./parser.y
+  
+  cd ./ast && bison -dv ./parser.y
+  
+  gcc -g -O0 -o ./app ./main.c ./ast/ast_maker.c \
+  ./ast/parser.tab.c \./ast/lex.yy.c ./ast/ast.c ./view/dgml.c -lfl
+  
+  Copying file '/home/user/projects/SystemSoftware/app' to 'C:\Users\mvideo\source\repos\SPO\bin\x64\Debug\app'

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml">
+ <Nodes>
+ <Node Id="0x11c7085f0" Label="x" />
+ <Node Id="0x11c708618" Label="RET" />
+ <Node Id="0x11c708640" Label="(a = 0)" />
+ <Node Id="0x11c708668" Label="(b = 0)" />
+ <Node Id="0x11c7088d0" Label="STORE(a)" Background="#FFD580" />
+ <Node Id="0x11c7088a0" Label="CONST(0)" Background="#FFD580" />
+ <Node Id="0x11c7089a0" Label="STORE(b)" Background="#FFD580" />
+ <Node Id="0x11c708970" Label="CONST(0)" Background="#FFD580" />
+ </Nodes>
+ <Links>
+ <Link Source="0x11c7088d0" Target="0x11c7088a0" StrokeDashArray="4, 2" />
+ <Link Source="0x11c708640" Target="0x11c7088d0" StrokeDashArray="4, 2" />
+ <Link Source="0x11c7089a0" Target="0x11c708970" StrokeDashArray="4, 2" />
+ <Link Source="0x11c708668" Target="0x11c7089a0" StrokeDashArray="4, 2" />
+ <Link Source="0x11c7085f0" Target="0x11c708640" />
+ <Link Source="0x11c708640" Target="0x11c708668" />
+ <Link Source="0x11c708668" Target="0x11c708618" />
+ </Links>
+</DirectedGraph>
