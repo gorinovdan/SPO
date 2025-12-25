@@ -1057,36 +1057,36 @@ static void write_const_item(FILE* f, const LC_DataItem* item) {
 	switch (item->const_kind) {
 	case IR_CONST_STRING: {
 		char* esc = escape_string(item->value ? item->value : "");
-		fprintf(f, "%s: .string \"%s\"\n", item->name, esc);
+		fprintf(f, "%s: DB \"%s\"\n", item->name, esc);
 		free(esc);
 		break;
 	}
 	case IR_CONST_CHAR: {
 		char c = (item->value && item->value[0]) ? item->value[0] : '\0';
 		if (c == '\'' || c == '\\') {
-			fprintf(f, "%s: .char '\\%c'\n", item->name, c);
+			fprintf(f, "%s: DB '\\%c'\n", item->name, c);
 		}
 		else if (c == '\n') {
-			fprintf(f, "%s: .char '\\n'\n", item->name);
+			fprintf(f, "%s: DB '\\n'\n", item->name);
 		}
 		else if (c == '\t') {
-			fprintf(f, "%s: .char '\\t'\n", item->name);
+			fprintf(f, "%s: DB '\\t'\n", item->name);
 		}
 		else {
-			fprintf(f, "%s: .char '%c'\n", item->name, c ? c : ' ');
+			fprintf(f, "%s: DB '%c'\n", item->name, c ? c : ' ');
 		}
 		break;
 	}
 	case IR_CONST_BOOL: {
 		int v = (item->value && strcmp(item->value, "true") == 0) ? 1 : 0;
-		fprintf(f, "%s: .byte %d\n", item->name, v);
+		fprintf(f, "%s: DB %d\n", item->name, v);
 		break;
 	}
 	case IR_CONST_NUMBER:
-		fprintf(f, "%s: .int %s\n", item->name, item->value ? item->value : "0");
+		fprintf(f, "%s: DD %s\n", item->name, item->value ? item->value : "0");
 		break;
 	default:
-		fprintf(f, "%s: .word %s\n", item->name, item->value ? item->value : "0");
+		fprintf(f, "%s: DD %s\n", item->name, item->value ? item->value : "0");
 		break;
 	}
 }
@@ -1095,13 +1095,13 @@ static void write_data_item(FILE* f, const LC_DataItem* item) {
 	if (!f || !item) return;
 	int size = item->size > 0 ? item->size : 4;
 	if (size == 1) {
-		fprintf(f, "%s: .byte 0\n", item->name);
+		fprintf(f, "%s: DB 0\n", item->name);
 	}
 	else if (size == 4) {
-		fprintf(f, "%s: .word 0\n", item->name);
+		fprintf(f, "%s: DD 0\n", item->name);
 	}
 	else {
-		fprintf(f, "%s: .space %d\n", item->name, size);
+		fprintf(f, "%s: RESB %d\n", item->name, size);
 	}
 }
 
@@ -1113,7 +1113,7 @@ int lc_write_assembly(const LC_Program* program, const char* filename) {
 	fprintf(f, "; SPO3 linear code listing\n");
 	fprintf(f, "; VM: stack-based, memory banks: code, constants, data_mem, stack_mem\n\n");
 
-	fprintf(f, ".const\n");
+	fprintf(f, "; constants\n");
 	if (program->constant_count == 0) {
 		fprintf(f, "; (empty)\n");
 	}
@@ -1121,7 +1121,7 @@ int lc_write_assembly(const LC_Program* program, const char* filename) {
 		write_const_item(f, &program->constants[i]);
 	}
 
-	fprintf(f, "\n.data\n");
+	fprintf(f, "\n; data\n");
 	if (program->data_count == 0) {
 		fprintf(f, "; (empty)\n");
 	}
@@ -1129,7 +1129,7 @@ int lc_write_assembly(const LC_Program* program, const char* filename) {
 		write_data_item(f, &program->data[i]);
 	}
 
-	fprintf(f, "\n.code\n");
+	fprintf(f, "\n; code\n");
 	for (int b = 0; b < program->block_count; b++) {
 		const LC_CodeBlock* block = &program->blocks[b];
 		fprintf(f, "%s:\n", block->name ? block->name : "block");

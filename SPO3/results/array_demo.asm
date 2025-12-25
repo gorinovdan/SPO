@@ -1,22 +1,19 @@
 ; SPO3 linear code listing
 ; VM: stack-based, memory banks: code, constants, data_mem, stack_mem
 
-.const
-k0: .int 2
-k1: .int 3
-k2: .int 5
-k3: .int 1
-k4: .int 4
-k5: .int 0
+k0: DD 2
+k1: DD 3
+k2: DD 5
+k3: DD 1
+k4: DD 4
+k5: DD 0
 
-.data
-v_main_a: .word 0
-v_main_b: .word 0
-v_main_arr: .space 256
-v_main_x: .word 0
-v_main_y: .word 0
+v_main_a: DD 0
+v_main_b: DD 0
+v_main_arr: RESB 256
+v_main_x: DD 0
+v_main_y: DD 0
 
-.code
 main:
   ENTER 272
   JMP main_B2

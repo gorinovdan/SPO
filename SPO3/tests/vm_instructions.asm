@@ -1,25 +1,22 @@
 ; VM instruction coverage test
 
-.const
-k0: .int 0
-k1: .int 1
-k2: .int 2
-k3: .int 3
-k4: .int 4
-k5: .int 5
-kneg4: .int -4
-kstr: .string "OK\n"
-kfail: .string "FAIL\n"
-kport_out: .int 1
-kport_in: .int 0
+k0: DD 0
+k1: DD 1
+k2: DD 2
+k3: DD 3
+k4: DD 4
+k5: DD 5
+kneg4: DD -4
+kstr: DB "OK\n"
+kfail: DB "FAIL\n"
+kport_out: DD 1
+kport_in: DD 0
 
-.data
-v_x: .word 0
-v_y: .word 0
-v_arr: .space 16
-v_msg: .word 0
+v_x: DD 0
+v_y: DD 0
+v_arr: RESB 16
+v_msg: DD 0
 
-.code
 main:
   ENTER 28
   NOP

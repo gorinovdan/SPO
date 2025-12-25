@@ -1,46 +1,43 @@
 ; SPO3 linear code listing
 ; VM: stack-based, memory banks: code, constants, data, stack
 
-.const
-k0: .int 3
-k1: .int 1
-k2: .string "Resilt of math op. is "
-k3: .int 0
-k4: .int 225
-k5: .int 2
-k6: .int 5
-k7: .int 100
-k8: .int 50
-k9: .int 1000
+k0: DD 3
+k1: DD 1
+k2: DB "Resilt of math op. is "
+k3: DD 0
+k4: DD 225
+k5: DD 2
+k6: DD 5
+k7: DD 100
+k8: DD 50
+k9: DD 1000
 
-.data
-v_calc_a: .word 0
-v_calc_b: .word 0
-v_calc_c: .word 0
-v_calc_x: .word 0
-v_calc_y: .word 0
-v_calc_res: .word 0
-v_condition_a: .word 0
-v_condition_b: .word 0
-v_condition_result: .word 0
-v_function_call_a: .word 0
-v_function_call_b: .word 0
-v_function_call_myArr: .space 256
-v_function_call_res: .word 0
-v_function_call_arr2: .word 0
-v_blockTest_a: .word 0
-v_blockTest_b: .word 0
-v_blockTest_counter: .word 0
-v_inline_func_arr: .space 28
-v_inline_func_counter: .word 0
-v_callTest_tmp: .space 8
-v_callTest_x: .word 0
-v_loopTest_a: .word 0
-v_loopTest_b: .word 0
-v_repeatTest_a: .word 0
-v_main_tmp: .space 8
+v_calc_a: DD 0
+v_calc_b: DD 0
+v_calc_c: DD 0
+v_calc_x: DD 0
+v_calc_y: DD 0
+v_calc_res: DD 0
+v_condition_a: DD 0
+v_condition_b: DD 0
+v_condition_result: DD 0
+v_function_call_a: DD 0
+v_function_call_b: DD 0
+v_function_call_myArr: RESB 256
+v_function_call_res: DD 0
+v_function_call_arr2: DD 0
+v_blockTest_a: DD 0
+v_blockTest_b: DD 0
+v_blockTest_counter: DD 0
+v_inline_func_arr: RESB 28
+v_inline_func_counter: DD 0
+v_callTest_tmp: RESB 8
+v_callTest_x: DD 0
+v_loopTest_a: DD 0
+v_loopTest_b: DD 0
+v_repeatTest_a: DD 0
+v_main_tmp: RESB 8
 
-.code
 calc:
   STORE v_calc_c
   STORE v_calc_b
