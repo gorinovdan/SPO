@@ -208,7 +208,7 @@ static char *ir_label(const IRNode *node)
 	case IR_NODE_INDEX:
 		return strdup("INDEX");
 	case IR_NODE_RANGE:
-		return strdup("RANGE");
+		return strdup("RANGE_OP");
 	case IR_NODE_LIST:
 		return strdup("LIST");
 	case IR_NODE_UNARY:

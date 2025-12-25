@@ -421,7 +421,7 @@ static void emit_range(EmitCtx* ctx, const IRNode* range) {
 	if (range->type == IR_NODE_RANGE && range->child_count >= 2) {
 		emit_ir(ctx, range->children[0]);
 		emit_ir(ctx, range->children[1]);
-		block_add_instr0(ctx->block, "RANGE");
+		block_add_instr0(ctx->block, "RANGE_OP");
 		return;
 	}
 	if (range->type == IR_NODE_RANGE && range->child_count >= 1) {
@@ -1009,7 +1009,7 @@ int lc_write_assembly(const LC_Program* program, const char* filename) {
 	if (!f) return 0;
 
 	fprintf(f, "; SPO3 linear code listing\n");
-	fprintf(f, "; VM: stack-based, memory banks: code, constants, data, stack\n\n");
+	fprintf(f, "; VM: stack-based, memory banks: code, constants, data_mem, stack_mem\n\n");
 
 	fprintf(f, ".const\n");
 	if (program->constant_count == 0) {

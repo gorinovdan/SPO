@@ -82,8 +82,8 @@ static const char* op_name_for_ast(NodeType type) {
 	case AST_GE: return "GE";
 	case AST_EQ: return "EQ";
 	case AST_NE: return "NE";
-	case AST_AND: return "AND";
-	case AST_OR: return "OR";
+	case AST_AND: return "AND_OP";
+	case AST_OR: return "OR_OP";
 	default: return NULL;
 	}
 }

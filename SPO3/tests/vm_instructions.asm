@@ -54,12 +54,12 @@ main:
 
   PUSH_CONST k1
   PUSH_CONST k0
-  AND
+  AND_OP
   POP
 
   PUSH_CONST k1
   PUSH_CONST k0
-  OR
+  OR_OP
   POP
 
   PUSH_CONST k1
@@ -101,7 +101,7 @@ main:
   PUSH_ADDR v_arr
   PUSH_CONST k1
   PUSH_CONST k3
-  RANGE
+  RANGE_OP
   INDEX
   LOAD_IND
   POP

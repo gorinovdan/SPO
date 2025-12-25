@@ -194,7 +194,7 @@ function_call_B9:
   PUSH_ADDR v_function_call_myArr
   PUSH_CONST k5
   PUSH_CONST k6
-  RANGE
+  RANGE_OP
   INDEX
   LOAD_IND
   STORE v_function_call_arr2

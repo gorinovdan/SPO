@@ -1,0 +1,822 @@
+architecture vm32 {
+
+    registers:
+
+        // General purpose registers
+        storage r0_s[32];
+        storage r1_s[32];
+        storage r2_s[32];
+        storage r3_s[32];
+        storage r4_s[32];
+        storage r5_s[32];
+
+        storage rzr_s[32];
+        
+        view r0 = r0_s;
+        view r1 = r1_s;
+        view r2 = r2_s;
+        view r3 = r3_s;
+        view r4 = r4_s;
+        view r5 = r5_s;
+
+        view rzr = rzr_s;
+
+        // IO registers
+        storage rin[8];
+        storage rout[8];
+
+        // Instruction pointer
+        storage rip[16];
+
+        // Inner registers
+        storage rbf16[16];
+
+        // Stack & heap pointers
+        storage rsp_s[16];
+        storage rbp_s[16];
+        storage rhp_s[16];
+
+        view rsp = rsp_s;
+        view rbp = rbp_s;
+        view rhp = rhp_s;
+
+    memory:
+
+        range code_data [0x0000 .. 0xffff] {
+            cell = 32;
+            endianess = big-endian;
+            granularity = 0;
+        }
+
+        range stack_bank [0x0000 .. 0xffff] {
+            cell = 32;
+            endianess = little-endian;
+            granularity = 0;
+        }
+    
+    instructions:
+
+        encode imm8 field = immediate [8];
+        encode imm16 field = immediate [16];
+        encode imm32 field = immediate [32];
+
+        encode off16 field = immediate [16];
+
+        encode addr16 field = immediate[16] displacement;
+
+        encode bank sequence = alternatives {
+            // data & code
+            d = {0},
+            // stack
+            s = {1}
+        };
+
+        encode reg field = register {
+            r0 = 0000,
+            r1 = 0001,
+            r2 = 0010,
+            r3 = 0011,
+            r4 = 0100,
+            r5 = 0101,
+            rsp = 0110,
+            rbp = 0111,
+            rhp = 1000,
+            rzr = 1001
+        };
+
+        instruction test = { 1111 1111 } {
+            r1 = 0x636361;
+            rip = rip + 1;
+        };
+
+        instruction halt = { 0000 0000 } {
+        };
+
+        // output
+
+        instruction out-reg = { 0000 0001, 0000, reg as from } {
+            rout = from;
+            rip = rip + 2;
+        };
+
+        // input
+
+        instruction in-reg = { 0000 0010, 0000, reg as to } {
+            to = rin;
+            rip = rip + 2;
+        };
+
+        // move
+
+        instruction mv32-imm32 = { 0000 0011, 0000, reg as to, imm32 as value } {
+            to = value;
+		    rip = rip + 6;
+        };
+
+        instruction mv32-reg = { 0000 0100, reg as to, reg as from } {
+            to = from;
+		    rip = rip + 2;
+        };
+
+        instruction mv16-imm32 = { 0000 0101, 0000, reg as to, imm32 as value } {
+            to = value & 0x0000FFFF;
+		    rip = rip + 6;
+        };
+
+        instruction mv16-reg = { 0000 0110, reg as to, reg as from } {
+            to = from & 0x0000FFFF;
+		    rip = rip + 2;
+        };
+
+        instruction mv8-imm32 = { 0000 0111, 0000, reg as to, imm32 as value } {
+            to = value & 0x000000FF;
+		    rip = rip + 6;
+        };
+
+        instruction mv8-reg = { 0000 1000, reg as to, reg as from } {
+            to = from & 0x000000FF;
+		    rip = rip + 2;
+        };
+        
+
+        // load
+
+        instruction ld32-direct = { 0000 1001, sequence bank, 000, reg as to, imm16 as target } {
+            when d then
+			    to = code_data:4[target];
+		    else
+			    to = stack_bank:4[target];
+
+		    rip = rip + 4;
+        };
+
+        instruction ld32-indirect = { 0000 1010, sequence bank, 000, reg as to, 0000, reg as ptr } {
+            when d then
+			    to = code_data:4[ptr];
+		    else
+			    to = stack_bank:4[ptr];
+
+		    rip = rip + 3;
+        };
+
+        instruction ld32-reg-imm-offset = { 0000 1011, sequence bank, 000, reg as to, 0000, reg as ptr, off16 as off} {
+            rbf16 = ptr + off;
+            when d then
+			    to = code_data:4[rbf16];
+		    else
+			    to = stack_bank:4[rbf16];
+
+		    rip = rip + 5;
+        };
+
+        instruction ld32-reg-reg-offset = { 0000 1100, sequence bank, 000, reg as to, reg as ptr, reg as offPtr} {
+            rbf16 = ptr + offPtr;
+            when d then
+			    to = code_data:4[rbf16];
+		    else
+			    to = stack_bank:4[rbf16];
+
+		    rip = rip + 3;
+        };
+
+        instruction ld16-direct = { 0000 1101, sequence bank, 000, reg as to, imm16 as target } {
+            when d then
+			    to = code_data:2[target];
+		    else
+			    to = stack_bank:2[target];
+
+		    rip = rip + 4;
+        };
+
+        instruction ld16-indirect = { 0000 1110, sequence bank, 000, reg as to, 0000, reg as ptr } {
+            when d then
+			    to = code_data:2[ptr];
+		    else
+			    to = stack_bank:2[ptr];
+
+		    rip = rip + 3;
+        };
+
+        instruction ld16-reg-imm-offset = { 0000 1111, sequence bank, 000, reg as to, 0000, reg as ptr, off16 as off} {
+            rbf16 = ptr + off;
+            when d then
+			    to = code_data:2[rbf16];
+		    else
+			    to = stack_bank:2[rbf16];
+
+		    rip = rip + 5;
+        };
+
+        instruction ld16-reg-reg-offset = { 0001 0000, sequence bank, 000, reg as to, reg as ptr, reg as offPtr} {
+            rbf16 = ptr + offPtr;
+            when d then
+			    to = code_data:2[rbf16];
+		    else
+			    to = stack_bank:2[rbf16];
+
+		    rip = rip + 3;
+        };
+
+        instruction ld8-direct = { 0001 0001, sequence bank, 000, reg as to, imm16 as target } {
+            when d then
+			    to = code_data:1[target];
+		    else
+			    to = stack_bank:1[target];
+
+		    rip = rip + 4;
+        };
+
+        instruction ld8-indirect = { 0001 0010, sequence bank, 000, reg as to, 0000, reg as ptr } {
+            when d then
+			    to = code_data:1[ptr];
+		    else
+			    to = stack_bank:1[ptr];
+
+		    rip = rip + 3;
+        };
+
+        instruction ld8-reg-imm-offset = { 0001 0011, sequence bank, 000, reg as to, 0000, reg as ptr, off16 as off} {
+            rbf16 = ptr + off;
+            when d then
+			    to = code_data:1[rbf16];
+		    else
+			    to = stack_bank:1[rbf16];
+
+		    rip = rip + 5;
+        };
+
+        instruction ld8-reg-reg-offset = { 0001 0100, sequence bank, 000, reg as to, reg as ptr, reg as offPtr} {
+            rbf16 = ptr + offPtr;
+            when d then
+			    to = code_data:1[rbf16];
+		    else
+			    to = stack_bank:1[rbf16];
+
+		    rip = rip + 3;
+        };
+
+        // store
+        
+        instruction st32-direct = { 0001 0101, sequence bank, 000, reg as from, imm16 as target } {
+            r0 = from;
+            when d then
+			    code_data:4[target] = from;
+		    else
+			    stack_bank:4[target] = from;
+
+		    rip = rip + 4;
+        };
+
+        instruction st32-indirect = { 0001 0110, sequence bank, 000, reg as from, 0000, reg as ptr } {
+            r0 = from;
+            when d then
+			    code_data:4[ptr] = from;
+		    else
+			    stack_bank:4[ptr] = from;
+
+		    rip = rip + 3;
+        };
+
+        instruction st32-reg-imm-offset = { 0001 0111, sequence bank, 000, reg as from, 0000, reg as ptr, off16 as off} {
+            r0 = from;
+            rbf16 = ptr + off;
+            when d then
+			    code_data:4[rbf16] = from;
+		    else
+			    stack_bank:4[rbf16] = from;
+
+		    rip = rip + 5;
+        };
+
+        instruction st32-reg-reg-offset = { 0001 1000, sequence bank, 000, reg as from, reg as ptr, reg as offPtr} {
+            r0 = from;
+            rbf16 = ptr + offPtr;
+            when d then
+			    code_data:4[rbf16] = from;
+		    else
+			    stack_bank:4[rbf16] = from;
+
+		    rip = rip + 3;
+        };
+
+        instruction st16-direct = { 0001 1001, sequence bank, 000, reg as from, imm16 as target } {
+            when d then
+			    code_data:2[target] = from;
+		    else
+			    stack_bank:2[target] = from;
+
+		    rip = rip + 4;
+        };
+
+        instruction st16-indirect = { 0001 1010, sequence bank, 000, reg as from, 0000, reg as ptr } {
+            when d then
+			    code_data:2[ptr] = from;
+		    else
+			    stack_bank:2[ptr] = from;
+
+		    rip = rip + 3;
+        };
+
+        instruction st16-reg-imm-offset = { 0001 1011, sequence bank, 000, reg as from, 0000, reg as ptr, off16 as off} {
+            rbf16 = ptr + off;
+            when d then
+			    code_data:2[rbf16] = from;
+		    else
+			    stack_bank:2[rbf16] = from;
+
+		    rip = rip + 5;
+        };
+
+        instruction st16-reg-reg-offset = { 0001 1100, sequence bank, 000, reg as from, reg as ptr, reg as offPtr} {
+            rbf16 = ptr + offPtr;
+            when d then
+			    code_data:2[rbf16] = from;
+		    else
+			    stack_bank:2[rbf16] = from;
+
+		    rip = rip + 3;
+        };
+
+        instruction st8-direct = { 0001 1101, sequence bank, 000, reg as from, imm16 as target } {
+            when d then
+			    code_data:1[target] = from;
+		    else
+			    stack_bank:1[target] = from;
+
+		    rip = rip + 4;
+        };
+
+        instruction st8-indirect = { 0001 1110, sequence bank, 000, reg as from, 0000, reg as ptr } {
+            when d then
+			    code_data:1[ptr] = from;
+		    else
+			    stack_bank:1[ptr] = from;
+
+		    rip = rip + 3;
+        };
+
+        instruction st8-reg-imm-offset = { 0001 1111, sequence bank, 000, reg as from, 0000, reg as ptr, off16 as off} {
+            rbf16 = ptr + off;
+            when d then
+			    code_data:1[rbf16] = from;
+		    else
+			    stack_bank:1[rbf16] = from;
+
+		    rip = rip + 5;
+        };
+
+        instruction st8-reg-reg-offset = { 0010 0000, sequence bank, 000, reg as from, reg as ptr, reg as offPtr} {
+            rbf16 = ptr + offPtr;
+            when d then
+			    code_data:1[rbf16] = from;
+		    else
+			    stack_bank:1[rbf16] = from;
+
+		    rip = rip + 3;
+        };
+
+        // push
+
+        instruction push32-reg = { 0010 0001, 0000, reg as from } {
+            rsp = rsp - 4;
+            stack_bank:4[rsp] = from;
+            rip = rip + 2;
+        };
+
+        instruction push16-reg = { 0010 0010, 0000, reg as from } {
+            rsp = rsp - 2;
+            stack_bank:2[rsp] = from;
+            rip = rip + 2;
+        };
+
+        instruction push8-reg = { 0010 0011, 0000, reg as from } {
+            rsp = rsp - 1;
+            stack_bank:1[rsp] = from;
+            rip = rip + 2;
+        };
+
+        // pop
+        
+        instruction pop32-reg = { 0010 0100, 0000, reg as to } {
+            to = stack_bank:4[rsp];
+            rsp = rsp + 4;
+            rip = rip + 2;
+        };
+
+        instruction pop16-reg = { 0010 0101, 0000, reg as to } {
+            to = stack_bank:2[rsp];
+            rsp = rsp + 2;
+            rip = rip + 2;
+        };
+
+        instruction pop8-reg = { 0010 0110, 0000, reg as to } {
+            to = stack_bank:1[rsp];
+            rsp = rsp + 1;
+            rip = rip + 2;
+        };
+
+        // jmp
+
+        instruction jmp-direct = { 0010 0111, imm16 as target } {
+            rip = target;
+        };
+
+        instruction jmp-indirect = { 0010 1000, 0000, reg as ptr } {
+            rip = ptr;
+        };
+
+        instruction jeq-direct = { 0010 1001, imm16 as target, reg as op1, reg as op2 } {
+            if op1 == op2 then
+                rip = target;
+            else
+                rip = rip + 4;
+        };
+
+        instruction jeq-indirect = { 0010 1010, 0000, reg as ptr, reg as op1, reg as op2 } {
+            if op1 == op2 then
+                rip = ptr;
+            else
+                rip = rip + 3;
+        };
+
+        instruction jne-direct = { 0010 1011, imm16 as target, reg as op1, reg as op2 } {
+            if op1 != op2 then
+                rip = target;
+            else
+                rip = rip + 4;
+        };
+
+        instruction jne-indirect = { 0010 1100, 0000, reg as ptr, reg as op1, reg as op2 } {
+            if op1 != op2 then
+                rip = ptr;
+            else
+                rip = rip + 3;
+        };
+
+        instruction jlt-direct = { 0010 1101, imm16 as target, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) < (op2 ^ 0x80000000) then
+                rip = target;
+            else
+                rip = rip + 4;
+        };
+
+        instruction jlt-indirect = { 0010 1110, 0000, reg as ptr, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) < (op2 ^ 0x80000000) then
+                rip = ptr;
+            else
+                rip = rip + 3;
+        };
+
+        instruction jle-direct = { 0010 1111, imm16 as target, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) <= (op2 ^ 0x80000000) then
+                rip = target;
+            else
+                rip = rip + 4;
+        };
+
+        instruction jle-indirect = { 0011 0000, 0000, reg as ptr, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) <= (op2 ^ 0x80000000) then
+                rip = ptr;
+            else
+                rip = rip + 3;
+        };
+
+        instruction jgt-direct = { 0011 0001, imm16 as target, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) > (op2 ^ 0x80000000) then
+                rip = target;
+            else
+                rip = rip + 4;
+        };
+
+        instruction jgt-indirect = { 0011 0010, 0000, reg as ptr, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) > (op2 ^ 0x80000000) then
+                rip = ptr;
+            else
+                rip = rip + 3;
+        };
+
+        instruction jge-direct = { 0011 0011, imm16 as target, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) >= (op2 ^ 0x80000000) then
+                rip = target;
+            else
+                rip = rip + 4;
+        };
+
+        instruction jge-indirect = { 0011 0100, 0000, reg as ptr, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) >= (op2 ^ 0x80000000) then
+                rip = ptr;
+            else
+                rip = rip + 3;
+        };
+
+        // maths
+
+        instruction add-reg = { 0011 0101, 0000, reg as dst, reg as op1, reg as op2 } {
+            dst = op1 + op2;
+            rip = rip + 3;
+        };
+
+        instruction sub-reg = { 0011 0110, 0000, reg as dst, reg as op1, reg as op2 } {
+            dst = op1 - op2;
+            rip = rip + 3;
+        };
+
+        instruction mul-reg = { 0011 0111, 0000, reg as dst, reg as op1, reg as op2 } {
+            dst = op1 * op2;
+            rip = rip + 3;
+        };
+
+        instruction div-reg = { 0011 1000, 0000, reg as dst, reg as op1, reg as op2 } {
+            let res_sign = 1;
+            if (op1 ^ 0x80000000) < (0x0 ^ 0x80000000) then {
+                op1 = 0 - op1;
+                res_sign = 0 - res_sign;
+            }
+            if (op2 ^ 0x80000000) < (0x0 ^ 0x80000000) then {
+                op2 = 0 - op2;
+                res_sign = 0 - res_sign;
+            }
+            dst = (op1 / op2) * res_sign;
+            rip = rip + 3;
+        };
+
+        instruction mod-reg = { 0011 1001, 0000, reg as dst, reg as op1, reg as op2 } {
+            let res_sign = 1;
+            if (op1 ^ 0x80000000) < (0x0 ^ 0x80000000) then {
+                op1 = 0 - op1;
+                res_sign = 0 - res_sign;
+            }
+            if (op2 ^ 0x80000000) < (0x0 ^ 0x80000000) then {
+                op2 = 0 - op2;
+                res_sign = 0 - res_sign;
+            }
+            dst = (op1 % op2) * res_sign;
+            rip = rip + 3;
+        };
+
+        instruction neg-reg = { 0011 1010, reg as dst, reg as op1 } {
+            dst = rzr - op1;
+            rip = rip + 2;
+        };
+
+        // bit logic
+
+        instruction and32-reg = { 0011 1011, 0000, reg as dst, reg as op1, reg as op2 } {
+            dst = op1 & op2;
+            rip = rip + 3;
+        };
+
+        instruction or32-reg = { 0011 1100, 0000, reg as dst, reg as op1, reg as op2 } {
+            dst = op1 | op2;
+            rip = rip + 3;
+        };
+
+        instruction not32-reg = { 0011 1101, reg as dst, reg as op1 } {
+            dst = !op1;
+            rip = rip + 2;
+        };
+
+        // functions support
+
+        instruction call-direct = { 0011 1110, imm16 as target } {
+            // save ip
+            rsp = rsp - 2;
+            stack_bank:2[rsp] = rip + 3;
+
+            // save bp
+            rsp = rsp - 2;
+            stack_bank:2[rsp] = rbp;
+
+            // new bp
+            rbp = rsp;
+
+            // jmp to function
+            rip = target;
+        };
+
+        instruction call-indirect = { 0011 1111, 0000, reg as ptr } {
+            // save ip
+            rsp = rsp - 2;
+            stack_bank:2[rsp] = rip + 2;
+
+            // save bp
+            rsp = rsp - 2;
+            stack_bank:2[rsp] = rbp;
+
+            // new bp
+            rbp = rsp;
+
+            // jmp to function
+            rip = ptr;
+        };
+
+        instruction ret = { 0100 0000 } {
+            // restore rbp  
+            rbp = stack_bank:2[rsp];
+            rsp = rsp + 2;
+
+            // restore rip
+            rip = stack_bank:2[rsp];
+            rsp = rsp + 2;
+        };
+
+        // comparison
+
+        instruction eq-reg = { 0100 0001, 0000, reg as to, reg as op1, reg as op2 } {
+            if op1 == op2 then
+                to = 0x1;
+            else
+                to = 0x0;
+            
+            rip = rip + 3;
+        };
+
+        instruction ne-reg = { 0100 0010, 0000, reg as to, reg as op1, reg as op2 } {
+            if op1 != op2 then
+                to = 0x1;
+            else
+                to = 0x0;
+            
+            rip = rip + 3;
+        };
+
+        instruction lt-reg = { 0100 0011, 0000, reg as to, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) < (op2 ^ 0x80000000) then
+                to = 0x1;
+            else
+                to = 0x0;
+            
+            rip = rip + 3;
+        };
+
+        instruction le-reg = { 0100 0100, 0000, reg as to, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) <= (op2 ^ 0x80000000) then
+                to = 0x1;
+            else
+                to = 0x0;
+            
+            rip = rip + 3;
+        };
+
+        instruction gt-reg = { 0100 0101, 0000, reg as to, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) > (op2 ^ 0x80000000) then
+                to = 0x1;
+            else
+                to = 0x0;
+            
+            rip = rip + 3;
+        };
+
+        instruction ge-reg = { 0100 0110, 0000, reg as to, reg as op1, reg as op2 } {
+            if (op1 ^ 0x80000000) >= (op2 ^ 0x80000000) then
+                to = 0x1;
+            else
+                to = 0x0;
+            
+            rip = rip + 3;
+        };
+
+
+    mnemonics:
+
+        mnemonic halt () "";
+        mnemonic test () "";
+
+        mnemonic out for out-reg (from) "{1}";
+
+        mnemonic in for in-reg (to) "{1}";
+
+        mnemonic mv32 for mv32-imm32 (to, value) "{1}, #{2}",
+                      for mv32-reg (to, from) "{1}, {2}";
+        
+        mnemonic mv16 for mv16-imm32 (to, value) "{1}, #{2}",
+                      for mv16-reg (to, from) "{1}, {2}";
+
+        mnemonic mv8 for mv8-imm32 (to, value) "{1}, #{2}",
+                     for mv8-reg (to, from) "{1}, {2}";
+
+        mnemonic ld32 for ld32-direct (to, target) "{1}, d[{2}]" when d,
+                      for ld32-direct (to, target) "{1}, s[{2}]" when s,
+                      for ld32-indirect (to, ptr) "{1}, d[{2}]" when d,
+                      for ld32-indirect (to, ptr) "{1}, s[{2}]" when s,
+                      for ld32-reg-imm-offset (to, ptr, off) "{1}, d[{2}+{3}]" when d,
+                      for ld32-reg-imm-offset (to, ptr, off) "{1}, s[{2}+{3}]" when s,
+                      for ld32-reg-reg-offset (to, ptr, offPtr) "{1}, d[{2}+{3}]" when d,
+                      for ld32-reg-reg-offset (to, ptr, offPtr) "{1}, s[{2}+{3}]" when s;
+
+        mnemonic ld16 for ld16-direct (to, target) "{1}, d[{2}]" when d,
+                      for ld16-direct (to, target) "{1}, s[{2}]" when s,
+                      for ld16-indirect (to, ptr) "{1}, d[{2}]" when d,
+                      for ld16-indirect (to, ptr) "{1}, s[{2}]" when s,
+                      for ld16-reg-imm-offset (to, ptr, off) "{1}, d[{2}+{3}]" when d,
+                      for ld16-reg-imm-offset (to, ptr, off) "{1}, s[{2}+{3}]" when s,
+                      for ld16-reg-reg-offset (to, ptr, offPtr) "{1}, d[{2}+{3}]" when d,
+                      for ld16-reg-reg-offset (to, ptr, offPtr) "{1}, s[{2}+{3}]" when s;
+        
+        mnemonic ld8 for ld8-direct (to, target) "{1}, d[{2}]" when d,
+                     for ld8-direct (to, target) "{1}, s[{2}]" when s,
+                     for ld8-indirect (to, ptr) "{1}, d[{2}]" when d,
+                     for ld8-indirect (to, ptr) "{1}, s[{2}]" when s,
+                     for ld8-reg-imm-offset (to, ptr, off) "{1}, d[{2}+{3}]" when d,
+                     for ld8-reg-imm-offset (to, ptr, off) "{1}, s[{2}+{3}]" when s,
+                     for ld8-reg-reg-offset (to, ptr, offPtr) "{1}, d[{2}+{3}]" when d,
+                     for ld8-reg-reg-offset (to, ptr, offPtr) "{1}, s[{2}+{3}]" when s;
+        
+        mnemonic st32 for st32-direct (from, target) "{1}, d[{2}]" when d,
+                      for st32-direct (from, target) "{1}, s[{2}]" when s,
+                      for st32-indirect (from, ptr) "{1}, d[{2}]" when d,
+                      for st32-indirect (from, ptr) "{1}, s[{2}]" when s,
+                      for st32-reg-imm-offset (from, ptr, off) "{1}, d[{2}+{3}]" when d,
+                      for st32-reg-imm-offset (from, ptr, off) "{1}, s[{2}+{3}]" when s,
+                      for st32-reg-reg-offset (from, ptr, offPtr) "{1}, d[{2}+{3}]" when d,
+                      for st32-reg-reg-offset (from, ptr, offPtr) "{1}, s[{2}+{3}]" when s;
+
+        mnemonic st16 for st16-direct (from, target) "{1}, d[{2}]" when d,
+                      for st16-direct (from, target) "{1}, s[{2}]" when s,
+                      for st16-indirect (from, ptr) "{1}, d[{2}]" when d,
+                      for st16-indirect (from, ptr) "{1}, s[{2}]" when s,
+                      for st16-reg-imm-offset (from, ptr, off) "{1}, d[{2}+{3}]" when d,
+                      for st16-reg-imm-offset (from, ptr, off) "{1}, s[{2}+{3}]" when s,
+                      for st16-reg-reg-offset (from, ptr, offPtr) "{1}, d[{2}+{3}]" when d,
+                      for st16-reg-reg-offset (from, ptr, offPtr) "{1}, s[{2}+{3}]" when s;
+        
+        mnemonic st8 for st8-direct (from, target) "{1}, d[{2}]" when d,
+                     for st8-direct (from, target) "{1}, s[{2}]" when s,
+                     for st8-indirect (from, ptr) "{1}, d[{2}]" when d,
+                     for st8-indirect (from, ptr) "{1}, s[{2}]" when s,
+                     for st8-reg-imm-offset (from, ptr, off) "{1}, d[{2}+{3}]" when d,
+                     for st8-reg-imm-offset (from, ptr, off) "{1}, s[{2}+{3}]" when s,
+                     for st8-reg-reg-offset (from, ptr, offPtr) "{1}, d[{2}+{3}]" when d,
+                     for st8-reg-reg-offset (from, ptr, offPtr) "{1}, s[{2}+{3}]" when s;
+        
+        mnemonic push32 for push32-reg (from) "{1}";
+
+        mnemonic push16 for push16-reg (from) "{1}";
+
+        mnemonic push8 for push8-reg (from) "{1}";
+
+        mnemonic pop32 for pop32-reg (to) "{1}";
+
+        mnemonic pop16 for pop16-reg (to) "{1}";
+
+        mnemonic pop8 for pop8-reg (to) "{1}";
+
+        mnemonic jmp for jmp-direct (target) "[{1}]",
+                     for jmp-indirect (ptr) "[{1}]";
+
+        mnemonic jeq for jeq-direct (target, op1, op2) "[{1}], {2}, {3}",
+                     for jeq-indirect (ptr, op1, op2) "[{1}], {2}, {3}";
+
+        mnemonic jne for jne-direct (target, op1, op2) "[{1}], {2}, {3}",
+                     for jne-indirect (ptr, op1, op2) "[{1}], {2}, {3}";
+        
+        mnemonic jlt for jlt-direct (target, op1, op2) "[{1}], {2}, {3}",
+                     for jlt-indirect (ptr, op1, op2) "[{1}], {2}, {3}";
+        
+        mnemonic jle for jle-direct (target, op1, op2) "[{1}], {2}, {3}",
+                     for jle-indirect (ptr, op1, op2) "[{1}], {2}, {3}";
+        
+        mnemonic jgt for jgt-direct (target, op1, op2) "[{1}], {2}, {3}",
+                     for jgt-indirect (ptr, op1, op2) "[{1}], {2}, {3}";
+
+        mnemonic jge for jge-direct (target, op1, op2) "[{1}], {2}, {3}",
+                     for jge-indirect (ptr, op1, op2) "[{1}], {2}, {3}";
+
+        mnemonic eq for eq-reg (to, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic ne for ne-reg (to, op1, op2) "{1}, {2}, {3}";
+        
+        mnemonic lt for lt-reg (to, op1, op2) "{1}, {2}, {3}";
+        
+        mnemonic le for le-reg (to, op1, op2) "{1}, {2}, {3}";
+        
+        mnemonic gt for gt-reg (to, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic ge for ge-reg (to, op1, op2) "{1}, {2}, {3}";
+
+
+        mnemonic add for add-reg (dst, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic sub for sub-reg (dst, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic mul for mul-reg (dst, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic div for div-reg (dst, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic mod for mod-reg (dst, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic neg for neg-reg (dst, op1) "{1}, {2}";
+
+        mnemonic and32 for and32-reg (dst, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic or32 for or32-reg (dst, op1, op2) "{1}, {2}, {3}";
+
+        mnemonic not32 for not32-reg (dst, op1) "{1}, {2}";
+
+        mnemonic call for call-direct (target) "[{1}]",
+                      for call-indirect (ptr) "[{1}]";
+
+        mnemonic ret () "";
+        
+
+}

@@ -1,0 +1,469 @@
+architecture vm32 {
+
+    registers:
+
+        // Visible registers
+        storage ip_s[32];
+        storage sp_s[32];
+        storage bp_s[32];
+        storage io_s[32];
+
+        view ip = ip_s;
+        view sp = sp_s;
+        view bp = bp_s;
+        view io = io_s;
+
+        // Runtime state (initialized by loader)
+        storage dbp_s[32];
+        storage df_size_s[32];
+        storage csp_s[32];
+
+        view dbp = dbp_s;
+        view df_size = df_size_s;
+        view csp = csp_s;
+
+        // IO latches
+        storage rin_s[32];
+        storage rout_s[32];
+
+        view rin = rin_s;
+        view rout = rout_s;
+
+        // sp/bp/csp are byte offsets; word size is 4
+
+    memory:
+
+        range code [0x00000000 .. 0xffffffff] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range const_pool [0x00000000 .. 0xffffffff] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range data_mem [0x00000000 .. 0xffffffff] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        // data_meta[addr] holds item size in bytes (0 => word size)
+        range data_meta [0x00000000 .. 0xffffffff] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range stack_mem [0x00000000 .. 0xffffffff] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        // Call frames: [return_ip, bp, dbp] packed as words
+        range call_stack [0x00000000 .. 0xffffffff] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+    instructions:
+
+        encode imm32 field = immediate[32];
+        encode code32 field = immediate[32] offset;
+        encode data32 field = immediate[32] data;
+        encode const32 field = immediate[32] data;
+
+        instruction nop = { 0000 0000 } {
+            ip = ip + 1;
+        };
+
+        // Data movement and constants
+        // const_id indexes a typed constant table (runtime resolves strings)
+        instruction push-const = { 0000 0001, const32 as const_id } {
+            let caddr = const_id * 4;
+            let value = const_pool:4[caddr];
+            stack_mem:4[sp] = value;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction push-addr = { 0000 0010, data32 as addr } {
+            let abs_addr = dbp + addr;
+            stack_mem:4[sp] = abs_addr;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction load = { 0000 0011, data32 as addr } {
+            let abs_addr = dbp + addr;
+            let size = data_meta:4[addr];
+            if size == 1 then
+                stack_mem:4[sp] = data_mem:1[abs_addr];
+            else
+                stack_mem:4[sp] = data_mem:4[abs_addr];
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction store = { 0000 0100, data32 as addr } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            let abs_addr = dbp + addr;
+            let size = data_meta:4[addr];
+            if size == 1 then
+                data_mem:1[abs_addr] = value;
+            else
+                data_mem:4[abs_addr] = value;
+            ip = ip + 1;
+        };
+
+        instruction load-ind = { 0000 0101 } {
+            sp = sp - 4;
+            let addr = stack_mem:4[sp];
+            let value = data_mem:4[addr];
+            stack_mem:4[sp] = value;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction store-ind = { 0000 0110 } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            sp = sp - 4;
+            let addr = stack_mem:4[sp];
+            data_mem:4[addr] = value;
+            ip = ip + 1;
+        };
+
+        instruction pop = { 0000 0111 } {
+            sp = sp - 4;
+            ip = ip + 1;
+        };
+
+        // Arithmetic and logic
+        // Runtime concatenates strings if any operand is a string
+        instruction add = { 0000 1000 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            stack_mem:4[sp] = a + b;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction sub = { 0000 1001 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            stack_mem:4[sp] = a - b;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction mul = { 0000 1010 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            stack_mem:4[sp] = a * b;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction div = { 0000 1011 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            stack_mem:4[sp] = a / b;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction rem = { 0000 1100 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            stack_mem:4[sp] = a % b;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction neg = { 0000 1101 } {
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            stack_mem:4[sp] = 0 - a;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction and-op = { 0000 1110 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a != 0 && b != 0 then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction or-op = { 0000 1111 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a != 0 || b != 0 then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction lt = { 0001 0000 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a < b then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction gt = { 0001 0001 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a > b then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction le = { 0001 0010 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a <= b then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction ge = { 0001 0011 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a >= b then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction eq = { 0001 0100 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a == b then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction ne = { 0001 0101 } {
+            sp = sp - 4;
+            let b = stack_mem:4[sp];
+            sp = sp - 4;
+            let a = stack_mem:4[sp];
+            let res = 0;
+            if a != b then
+                res = 1;
+            stack_mem:4[sp] = res;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        // Control flow
+        instruction jmp = { 0001 0110, code32 as target } {
+            ip = target;
+        };
+
+        instruction jz = { 0001 0111, code32 as target } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            if value == 0 then
+                ip = target;
+            else
+                ip = ip + 1;
+        };
+
+        // Negative targets are builtins (print/printf/read)
+        instruction call = { 0001 1000, imm32 as target, imm32 as argc } {
+            if target < 0 then {
+                let i = 0;
+                while i < argc do {
+                    sp = sp - 4;
+                    i = i + 1;
+                }
+                stack_mem:4[sp] = 0;
+                sp = sp + 4;
+                ip = ip + 1;
+            }
+            else {
+                call_stack:4[csp] = ip + 1;
+                csp = csp + 4;
+                call_stack:4[csp] = bp;
+                csp = csp + 4;
+                call_stack:4[csp] = dbp;
+                csp = csp + 4;
+                dbp = dbp + df_size;
+                ip = target;
+            }
+        };
+
+        instruction ret = { 0001 1001 } {
+            if csp == 0 then
+                ip = 0xffffffff;
+            else {
+                csp = csp - 4;
+                dbp = call_stack:4[csp];
+                csp = csp - 4;
+                bp = call_stack:4[csp];
+                csp = csp - 4;
+                ip = call_stack:4[csp];
+            }
+        };
+
+        instruction enter = { 0001 1010, imm32 as nlocals } {
+            bp = sp;
+            ip = ip + 1;
+        };
+
+        instruction leave = { 0001 1011 } {
+            let ret_val = 0;
+            if sp > bp then {
+                sp = sp - 4;
+                ret_val = stack_mem:4[sp];
+            }
+            sp = bp;
+            stack_mem:4[sp] = ret_val;
+            sp = sp + 4;
+            if csp >= 12 then
+                dbp = call_stack:4[csp - 4];
+            ip = ip + 1;
+        };
+
+        // Indexing
+        instruction range-op = { 0001 1100 } {
+            sp = sp - 4;
+            let end = stack_mem:4[sp];
+            sp = sp - 4;
+            let start = stack_mem:4[sp];
+            stack_mem:4[sp] = start;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction index-op = { 0001 1101 } {
+            sp = sp - 4;
+            let idx = stack_mem:4[sp];
+            sp = sp - 4;
+            let base = stack_mem:4[sp];
+            let addr = base + idx * 4;
+            stack_mem:4[sp] = addr;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        // IO
+        instruction set-port = { 0001 1110 } {
+            sp = sp - 4;
+            io = stack_mem:4[sp];
+            ip = ip + 1;
+        };
+
+        instruction in-op = { 0001 1111 } {
+            let value = 0;
+            if io == 0 then
+                value = rin;
+            stack_mem:4[sp] = value;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction out-op = { 0010 0000 } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            if io == 1 then
+                rout = value;
+            ip = ip + 1;
+        };
+
+    mnemonics:
+
+        mnemonic nop () "";
+
+        mnemonic push_const for push-const (const_id) "{1}";
+        mnemonic push_addr for push-addr (addr) "{1}";
+        mnemonic load for load (addr) "{1}";
+        mnemonic store for store (addr) "{1}";
+        mnemonic load_ind for load-ind () "";
+        mnemonic store_ind for store-ind () "";
+        mnemonic pop () "";
+
+        mnemonic add for add () "";
+        mnemonic sub for sub () "";
+        mnemonic mul for mul () "";
+        mnemonic div for div () "";
+        mnemonic rem for rem () "";
+        mnemonic neg for neg () "";
+        mnemonic and_op for and-op () "";
+        mnemonic or_op for or-op () "";
+        mnemonic lt for lt () "";
+        mnemonic gt for gt () "";
+        mnemonic le for le () "";
+        mnemonic ge for ge () "";
+        mnemonic eq for eq () "";
+        mnemonic ne for ne () "";
+
+        mnemonic jmp for jmp (target) "{1}";
+        mnemonic jz for jz (target) "{1}";
+        mnemonic call for call (target, argc) "{1}, {2}";
+        mnemonic ret for ret () "";
+        mnemonic enter for enter (nlocals) "{1}";
+        mnemonic leave for leave () "";
+
+        mnemonic range_op for range-op () "";
+        mnemonic index for index-op () "";
+
+        mnemonic set_port for set-port () "";
+        mnemonic in for in-op () "";
+        mnemonic out for out-op () "";
+
+}

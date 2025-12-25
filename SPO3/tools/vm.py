@@ -323,7 +323,7 @@ def run_vm(binary, spec, spec_by_opcode, max_steps):
         elif mnemonic == "POP":
             stack_pop()
             ip += 1
-        elif mnemonic in ("ADD", "SUB", "MUL", "DIV", "REM", "AND", "OR", "LT", "GT", "LE", "GE", "EQ", "NE"):
+        elif mnemonic in ("ADD", "SUB", "MUL", "DIV", "REM", "AND_OP", "OR_OP", "LT", "GT", "LE", "GE", "EQ", "NE"):
             b = stack_pop()
             a = stack_pop()
             if mnemonic == "ADD" and (isinstance(a, str) or isinstance(b, str)):
@@ -342,9 +342,9 @@ def run_vm(binary, spec, spec_by_opcode, max_steps):
                 stack_push(int(ai / bi))
             elif mnemonic == "REM":
                 stack_push(ai % bi)
-            elif mnemonic == "AND":
+            elif mnemonic == "AND_OP":
                 stack_push(1 if (ai and bi) else 0)
-            elif mnemonic == "OR":
+            elif mnemonic == "OR_OP":
                 stack_push(1 if (ai or bi) else 0)
             elif mnemonic == "LT":
                 stack_push(1 if ai < bi else 0)
@@ -416,7 +416,7 @@ def run_vm(binary, spec, spec_by_opcode, max_steps):
                 if len(data_frames) > target_depth:
                     data_frames.pop()
             ip += 1
-        elif mnemonic == "RANGE":
+        elif mnemonic == "RANGE_OP":
             _end = stack_pop()
             start = stack_pop()
             stack_push(to_int(start))

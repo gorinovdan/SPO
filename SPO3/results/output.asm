@@ -1,5 +1,5 @@
 ; SPO3 linear code listing
-; VM: stack-based, memory banks: code, constants, data, stack
+; VM: stack-based, memory banks: code, constants, data_mem, stack_mem
 
 .const
 k0: .int 2

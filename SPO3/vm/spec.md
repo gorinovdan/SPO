@@ -2,14 +2,14 @@ SPO3 VM (stack-based)
 
 Overview
 - Word size: 4 bytes
-- Memory banks: code, constants, data, stack
+- Memory banks: code, constants, data_mem, stack_mem
 - Registers: IP (instruction pointer), SP (stack pointer), BP (base pointer), IO (hidden IO port)
 
 Memory model
 - code: linear array of bytecode instructions
 - constants: typed constant pool (int/char/bool/string)
-- data: mutable memory for variables and arrays (per-call frame)
-- stack: evaluation stack for operands and temporary values (SP/BP tracked)
+- data_mem: mutable memory for variables and arrays (per-call frame)
+- stack_mem: evaluation stack for operands and temporary values (SP/BP tracked)
 
 Calling convention
 - Arguments are pushed by the caller (left-to-right order).
@@ -37,7 +37,7 @@ Data movement and constants
 Arithmetic and logic
 - ADD, SUB, MUL, DIV, REM, NEG
 - LT, GT, LE, GE, EQ, NE
-- AND, OR
+- AND_OP, OR_OP
 
 Control flow
 - JMP label
@@ -48,7 +48,7 @@ Control flow
 - RET
 
 Indexing
-- RANGE (start, end -> start)
+- RANGE_OP (start, end -> start)
 - INDEX (base, index -> address)
 
 IO
@@ -57,7 +57,7 @@ IO
 - OUT
 
 Notes
-- RANGE is simplified to keep only the start index; INDEX uses word-sized elements (4 bytes).
+- RANGE_OP is simplified to keep only the start index; INDEX uses word-sized elements (4 bytes).
 - LOAD/STORE operate on declared data item sizes; LOAD_IND/STORE_IND operate on word size.
 - Data frames are initialized from the program data template on each call.
 - Addresses produced by PUSH_ADDR are frame-relative and are preserved across calls.
