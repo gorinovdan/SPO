@@ -89,8 +89,10 @@ static void vartable_add(VarTable* vt, const char* name, const char* func_name, 
 	if (!vt || !name) return;
 	int idx = vartable_find(vt, name);
 	if (idx >= 0) {
-		int new_size = size > 0 ? size : 4;
-		if (new_size > vt->sizes[idx]) vt->sizes[idx] = new_size;
+		if (!vt->is_ref[idx]) {
+			int new_size = size > 0 ? size : 4;
+			if (new_size > vt->sizes[idx]) vt->sizes[idx] = new_size;
+		}
 		if (is_ref) vt->is_ref[idx] = 1;
 		return;
 	}
