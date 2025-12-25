@@ -132,6 +132,12 @@ def to_int(val):
     return int(val)
 
 
+def normalize_size(size, word_size):
+    if size == 1:
+        return 1
+    return word_size
+
+
 def read_mem_word(mem, addr):
     if addr < 0 or addr + 4 > len(mem):
         raise ValueError("memory read out of bounds")
@@ -235,6 +241,7 @@ def run_vm(binary, spec, spec_by_opcode, max_steps):
     data_template = bytes(binary["data_mem"])
     data_sizes = binary["data_sizes"]
     imports = binary["imports"]
+    word_size = spec.get("word_size", 4)
 
     ip = binary["entry_ip"]
     stack = []
@@ -296,12 +303,12 @@ def run_vm(binary, spec, spec_by_opcode, max_steps):
             ip += 1
         elif mnemonic == "LOAD":
             addr = operands[0]
-            size = data_sizes.get(addr, spec.get("word_size", 4))
+            size = normalize_size(data_sizes.get(addr, word_size), word_size)
             stack_push(frame_read_sized(frame, addr, size))
             ip += 1
         elif mnemonic == "STORE":
             addr = operands[0]
-            size = data_sizes.get(addr, spec.get("word_size", 4))
+            size = normalize_size(data_sizes.get(addr, word_size), word_size)
             val = stack_pop()
             frame_write_sized(frame, addr, size, val)
             ip += 1
@@ -426,7 +433,7 @@ def run_vm(binary, spec, spec_by_opcode, max_steps):
             base = stack_pop()
             if not isinstance(base, Address):
                 raise ValueError("INDEX expects address base")
-            addr = base.addr + to_int(idx) * spec.get("word_size", 4)
+            addr = base.addr + to_int(idx) * word_size
             stack_push(Address(addr, base.frame_id))
             ip += 1
         elif mnemonic == "SET_PORT":

@@ -19,7 +19,11 @@ typedef struct EmitCtx {
 	VarTable* vars;
 	LC_CodeBlock* block;
 	const char* func_name;
+	const CFG_Analysis* analysis;
 } EmitCtx;
+
+static int type_is_array(const char* type_str);
+static const CFG_Subprogram* find_subprogram(const CFG_Analysis* analysis, const char* name);
 
 static char* xstrdup(const char* s) {
 	if (!s) return NULL;
@@ -353,6 +357,7 @@ static int max_index_from_range(const IRNode* node, int* known) {
 	return 0;
 }
 
+#define VM_WORD_SIZE 4
 #define DEFAULT_INDEX_ELEMS 64
 
 static int guess_indexed_size(const IRNode* node) {
@@ -478,6 +483,36 @@ static int emit_load(EmitCtx* ctx, const IRNode* node) {
 	return 1;
 }
 
+static int emit_load_address(EmitCtx* ctx, const IRNode* node) {
+	const char* label = vartable_label(ctx->vars, node->text);
+	if (!label) {
+		int size = vartable_size(ctx->vars, node->text);
+		vartable_add(ctx->vars, node->text, ctx->func_name, size, 0);
+		label = vartable_label(ctx->vars, node->text);
+		program_add_data(ctx->program, label ? label : node->text, size);
+	}
+	int is_ref = vartable_is_ref(ctx->vars, node->text);
+	if (node->child_count == 0) {
+		if (is_ref) {
+			block_add_instr1(ctx->block, "LOAD", label ? label : node->text);
+		}
+		else {
+			block_add_instr1(ctx->block, "PUSH_ADDR", label ? label : node->text);
+		}
+		return 1;
+	}
+	if (is_ref) {
+		block_add_instr1(ctx->block, "LOAD", label ? label : node->text);
+	}
+	else {
+		block_add_instr1(ctx->block, "PUSH_ADDR", label ? label : node->text);
+	}
+	for (int i = 0; i < node->child_count; i++) {
+		emit_index(ctx, node->children[i]);
+	}
+	return 1;
+}
+
 static int emit_store(EmitCtx* ctx, const IRNode* node) {
 	const char* label = vartable_label(ctx->vars, node->text);
 	if (!label) {
@@ -532,8 +567,19 @@ static int emit_ir(EmitCtx* ctx, const IRNode* node) {
 		if (node->op) block_add_instr0(ctx->block, node->op);
 		return 1;
 	case IR_NODE_CALL: {
+		const CFG_Subprogram* callee = find_subprogram(ctx->analysis, node->text);
 		for (int i = 0; i < node->child_count; i++) {
-			int child_has_value = emit_ir(ctx, node->children[i]);
+			int want_addr = 0;
+			if (callee && i < callee->param_count) {
+				want_addr = type_is_array(callee->params[i].type);
+			}
+			int child_has_value = 0;
+			if (want_addr && node->children[i] && node->children[i]->type == IR_NODE_LOAD) {
+				child_has_value = emit_load_address(ctx, node->children[i]);
+			}
+			else {
+				child_has_value = emit_ir(ctx, node->children[i]);
+			}
 			if (!child_has_value) {
 				LC_DataItem* zero = program_add_const(ctx->program, IR_CONST_NUMBER, "0");
 				if (zero && zero->name) {
@@ -808,7 +854,56 @@ static int type_is_array(const char* type_str) {
 	return type_str && strstr(type_str, "array[") != NULL;
 }
 
-static void generate_subprogram(LC_Program* program, const CFG_Subprogram* sp) {
+static int parse_array_dim(const char* type_str) {
+	if (!type_str) return 0;
+	const char* start = strstr(type_str, "array[");
+	if (!start) return 0;
+	start += strlen("array[");
+	char* end = NULL;
+	long dim = strtol(start, &end, 0);
+	if (!end || *end != ']') return 0;
+	if (dim <= 0) return 0;
+	return (int)dim;
+}
+
+static int array_param_size_bytes(const char* type_str) {
+	int dim = parse_array_dim(type_str);
+	if (dim <= 0) dim = DEFAULT_INDEX_ELEMS;
+	return dim * VM_WORD_SIZE;
+}
+
+static const CFG_Subprogram* find_subprogram(const CFG_Analysis* analysis, const char* name) {
+	if (!analysis || !name) return NULL;
+	for (int i = 0; i < analysis->subprogram_count; i++) {
+		if (analysis->subprograms[i].name && strcmp(analysis->subprograms[i].name, name) == 0) {
+			return &analysis->subprograms[i];
+		}
+	}
+	return NULL;
+}
+
+static void mark_array_args_ir(const CFG_Analysis* analysis, const IRNode* node, VarTable* vars, const char* func_name) {
+	if (!node || !vars) return;
+	if (node->type == IR_NODE_CALL && node->text) {
+		const CFG_Subprogram* callee = find_subprogram(analysis, node->text);
+		if (callee) {
+			int n = node->child_count < callee->param_count ? node->child_count : callee->param_count;
+			for (int i = 0; i < n; i++) {
+				if (!type_is_array(callee->params[i].type)) continue;
+				const IRNode* arg = node->children[i];
+				if (!arg || arg->type != IR_NODE_LOAD || arg->child_count != 0 || !arg->text) continue;
+				if (vartable_is_ref(vars, arg->text)) continue;
+				int size = array_param_size_bytes(callee->params[i].type);
+				vartable_add(vars, arg->text, func_name, size, 0);
+			}
+		}
+	}
+	for (int i = 0; i < node->child_count; i++) {
+		mark_array_args_ir(analysis, node->children[i], vars, func_name);
+	}
+}
+
+static void generate_subprogram(LC_Program* program, const CFG_Subprogram* sp, const CFG_Analysis* analysis) {
 	if (!program || !sp) return;
 
 	VarTable vars;
@@ -822,6 +917,7 @@ static void generate_subprogram(LC_Program* program, const CFG_Subprogram* sp) {
 	}
 	for (int i = 0; i < sp->cfg.block_count; i++) {
 		collect_vars_ir(sp->cfg.blocks[i].ir, &vars, sp->name);
+		mark_array_args_ir(analysis, sp->cfg.blocks[i].ir, &vars, sp->name);
 	}
 
 	for (int i = 0; i < vars.count; i++) {
@@ -847,7 +943,13 @@ static void generate_subprogram(LC_Program* program, const CFG_Subprogram* sp) {
 		int id = order[oi];
 		const CFG_Block* block = &sp->cfg.blocks[id];
 		LC_CodeBlock* out_block = program_add_block(program, labels[id]);
-		EmitCtx ctx = { program, &vars, out_block, sp->name };
+		EmitCtx ctx = {
+			.program = program,
+			.vars = &vars,
+			.block = out_block,
+			.func_name = sp->name,
+			.analysis = analysis,
+		};
 
 		if (id == sp->cfg.entry_id) {
 			char locals_buf[32];
@@ -907,7 +1009,7 @@ LC_Program lc_generate_program(const CFG_Analysis* analysis) {
 	if (!analysis) return program;
 
 	for (int i = 0; i < analysis->subprogram_count; i++) {
-		generate_subprogram(&program, &analysis->subprograms[i]);
+		generate_subprogram(&program, &analysis->subprograms[i], analysis);
 	}
 	return program;
 }
