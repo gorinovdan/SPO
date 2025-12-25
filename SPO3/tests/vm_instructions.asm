@@ -1,5 +1,6 @@
 ; VM instruction coverage test
 
+[section const_pool]
 k0: DD 0
 k1: DD 1
 k2: DD 2
@@ -7,16 +8,21 @@ k3: DD 3
 k4: DD 4
 k5: DD 5
 kneg4: DD -4
+kO: DD 79
+kK: DD 75
+kNL: DD 10
 kstr: DB "OK\n"
 kfail: DB "FAIL\n"
 kport_out: DD 1
 kport_in: DD 0
 
+[section data_mem]
 v_x: DD 0
 v_y: DD 0
 v_arr: RESB 16
 v_msg: DD 0
 
+[section code]
 main:
   ENTER 28
   NOP
@@ -105,9 +111,11 @@ main:
 
   PUSH_CONST kport_out
   SET_PORT
-  PUSH_CONST kstr
-  STORE v_msg
-  LOAD v_msg
+  PUSH_CONST kO
+  OUT
+  PUSH_CONST kK
+  OUT
+  PUSH_CONST kNL
   OUT
 
   PUSH_CONST kport_in
@@ -144,7 +152,7 @@ foo:
 foo_done:
   LOAD v_x
   LEAVE
-  RET
+  RETF
 
 fail:
   PUSH_CONST kport_out

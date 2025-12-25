@@ -966,6 +966,7 @@ static void generate_subprogram(LC_Program* program, const CFG_Subprogram* sp, c
 		}
 
 		if (id == sp->cfg.exit_id) {
+			const char* ret_mnemonic = (sp->name && strcmp(sp->name, "main") == 0) ? "RET" : "RETF";
 			if (ret_label) {
 				block_add_instr1(out_block, "LOAD", ret_label);
 			}
@@ -976,7 +977,7 @@ static void generate_subprogram(LC_Program* program, const CFG_Subprogram* sp, c
 				}
 			}
 			block_add_instr0(out_block, "LEAVE");
-			block_add_instr0(out_block, "RET");
+			block_add_instr0(out_block, ret_mnemonic);
 			continue;
 		}
 
@@ -1105,23 +1106,46 @@ static void write_data_item(FILE* f, const LC_DataItem* item) {
 	}
 }
 
+static int program_uses_call(const LC_Program* program, const char* name) {
+	if (!program || !name) return 0;
+	for (int b = 0; b < program->block_count; b++) {
+		const LC_CodeBlock* block = &program->blocks[b];
+		for (int i = 0; i < block->instruction_count; i++) {
+			const LC_Instruction* ins = &block->instructions[i];
+			if (!ins->mnemonic || strcmp(ins->mnemonic, "CALL") != 0) continue;
+			if (ins->operand_count < 1 || !ins->operands[0]) continue;
+			if (strcmp(ins->operands[0], name) == 0) return 1;
+		}
+	}
+	return 0;
+}
+
 int lc_write_assembly(const LC_Program* program, const char* filename) {
 	if (!program || !filename) return 0;
 	FILE* f = fopen(filename, "w");
 	if (!f) return 0;
 
-	fprintf(f, "; SPO3 linear code listing\n");
-	fprintf(f, "; VM: stack-based, memory banks: code, constants, data_mem, stack_mem\n\n");
+	int need_print = program_uses_call(program, "print");
+	int need_printf = program_uses_call(program, "printf");
+	int need_read = program_uses_call(program, "read");
+	int need_builtin_consts = need_print || need_printf || need_read;
 
-	fprintf(f, "; constants\n");
+	fprintf(f, "; SPO3 linear code listing\n");
+	fprintf(f, "; VM: stack-based, memory banks: code, const_pool, data_mem, stack_mem\n\n");
+
+	fprintf(f, "[section const_pool]\n");
 	if (program->constant_count == 0) {
 		fprintf(f, "; (empty)\n");
 	}
 	for (int i = 0; i < program->constant_count; i++) {
 		write_const_item(f, &program->constants[i]);
 	}
+	if (need_builtin_consts) {
+		fprintf(f, "__builtin_zero: DD 0\n");
+		fprintf(f, "__builtin_one: DD 1\n");
+	}
 
-	fprintf(f, "\n; data\n");
+	fprintf(f, "\n[section data_mem]\n");
 	if (program->data_count == 0) {
 		fprintf(f, "; (empty)\n");
 	}
@@ -1129,22 +1153,61 @@ int lc_write_assembly(const LC_Program* program, const char* filename) {
 		write_data_item(f, &program->data[i]);
 	}
 
-	fprintf(f, "\n; code\n");
+	fprintf(f, "\n[section code]\n");
+	int has_main = 0;
 	for (int b = 0; b < program->block_count; b++) {
-		const LC_CodeBlock* block = &program->blocks[b];
-		fprintf(f, "%s:\n", block->name ? block->name : "block");
-		for (int i = 0; i < block->instruction_count; i++) {
-			const LC_Instruction* ins = &block->instructions[i];
-			fprintf(f, "  %s", ins->mnemonic ? ins->mnemonic : "NOP");
-			if (ins->operand_count > 0) {
-				fprintf(f, " %s", ins->operands[0]);
-				for (int j = 1; j < ins->operand_count; j++) {
-					fprintf(f, ", %s", ins->operands[j]);
+		const char* name = program->blocks[b].name;
+		if (name && (strcmp(name, "main") == 0 || strncmp(name, "main_", 5) == 0)) {
+			has_main = 1;
+			break;
+		}
+	}
+	for (int pass = 0; pass < (has_main ? 2 : 1); pass++) {
+		for (int b = 0; b < program->block_count; b++) {
+			const LC_CodeBlock* block = &program->blocks[b];
+			const char* name = block->name;
+			int is_main = name && (strcmp(name, "main") == 0 || strncmp(name, "main_", 5) == 0);
+			if (has_main && ((pass == 0 && !is_main) || (pass == 1 && is_main))) continue;
+			fprintf(f, "%s:\n", name ? name : "block");
+			for (int i = 0; i < block->instruction_count; i++) {
+				const LC_Instruction* ins = &block->instructions[i];
+				fprintf(f, "  %s", ins->mnemonic ? ins->mnemonic : "NOP");
+				if (ins->operand_count > 0) {
+					fprintf(f, " %s", ins->operands[0]);
+					for (int j = 1; j < ins->operand_count; j++) {
+						fprintf(f, ", %s", ins->operands[j]);
+					}
 				}
+				fprintf(f, "\n");
 			}
 			fprintf(f, "\n");
 		}
-		fprintf(f, "\n");
+	}
+	if (need_print || need_printf || need_read) {
+		fprintf(f, "; builtins\n");
+	}
+	if (need_print) {
+		fprintf(f, "print:\n");
+		fprintf(f, "  PUSH_CONST __builtin_one\n");
+		fprintf(f, "  SET_PORT\n");
+		fprintf(f, "  OUT\n");
+		fprintf(f, "  PUSH_CONST __builtin_zero\n");
+		fprintf(f, "  RETF\n\n");
+	}
+	if (need_printf) {
+		fprintf(f, "printf:\n");
+		fprintf(f, "  PUSH_CONST __builtin_one\n");
+		fprintf(f, "  SET_PORT\n");
+		fprintf(f, "  OUT\n");
+		fprintf(f, "  PUSH_CONST __builtin_zero\n");
+		fprintf(f, "  RETF\n\n");
+	}
+	if (need_read) {
+		fprintf(f, "read:\n");
+		fprintf(f, "  PUSH_CONST __builtin_zero\n");
+		fprintf(f, "  SET_PORT\n");
+		fprintf(f, "  IN\n");
+		fprintf(f, "  RETF\n\n");
 	}
 
 	fclose(f);

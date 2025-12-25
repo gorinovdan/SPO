@@ -1,0 +1,3 @@
+	ip_s :=  0x0
+1> store	0x0000000c
+	sp_s :=  0x0fffffffc

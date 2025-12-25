@@ -1,6 +1,7 @@
 ; SPO3 linear code listing
-; VM: stack-based, memory banks: code, constants, data, stack
+; VM: stack-based, memory banks: code, const_pool, data_mem, stack_mem
 
+[section const_pool]
 k0: DD 3
 k1: DD 1
 k2: DB "Resilt of math op. is "
@@ -12,6 +13,7 @@ k7: DD 100
 k8: DD 50
 k9: DD 1000
 
+[section data_mem]
 v_calc_a: DD 0
 v_calc_b: DD 0
 v_calc_c: DD 0
@@ -37,6 +39,72 @@ v_loopTest_a: DD 0
 v_loopTest_b: DD 0
 v_repeatTest_a: DD 0
 v_main_tmp: RESB 8
+
+[section code]
+main:
+  ENTER 8
+  JMP main_B2
+
+main_B2:
+  PUSH_ADDR v_main_tmp
+  PUSH_CONST k3
+  INDEX
+  PUSH_CONST k3
+  STORE_IND
+  JMP main_B3
+
+main_B3:
+  PUSH_ADDR v_main_tmp
+  PUSH_CONST k1
+  INDEX
+  PUSH_CONST k1
+  STORE_IND
+  JMP main_B4
+
+main_B4:
+  PUSH_CONST k1
+  PUSH_CONST k5
+  PUSH_ADDR v_main_tmp
+  CALL calc, 3
+  POP
+  JMP main_B5
+
+main_B5:
+  PUSH_CONST k1
+  PUSH_CONST k5
+  CALL condition, 2
+  POP
+  JMP main_B6
+
+main_B6:
+  CALL function_call, 0
+  POP
+  JMP main_B7
+
+main_B7:
+  CALL blockTest, 0
+  POP
+  JMP main_B8
+
+main_B8:
+  CALL callTest, 0
+  POP
+  JMP main_B9
+
+main_B9:
+  CALL loopTest, 0
+  POP
+  JMP main_B10
+
+main_B10:
+  CALL repeatTest, 0
+  POP
+  JMP main_exit
+
+main_exit:
+  PUSH_CONST k3
+  LEAVE
+  RET
 
 calc:
   STORE v_calc_c
@@ -438,71 +506,6 @@ repeatTest_B3:
   JMP repeatTest_exit
 
 repeatTest_exit:
-  PUSH_CONST k3
-  LEAVE
-  RET
-
-main:
-  ENTER 8
-  JMP main_B2
-
-main_B2:
-  PUSH_ADDR v_main_tmp
-  PUSH_CONST k3
-  INDEX
-  PUSH_CONST k3
-  STORE_IND
-  JMP main_B3
-
-main_B3:
-  PUSH_ADDR v_main_tmp
-  PUSH_CONST k1
-  INDEX
-  PUSH_CONST k1
-  STORE_IND
-  JMP main_B4
-
-main_B4:
-  PUSH_CONST k1
-  PUSH_CONST k5
-  PUSH_ADDR v_main_tmp
-  CALL calc, 3
-  POP
-  JMP main_B5
-
-main_B5:
-  PUSH_CONST k1
-  PUSH_CONST k5
-  CALL condition, 2
-  POP
-  JMP main_B6
-
-main_B6:
-  CALL function_call, 0
-  POP
-  JMP main_B7
-
-main_B7:
-  CALL blockTest, 0
-  POP
-  JMP main_B8
-
-main_B8:
-  CALL callTest, 0
-  POP
-  JMP main_B9
-
-main_B9:
-  CALL loopTest, 0
-  POP
-  JMP main_B10
-
-main_B10:
-  CALL repeatTest, 0
-  POP
-  JMP main_exit
-
-main_exit:
   PUSH_CONST k3
   LEAVE
   RET

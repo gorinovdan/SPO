@@ -83,20 +83,19 @@ architecture vm32 {
         };
 
         // Data movement and constants
-        // const_id indexes a typed constant table (runtime resolves strings)
+        // const_id is a byte address in const_pool
         instruction push-const = { 0000 0001, const32 as const_id } {
-            let caddr = const_id * 4;
-            let value = const_pool:4[caddr];
+            let value = const_pool:4[const_id];
             stack_mem:4[sp] = value;
             sp = sp + 4;
-            ip = ip + 1;
+            ip = ip + 5;
         };
 
         instruction push-addr = { 0000 0010, data32 as addr } {
             let abs_addr = dbp + addr;
             stack_mem:4[sp] = abs_addr;
             sp = sp + 4;
-            ip = ip + 1;
+            ip = ip + 5;
         };
 
         instruction load = { 0000 0011, data32 as addr } {
@@ -107,7 +106,7 @@ architecture vm32 {
             else
                 stack_mem:4[sp] = data_mem:4[abs_addr];
             sp = sp + 4;
-            ip = ip + 1;
+            ip = ip + 5;
         };
 
         instruction store = { 0000 0100, data32 as addr } {
@@ -119,7 +118,7 @@ architecture vm32 {
                 data_mem:1[abs_addr] = value;
             else
                 data_mem:4[abs_addr] = value;
-            ip = ip + 1;
+            ip = ip + 5;
         };
 
         instruction load-ind = { 0000 0101 } {
@@ -320,7 +319,7 @@ architecture vm32 {
             if value == 0 then
                 ip = target;
             else
-                ip = ip + 1;
+                ip = ip + 5;
         };
 
         // Negative targets are builtins (print/printf/read)
@@ -333,10 +332,10 @@ architecture vm32 {
                 }
                 stack_mem:4[sp] = 0;
                 sp = sp + 4;
-                ip = ip + 1;
+                ip = ip + 9;
             }
             else {
-                call_stack:4[csp] = ip + 1;
+                call_stack:4[csp] = ip + 9;
                 csp = csp + 4;
                 call_stack:4[csp] = bp;
                 csp = csp + 4;
@@ -360,9 +359,22 @@ architecture vm32 {
             }
         };
 
+        instruction retf = { 0010 0001 } {
+            if csp == 0 then
+                ip = 0xffffffff;
+            else {
+                csp = csp - 4;
+                dbp = call_stack:4[csp];
+                csp = csp - 4;
+                bp = call_stack:4[csp];
+                csp = csp - 4;
+                ip = call_stack:4[csp];
+            }
+        };
+
         instruction enter = { 0001 1010, imm32 as nlocals } {
             bp = sp;
-            ip = ip + 1;
+            ip = ip + 5;
         };
 
         instruction leave = { 0001 1011 } {
@@ -456,6 +468,7 @@ architecture vm32 {
         mnemonic jz for jz (target) "{1}";
         mnemonic call for call (target, argc) "{1}, {2}";
         mnemonic ret for ret () "";
+        mnemonic retf for retf () "";
         mnemonic enter for enter (nlocals) "{1}";
         mnemonic leave for leave () "";
 

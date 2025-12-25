@@ -393,7 +393,7 @@ def run_vm(binary, spec, spec_by_opcode, max_steps):
                 call_stack.append(CallFrame(ip + 1, bp, len(data_frames)))
                 data_frames.append(DataFrame(bytearray(data_template)))
                 ip = target
-        elif mnemonic == "RET":
+        elif mnemonic in ("RET", "RETF"):
             if not call_stack:
                 break
             frame_info = call_stack.pop()

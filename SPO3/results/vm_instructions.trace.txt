@@ -1,0 +1,736 @@
+	ip_s :=  0x0
+1> enter	0x0000001c
+	bp_s :=  0x0
+	ip_s :=  0x5
+2> nop	
+	ip_s :=  0x6
+3> push_const	0x00000008
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0b
+4> push_const	0x0000000c
+	value stack_mem:4[0x4] := 0x3
+	byte stack_mem[0x04] := 03
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x10
+5> add	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x5
+	byte stack_mem[0x00] := 05
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x11
+6> store	0x00000000
+	sp_s :=  0x0
+	value data_mem:4[0x0] := 0x5
+	byte data_mem[0x00] := 05
+	byte data_mem[0x01] := 00
+	byte data_mem[0x02] := 00
+	byte data_mem[0x03] := 00
+	ip_s :=  0x16
+7> load	0x00000000
+	value stack_mem:4[0x0] := 0x5
+	byte stack_mem[0x00] := 05
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x1b
+8> push_const	0x00000004
+	value stack_mem:4[0x4] := 0x1
+	byte stack_mem[0x04] := 01
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x20
+9> sub	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x4
+	byte stack_mem[0x00] := 04
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x21
+10> store	0x00000004
+	sp_s :=  0x0
+	value data_mem:4[0x4] := 0x4
+	byte data_mem[0x04] := 04
+	byte data_mem[0x05] := 00
+	byte data_mem[0x06] := 00
+	byte data_mem[0x07] := 00
+	ip_s :=  0x26
+11> load	0x00000000
+	value stack_mem:4[0x0] := 0x5
+	byte stack_mem[0x00] := 05
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x2b
+12> load	0x00000004
+	value stack_mem:4[0x4] := 0x4
+	byte stack_mem[0x04] := 04
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x30
+13> mul	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x14
+	byte stack_mem[0x00] := 14
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x31
+14> pop	
+	sp_s :=  0x0
+	ip_s :=  0x32
+15> push_const	0x00000014
+	value stack_mem:4[0x0] := 0x5
+	byte stack_mem[0x00] := 05
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x37
+16> push_const	0x00000008
+	value stack_mem:4[0x4] := 0x2
+	byte stack_mem[0x04] := 02
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x3c
+17> div	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x3d
+18> pop	
+	sp_s :=  0x0
+	ip_s :=  0x3e
+19> push_const	0x00000014
+	value stack_mem:4[0x0] := 0x5
+	byte stack_mem[0x00] := 05
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x43
+20> push_const	0x00000008
+	value stack_mem:4[0x4] := 0x2
+	byte stack_mem[0x04] := 02
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x48
+21> rem	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x49
+22> pop	
+	sp_s :=  0x0
+	ip_s :=  0x4a
+23> push_const	0x00000008
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x4f
+24> neg	
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0xe
+	byte stack_mem[0x00] := fe
+	byte stack_mem[0x01] := ff
+	byte stack_mem[0x02] := ff
+	byte stack_mem[0x03] := ff
+	sp_s :=  0x4
+	ip_s :=  0x50
+25> pop	
+	sp_s :=  0x0
+	ip_s :=  0x51
+26> push_const	0x00000004
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x56
+27> push_const	0x00000000
+	value stack_mem:4[0x4] := 0x0
+	byte stack_mem[0x04] := 00
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x5b
+28> and_op	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x0
+	byte stack_mem[0x00] := 00
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x5c
+29> pop	
+	sp_s :=  0x0
+	ip_s :=  0x5d
+30> push_const	0x00000004
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x62
+31> push_const	0x00000000
+	value stack_mem:4[0x4] := 0x0
+	byte stack_mem[0x04] := 00
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x67
+32> or_op	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x68
+33> pop	
+	sp_s :=  0x0
+	ip_s :=  0x69
+34> push_const	0x00000004
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x6e
+35> push_const	0x00000008
+	value stack_mem:4[0x4] := 0x2
+	byte stack_mem[0x04] := 02
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x73
+36> lt	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x74
+37> pop	
+	sp_s :=  0x0
+	ip_s :=  0x75
+38> push_const	0x00000008
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x7a
+39> push_const	0x00000004
+	value stack_mem:4[0x4] := 0x1
+	byte stack_mem[0x04] := 01
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x7f
+40> gt	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x080
+41> pop	
+	sp_s :=  0x0
+	ip_s :=  0x081
+42> push_const	0x00000008
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x086
+43> push_const	0x00000008
+	value stack_mem:4[0x4] := 0x2
+	byte stack_mem[0x04] := 02
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x08b
+44> le	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x08c
+45> pop	
+	sp_s :=  0x0
+	ip_s :=  0x08d
+46> push_const	0x00000008
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x092
+47> push_const	0x00000008
+	value stack_mem:4[0x4] := 0x2
+	byte stack_mem[0x04] := 02
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x097
+48> ge	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x098
+49> pop	
+	sp_s :=  0x0
+	ip_s :=  0x099
+50> push_const	0x00000008
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x09e
+51> push_const	0x00000008
+	value stack_mem:4[0x4] := 0x2
+	byte stack_mem[0x04] := 02
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x0a3
+52> eq	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0a4
+53> pop	
+	sp_s :=  0x0
+	ip_s :=  0x0a5
+54> push_const	0x00000008
+	value stack_mem:4[0x0] := 0x2
+	byte stack_mem[0x00] := 02
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0aa
+55> push_const	0x0000000c
+	value stack_mem:4[0x4] := 0x3
+	byte stack_mem[0x04] := 03
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x0af
+56> ne	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0b0
+57> pop	
+	sp_s :=  0x0
+	ip_s :=  0x0b1
+58> push_addr	0x00000008
+	value stack_mem:4[0x0] := 0x08
+	byte stack_mem[0x00] := 08
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0b6
+59> push_const	0x00000004
+	value stack_mem:4[0x4] := 0x1
+	byte stack_mem[0x04] := 01
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x0bb
+60> index	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x0c
+	byte stack_mem[0x00] := 0c
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0bc
+61> push_const	0x0000000c
+	value stack_mem:4[0x4] := 0x3
+	byte stack_mem[0x04] := 03
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x0c1
+62> store_ind	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value data_mem:4[0x0c] := 0x3
+	byte data_mem[0x0c] := 03
+	byte data_mem[0x0d] := 00
+	byte data_mem[0x0e] := 00
+	byte data_mem[0x0f] := 00
+	ip_s :=  0x0c2
+63> push_addr	0x00000008
+	value stack_mem:4[0x0] := 0x08
+	byte stack_mem[0x00] := 08
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0c7
+64> push_const	0x00000004
+	value stack_mem:4[0x4] := 0x1
+	byte stack_mem[0x04] := 01
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x0cc
+65> push_const	0x0000000c
+	value stack_mem:4[0x08] := 0x3
+	byte stack_mem[0x08] := 03
+	byte stack_mem[0x09] := 00
+	byte stack_mem[0x0a] := 00
+	byte stack_mem[0x0b] := 00
+	sp_s :=  0x0c
+	ip_s :=  0x0d1
+66> range_op	
+	sp_s :=  0x08
+	sp_s :=  0x4
+	value stack_mem:4[0x4] := 0x1
+	byte stack_mem[0x04] := 01
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x0d2
+67> index	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x0c
+	byte stack_mem[0x00] := 0c
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0d3
+68> load_ind	
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x3
+	byte stack_mem[0x00] := 03
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0d4
+69> pop	
+	sp_s :=  0x0
+	ip_s :=  0x0d5
+70> push_const	0x00000032
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0da
+71> set_port	
+	sp_s :=  0x0
+	io_s :=  0x1
+	ip_s :=  0x0db
+72> push_const	0x0000001c
+	value stack_mem:4[0x0] := 0x4f
+	byte stack_mem[0x00] := 4f
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0e0
+73> out	
+	sp_s :=  0x0
+	rout_s :=  0x4f
+	ip_s :=  0x0e1
+74> push_const	0x00000020
+	value stack_mem:4[0x0] := 0x4b
+	byte stack_mem[0x00] := 4b
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0e6
+75> out	
+	sp_s :=  0x0
+	rout_s :=  0x4b
+	ip_s :=  0x0e7
+76> push_const	0x00000024
+	value stack_mem:4[0x0] := 0x0a
+	byte stack_mem[0x00] := 0a
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0ec
+77> out	
+	sp_s :=  0x0
+	rout_s :=  0x0a
+	ip_s :=  0x0ed
+78> push_const	0x00000036
+	value stack_mem:4[0x0] := 0x0
+	byte stack_mem[0x00] := 00
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0f2
+79> set_port	
+	sp_s :=  0x0
+	io_s :=  0x0
+	ip_s :=  0x0f3
+80> in	
+	value stack_mem:4[0x0] := 0x30
+	byte stack_mem[0x00] := 30
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0f4
+81> pop	
+	sp_s :=  0x0
+	ip_s :=  0x0f5
+82> push_const	0x00000010
+	value stack_mem:4[0x0] := 0x4
+	byte stack_mem[0x00] := 04
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x0fa
+83> call	0x0000011b , 0x00000001
+	value call_stack:4[0x0] := 0x103
+	byte call_stack[0x00] := 03
+	byte call_stack[0x01] := 01
+	byte call_stack[0x02] := 00
+	byte call_stack[0x03] := 00
+	csp_s :=  0x4
+	value call_stack:4[0x4] := 0x0
+	byte call_stack[0x04] := 00
+	byte call_stack[0x05] := 00
+	byte call_stack[0x06] := 00
+	byte call_stack[0x07] := 00
+	csp_s :=  0x08
+	value call_stack:4[0x08] := 0x0
+	byte call_stack[0x08] := 00
+	byte call_stack[0x09] := 00
+	byte call_stack[0x0a] := 00
+	byte call_stack[0x0b] := 00
+	csp_s :=  0x0c
+	dbp_s :=  0x0
+	ip_s :=  0x11b
+84> store	0x00000000
+	sp_s :=  0x0
+	value data_mem:4[0x0] := 0x4
+	byte data_mem[0x00] := 04
+	byte data_mem[0x01] := 00
+	byte data_mem[0x02] := 00
+	byte data_mem[0x03] := 00
+	ip_s :=  0x120
+85> enter	0x00000004
+	bp_s :=  0x0
+	ip_s :=  0x125
+86> load	0x00000000
+	value stack_mem:4[0x0] := 0x4
+	byte stack_mem[0x00] := 04
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x12a
+87> push_const	0x00000008
+	value stack_mem:4[0x4] := 0x2
+	byte stack_mem[0x04] := 02
+	byte stack_mem[0x05] := 00
+	byte stack_mem[0x06] := 00
+	byte stack_mem[0x07] := 00
+	sp_s :=  0x08
+	ip_s :=  0x12f
+88> gt	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x130
+89> jz	0x00000140
+	sp_s :=  0x0
+	ip_s :=  0x135
+90> load	0x00000000
+	value stack_mem:4[0x0] := 0x4
+	byte stack_mem[0x00] := 04
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x13a
+91> neg	
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0xc
+	byte stack_mem[0x00] := fc
+	byte stack_mem[0x01] := ff
+	byte stack_mem[0x02] := ff
+	byte stack_mem[0x03] := ff
+	sp_s :=  0x4
+	ip_s :=  0x13b
+92> store	0x00000000
+	sp_s :=  0x0
+	value data_mem:4[0x0] := 0x0fffffffc
+	byte data_mem[0x00] := fc
+	byte data_mem[0x01] := ff
+	byte data_mem[0x02] := ff
+	byte data_mem[0x03] := ff
+	ip_s :=  0x140
+93> load	0x00000000
+	value stack_mem:4[0x0] := 0x0fffffffc
+	byte stack_mem[0x00] := fc
+	byte stack_mem[0x01] := ff
+	byte stack_mem[0x02] := ff
+	byte stack_mem[0x03] := ff
+	sp_s :=  0x4
+	ip_s :=  0x145
+94> leave	
+	sp_s :=  0x0
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x0fffffffc
+	byte stack_mem[0x00] := fc
+	byte stack_mem[0x01] := ff
+	byte stack_mem[0x02] := ff
+	byte stack_mem[0x03] := ff
+	sp_s :=  0x4
+	dbp_s :=  0x0
+	ip_s :=  0x146
+95> retf	
+	csp_s :=  0x08
+	dbp_s :=  0x0
+	csp_s :=  0x4
+	bp_s :=  0x0
+	csp_s :=  0x0
+	ip_s :=  0x103
+96> push_const	0x00000018
+	value stack_mem:4[0x4] := 0x0fffffffc
+	byte stack_mem[0x04] := fc
+	byte stack_mem[0x05] := ff
+	byte stack_mem[0x06] := ff
+	byte stack_mem[0x07] := ff
+	sp_s :=  0x08
+	ip_s :=  0x108
+97> eq	
+	sp_s :=  0x4
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x1
+	byte stack_mem[0x00] := 01
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x109
+98> jz	0x00000147
+	sp_s :=  0x0
+	ip_s :=  0x10e
+99> jmp	0x00000119
+	ip_s :=  0x119
+100> leave	
+	sp_s :=  0x0
+	value stack_mem:4[0x0] := 0x0
+	byte stack_mem[0x00] := 00
+	byte stack_mem[0x01] := 00
+	byte stack_mem[0x02] := 00
+	byte stack_mem[0x03] := 00
+	sp_s :=  0x4
+	ip_s :=  0x11a
+101> ret	

@@ -86,5 +86,5 @@ sum_B2:
 sum_exit:
   LOAD v_sum_result
   LEAVE
-  RET
+  RETF
 

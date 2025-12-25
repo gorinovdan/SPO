@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ASM_FILE="${ROOT_DIR}/tests/vm_instructions.asm"
+ASM_FILE="${ROOT_DIR}/results/vm_instructions.asm"
 BIN_FILE="${ROOT_DIR}/results/vm_instructions.bin"
 SPEC_FILE="${ROOT_DIR}/vm/spec.json"
 

@@ -181,6 +181,29 @@ def parse_asm(path):
                 section = "code"
                 has_sections = True
                 continue
+            if line.startswith("[section"):
+                end = line.rfind("]")
+                if end == -1:
+                    raise ValueError(f"{path}:{line_no}: invalid section directive")
+                name = line[len("[section"):end].strip()
+                if not name:
+                    raise ValueError(f"{path}:{line_no}: invalid section directive")
+                name = name.split()[0]
+                if name in ("const_pool", "const"):
+                    section = "const"
+                elif name in ("data_mem", "data"):
+                    section = "data"
+                elif name == "code":
+                    section = "code"
+                elif name == "data_meta":
+                    section = "meta"
+                else:
+                    raise ValueError(f"{path}:{line_no}: unknown section {name}")
+                has_sections = True
+                continue
+
+            if section == "meta":
+                continue
 
             if section in ("const", "data") or not has_sections:
                 if ":" in line:

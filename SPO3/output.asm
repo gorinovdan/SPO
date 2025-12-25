@@ -1,6 +1,7 @@
 ; SPO3 linear code listing
-; VM: stack-based, memory banks: code, constants, data, stack
+; VM: stack-based, memory banks: code, const_pool, data_mem, stack_mem
 
+[section const_pool]
 k0: DD 3
 k1: DB "Resilt of math op. is "
 k2: DD 225
@@ -12,6 +13,7 @@ k7: DD 100
 k8: DD 50
 k9: DD 1000
 
+[section data_mem]
 v_calc_x: DD 0
 v_calc_a: DD 0
 v_calc_b: DD 0
@@ -35,6 +37,7 @@ v_loopTest_a: DD 0
 v_loopTest_b: DD 0
 v_repeatTest_a: DD 0
 
+[section code]
 calc:
   ENTER 5
   JMP calc_B2

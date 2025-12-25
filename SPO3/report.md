@@ -10,7 +10,7 @@ Part 3. Data structures
 Part 4. Linear code module
 Interface
 - lc_generate_program(const CFG_Analysis*): builds LC_Program from CFG analysis.
-- lc_write_assembly(const LC_Program*, const char*): emits .const/.data/.code sections.
+- lc_write_assembly(const LC_Program*, const char*): emits [section const_pool], [section data_mem], [section code].
 
 Implementation notes
 - CFG traversal uses SCC-based topological order to respect cycles while starting from entry.

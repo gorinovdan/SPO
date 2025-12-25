@@ -1,19 +1,24 @@
 ; SPO3 linear code listing
-; VM: stack-based, memory banks: code, constants, data_mem, stack_mem
+; VM: stack-based, memory banks: code, const_pool, data_mem, stack_mem
 
+[section const_pool]
 k0: DD 2
 k1: DD 3
 k2: DD 5
 k3: DD 1
 k4: DD 4
 k5: DD 0
+__builtin_zero: DD 0
+__builtin_one: DD 1
 
+[section data_mem]
 v_main_a: DD 0
 v_main_b: DD 0
 v_main_arr: RESB 256
 v_main_x: DD 0
 v_main_y: DD 0
 
+[section code]
 main:
   ENTER 272
   JMP main_B2
@@ -88,4 +93,12 @@ main_exit:
   PUSH_CONST k5
   LEAVE
   RET
+
+; builtins
+print:
+  PUSH_CONST __builtin_one
+  SET_PORT
+  OUT
+  PUSH_CONST __builtin_zero
+  RETF
 
