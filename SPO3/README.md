@@ -1,57 +1,90 @@
-# SPO3 — линейный код для стековой ВМ
+# SPO3 — формирование линейного кода
 
 ## Что реализовано
-- Формирование линейного кода (ассемблерного листинга) по CFG.
-- Описание виртуальной машины и набор мнемоник (stack-based VM).
-- Ассемблер и эмулятор для проверки результата.
+- Генерация линейного кода (ассемблерного листинга) по CFG.
+- Описание ВМ и набора инструкций для целевой архитектуры.
+- Проверка листингов через утилиту запуска из `tools` (RemoteTasks).
 - Опциональный экспорт AST/CFG (наследуется из SPO2).
 
 ## Структура проекта
 - `codegen/linear_code.h`, `codegen/linear_code.c` — генерация линейного кода.
 - `vm/spec.md`, `vm/spec.json` — описание ВМ и набора инструкций.
-- `tools/asm.py`, `tools/vm.py` — ассемблер и эмулятор.
-- `tools/run_vm.sh` — сборка, ассемблирование и запуск.
+- `tools/run.bat` — сборка/запуск листинга через RemoteTasks.
 - `main.c` — CLI: парсинг → CFG → линейный код.
+- `Validation.md` — примеры всех запусков.
 
 ## Сборка
-Нужны `flex`, `bison`, компилятор C (gcc/clang) и Python 3.
+Нужны `flex`, `bison`, компилятор C (gcc/clang). Для Windows можно использовать `app.exe`.
 
 ```bash
 make -C SPO3 build
 ```
 
-## Запуск
-Генерация листинга:
-```bash
-./SPO3/app -o ./SPO3/results/output.asm ./SPO3/tests/spo3_demo.txt
-```
+## Запуск (через RemoteTasks)
+Все примеры ниже выполняются из корня репозитория в PowerShell.
 
-Генерация листинга и запуск на ВМ:
-```bash
-./SPO3/tools/run_vm.sh ./SPO3/tests/spo3_demo.txt ./SPO3/results/output.asm ./SPO3/results/output.bin
+Общий шаблон:
+```powershell
+.\SPO3\app.exe -o .\SPO3\results\<name>.asm .\SPO3\tests\<name>.txt
+.\tools\run.bat .\SPO3\results\<name>.asm .\tools\vm_input.txt exec `
+  .\SPO3\results\<name>.ptptb .\SPO3\results\<name>.stdout.txt .\SPO3\results\<name>.trace.txt
 ```
 
 Опциональный вывод графов:
-```bash
-./SPO3/app --cfg --cfg-dir ./SPO3/results -o ./SPO3/results/output.asm ./SPO3/tests/spo3_demo.txt
+```powershell
+.\SPO3\app.exe --cfg --cfg-dir .\SPO3\results -o .\SPO3\results\output.asm .\SPO3\tests\spo3_demo.txt
 ```
 
-## Тестовые команды
-```bash
-make -C SPO3 vm-test
-make -C SPO3 vm-demo
-make -C SPO3 vm-input
+## Примеры запусков
+Полный набор примеров находится в `SPO3/Validation.md`. Ключевые сценарии:
+
+### spo3_demo.txt
+```powershell
+.\SPO3\app.exe -o .\SPO3\results\spo3_demo.asm .\SPO3\tests\spo3_demo.txt
+.\tools\run.bat .\SPO3\results\spo3_demo.asm .\tools\vm_input.txt exec `
+  .\SPO3\results\spo3_demo.ptptb .\SPO3\results\spo3_demo.stdout.txt .\SPO3\results\spo3_demo.trace.txt
+```
+
+### array_demo.txt
+```powershell
+.\SPO3\app.exe -o .\SPO3\results\array_demo.asm .\SPO3\tests\array_demo.txt
+.\tools\run.bat .\SPO3\results\array_demo.asm .\tools\vm_input.txt exec `
+  .\SPO3\results\array_demo.ptptb .\SPO3\results\array_demo.stdout.txt .\SPO3\results\array_demo.trace.txt
+```
+Ожидаемый вывод в `SPO3\results\array_demo.stdout.txt`:
+```
+05 04
+```
+
+### vm_instructions.asm
+```powershell
+.\tools\run.bat .\SPO3\tests\vm_instructions.asm .\tools\vm_input.txt exec `
+  .\SPO3\results\vm_instructions.ptptb .\SPO3\results\vm_instructions.stdout.txt .\SPO3\results\vm_instructions.trace.txt
+```
+Ожидаемый вывод в `SPO3\results\vm_instructions.stdout.txt`:
+```
+OK
+```
+
+### calculator.txt
+```powershell
+.\SPO3\app.exe -o .\SPO3\results\calculator.asm .\SPO3\tests\calculator.txt
+.\tools\run.bat .\SPO3\results\calculator.asm .\SPO3\tests\calculator_input.txt exec `
+  .\SPO3\results\calculator.ptptb .\SPO3\results\calculator.stdout.txt .\SPO3\results\calculator.trace.txt
+```
+Ожидаемый вывод в `SPO3\results\calculator.stdout.txt`:
+```
+4
 ```
 
 ## Выходные файлы
-- `output.asm` — ассемблерный листинг (секция констант, данных и кода).
-- `output.bin` — бинарный модуль ВМ (после ассемблирования).
+- `*.asm` — ассемблерный листинг.
+- `*.ptptb` — бинарный модуль после сборки в RemoteTasks.
+- `*.stdout.txt` — вывод программы.
+- `*.trace.txt` — трассировка исполнения.
 - `*.dgml` — опциональные AST/CFG графы.
 
-## Примеры
-- Исходники: `SPO3/tests/spo3_demo.txt`, `SPO3/tests/array_demo.txt`
-- Готовые артефакты: `SPO3/results/*`
-
 ## Примечания
-- Для массива параметры передаются по ссылке, элементы индексируются через `INDEX`/`RANGE_OP`.
-- Если тип аргумента не указан, по умолчанию используется размер 4 байта.
+- `tools\run.bat` использует `SPO3\spo3.target.pdsl` и `archName vm32`.
+- Для функций (кроме `main`) требуется `RETF`.
+- Если `SPO3\app.exe` отсутствует, соберите проект вручную (gcc с ключом `-fcommon`).
