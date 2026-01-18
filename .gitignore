@@ -2,3 +2,6 @@
 /SPO2.zip
 /SPO2Denis/*
 /*/.DS_Store
+*.aux
+*.log
+*.tex
