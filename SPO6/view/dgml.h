@@ -1,0 +1,78 @@
+#ifndef DGML_H
+#define DGML_H
+
+#include <stdio.h>
+#include "../ast/ast.h"
+
+static const char* const ast_node_names[AST_TYPES_COUNT] = {
+	[AST_LIST] = "AST_LIST",
+
+	[AST_TYPE_BOOL] = "AST_TYPE_BOOL",
+	[AST_TYPE_BYTE] = "AST_TYPE_BYTE",
+	[AST_TYPE_INT] = "AST_TYPE_INT",
+	[AST_TYPE_UINT] = "AST_TYPE_UINT",
+	[AST_TYPE_LONG] = "AST_TYPE_LONG",
+	[AST_TYPE_ULONG] = "AST_TYPE_ULONG",
+	[AST_TYPE_CHAR] = "AST_TYPE_CHAR",
+	[AST_TYPE_STRING] = "AST_TYPE_STRING",
+
+	[AST_ID] = "AST_ID",
+
+	[AST_CHAR] = "AST_CHAR",
+	[AST_NUM] = "AST_NUM",
+	[AST_HEX] = "AST_HEX",
+	[AST_BIT] = "AST_BIT",
+	[AST_BOOL] = "AST_BOOL",
+	[AST_STRING] = "AST_STRING",
+
+	[AST_TYPE_ARRAY] = "AST_TYPE_ARRAY",
+	[AST_TYPE_ARRAY_DIMENTION] = "AST_TYPE_ARRAY_DIMENTION",
+
+	[AST_TYPE_REF] = "AST_TYPE_REF",
+	[AST_ARG_DEF] = "AST_ARG_DEF",
+	[AST_VAR_DECL] = "AST_VAR_DECL",
+	[AST_FIELD_DEF] = "AST_FIELD_DEF",
+	[AST_TYPE_DEF] = "AST_TYPE_DEF",
+	[AST_INTERFACE_DEF] = "AST_INTERFACE_DEF",
+	[AST_MEMBER_ACCESS] = "AST_MEMBER_ACCESS",
+
+	[AST_UMINUS] = "AST_UMINUS",
+	// AST_NOT (!) can be added
+
+	[AST_ASSIG_EQUAL] = "AST_ASSIG_EQUAL",
+	[AST_MUL] = "AST_MUL",
+	[AST_DIV] = "AST_DIV",
+	[AST_ADD] = "AST_ADD",
+	[AST_SUB] = "AST_SUB",
+	[AST_REM] = "AST_REM",
+	[AST_L] = "AST_L",
+	[AST_G] = "AST_G",
+	[AST_LE] = "AST_LE",
+	[AST_GE] = "AST_GE",
+	[AST_EQ] = "AST_EQ",
+	[AST_NE] = "AST_NE",
+	[AST_AND] = "AST_AND",
+	[AST_OR] = "AST_OR",
+
+	[AST_WHILE] = "AST_WHILE",
+	[AST_UNTIL] = "AST_UNTIL",
+	[AST_REPEAT_WHILE] = "AST_REPEAT_WHILE",
+	[AST_REPEAT_UNTIL] = "AST_REPEAT_UNTIL",
+	[AST_BLOCK] = "AST_BLOCK",
+	[AST_BREAK] = "AST_BREAK",
+
+	[AST_IF] = "AST_IF",
+	[AST_ELSE] = "AST_ELSE",
+
+	[AST_FUNC_SIGNATURE] = "AST_FUNC_SIGNATURE",
+	[AST_FUNC_DEF] = "AST_FUNC_DEF",
+	[AST_CALL] = "AST_CALL",
+	[AST_SLICE] = "AST_SLICE",
+	[AST_RANGE] = "AST_RANGE"
+
+};
+
+void export_ast_dgml(AST_Node* root, const char* filename);
+
+
+#endif // DGML_H
