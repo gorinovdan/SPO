@@ -1,0 +1,68 @@
+// Calculator demo (SPO3 source)
+// Input example:
+// 234
+// %
+// 10
+// Output: 4
+
+def read_number() of int
+    acc = 0;
+    ch = read();
+    while ch == 10 || ch == 13
+        ch = read();
+    end
+    while ch != 10 && ch != 13
+        acc = acc * 10 + (ch - 48);
+        ch = read();
+    end
+    result = acc;
+end
+
+def read_operator() of int
+    ch = read();
+    while ch == 10 || ch == 13
+        ch = read();
+    end
+    result = ch;
+end
+
+def print_number(n of int)
+    if n == 0 then
+        print(48);
+    else
+        begin
+            cnt = 0;
+            tmp = n;
+            while tmp > 0
+                digits[cnt] = tmp % 10;
+                cnt = cnt + 1;
+                tmp = tmp / 10;
+            end
+            while cnt > 0
+                cnt = cnt - 1;
+                print(digits[cnt] + 48);
+            end
+        end
+    print(10);
+end
+
+def main()
+    a = read_number();
+    op = read_operator();
+    b = read_number();
+
+    if op == 43 then
+        res = a + b;
+    else if op == 45 then
+        res = a - b;
+    else if op == 42 then
+        res = a * b;
+    else if op == 47 then
+        res = a / b;
+    else if op == 37 then
+        res = a % b;
+    else
+        res = 0;
+
+    print_number(res);
+end

@@ -1,0 +1,15 @@
+Error: Exception has been thrown by the target of an invocation.
+                  at System.RuntimeMethodHandle.InvokeMethod(Object target, Object[] arguments, Signature sig, Boolean constructor)
+                  at System.Reflection.RuntimeMethodInfo.UnsafeInvokeInternal(Object obj, Object[] parameters, Object[] arguments)
+                  at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+                  at System.Reflection.MethodBase.Invoke(Object obj, Object[] parameters)
+                  at Portable.TargetPlatform.Vm.VmRunner.InvokeInsnImpl(MethodBase method, IParsedInstructionInfo insn) in C:\runtime\src\Portable.TargetPlatform.Vm\VmRunner.cs:line 257
+                  at Portable.TargetPlatform.Vm.VmRunner.Run(Int64 entryPoint, String finishMnemonic, Boolean breakAtStart) in C:\runtime\src\Portable.TargetPlatform.Vm\VmRunner.cs:line 180
+                  at Portable.TargetPlatform.Vm.Program.DoWork(CommandLineArgs options) in C:\runtime\src\Portable.TargetPlatform.Vm\Program.cs:line 222
+                  at Portable.TargetPlatform.Vm.Program.<>c__DisplayClass0_0.<Main>b__0() in C:\runtime\src\Portable.TargetPlatform.Vm\Program.cs:line 29
+                  at Portable.TargetPlatform.Vm.Program.PerformHandled(Action act, Boolean verbose, Action`1 handler) in C:\runtime\src\Portable.TargetPlatform.Vm\Program.cs:line 241
+Error: Uninitialized memory region access at 0xfffffffc
+                  at Portable.TargetPlatform.Vm.Runtime.Impl.VmRamBankImpl.UninitializedRead(UInt64 address) in C:\runtime\src\Portable.TargetPlatform.Vm.Runtime\Impl\VmRamBankImpl.cs:line 164
+                  at Portable.TargetPlatform.Vm.Runtime.Impl.VmRamBankImpl.GetByte(UInt64 address) in C:\runtime\src\Portable.TargetPlatform.Vm.Runtime\Impl\VmRamBankImpl.cs:line 156
+                  at Portable.TargetPlatform.Vm.Runtime.Impl.VmRamBankImpl.GetValue(IValueInstance address, Nullable`1 opSize) in C:\runtime\src\Portable.TargetPlatform.Vm.Runtime\Impl\VmRamBankImpl.cs:line 103
+                  at InsnsImpl.store(IVmInstance vm, IValueInstance addr) in C:\RemoteTasks.Workspace\Sessions\ExecuteBinaryWithInput_a9d9979f-bce3-465a-be27-3949eb73e967\workdir\In\spo3.target.pdsl:line 114

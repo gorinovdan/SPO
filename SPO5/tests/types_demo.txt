@@ -1,0 +1,46 @@
+interface Printer
+    def describe() of int;
+end
+
+type Shape
+    value of int;
+
+    def describe() of int
+        result = self.value;
+    end
+end
+
+type FancyShape extends Shape implements Printer
+    extra of int;
+
+    override def describe() of int
+        result = self.value + self.extra;
+    end
+end
+
+def use_shape(shape of Shape) of int
+    result = shape.describe();
+end
+
+def use_printer(item of Printer) of int
+    result = item.describe();
+end
+
+def main()
+    base of Shape;
+    fancy of FancyShape;
+    view of Shape;
+    iface of Printer;
+
+    base.value = 5;
+    fancy.value = 7;
+    fancy.extra = 4;
+    view = fancy;
+    iface = fancy;
+
+    a = base.describe();
+    b = use_shape(view);
+    c = use_printer(iface);
+
+    print(a + b * 100 + c * 10000);
+end

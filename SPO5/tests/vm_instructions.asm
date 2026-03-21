@@ -1,0 +1,164 @@
+; VM instruction coverage test
+
+[section const_pool]
+k0: DD 0
+k1: DD 1
+k2: DD 2
+k3: DD 3
+k4: DD 4
+k5: DD 5
+kneg4: DD -4
+kO: DD 79
+kK: DD 75
+kNL: DD 10
+kstr: DB "OK\n"
+kfail: DB "FAIL\n"
+kport_out: DD 1
+kport_in: DD 0
+
+[section data_mem]
+v_x: DD 0
+v_y: DD 0
+v_arr: RESB 16
+v_msg: DD 0
+
+[section code]
+main:
+  ENTER 28
+  NOP
+  PUSH_CONST k2
+  PUSH_CONST k3
+  ADD
+  STORE v_x
+
+  LOAD v_x
+  PUSH_CONST k1
+  SUB
+  STORE v_y
+
+  LOAD v_x
+  LOAD v_y
+  MUL
+  POP
+
+  PUSH_CONST k5
+  PUSH_CONST k2
+  DIV
+  POP
+
+  PUSH_CONST k5
+  PUSH_CONST k2
+  REM
+  POP
+
+  PUSH_CONST k2
+  NEG
+  POP
+
+  PUSH_CONST k1
+  PUSH_CONST k0
+  AND_OP
+  POP
+
+  PUSH_CONST k1
+  PUSH_CONST k0
+  OR_OP
+  POP
+
+  PUSH_CONST k1
+  PUSH_CONST k2
+  LT
+  POP
+
+  PUSH_CONST k2
+  PUSH_CONST k1
+  GT
+  POP
+
+  PUSH_CONST k2
+  PUSH_CONST k2
+  LE
+  POP
+
+  PUSH_CONST k2
+  PUSH_CONST k2
+  GE
+  POP
+
+  PUSH_CONST k2
+  PUSH_CONST k2
+  EQ
+  POP
+
+  PUSH_CONST k2
+  PUSH_CONST k3
+  NE
+  POP
+
+  PUSH_ADDR v_arr
+  PUSH_CONST k1
+  INDEX
+  PUSH_CONST k3
+  STORE_IND
+
+  PUSH_ADDR v_arr
+  PUSH_CONST k1
+  PUSH_CONST k3
+  RANGE_OP
+  INDEX
+  LOAD_IND
+  POP
+
+  PUSH_CONST kport_out
+  SET_PORT
+  PUSH_CONST kO
+  OUT
+  PUSH_CONST kK
+  OUT
+  PUSH_CONST kNL
+  OUT
+
+  PUSH_CONST kport_in
+  SET_PORT
+  IN
+  POP
+
+  PUSH_CONST k4
+  CALL foo, 1
+  PUSH_CONST kneg4
+  EQ
+  JZ fail
+
+  JMP end_main
+
+dead_code:
+  PUSH_CONST k0
+  POP
+
+end_main:
+  LEAVE
+  RET
+
+foo:
+  STORE v_x
+  ENTER 4
+  LOAD v_x
+  PUSH_CONST k2
+  GT
+  JZ foo_done
+  LOAD v_x
+  NEG
+  STORE v_x
+foo_done:
+  LOAD v_x
+  LEAVE
+  RETF
+
+fail:
+  PUSH_CONST kport_out
+  SET_PORT
+  PUSH_CONST kfail
+  STORE v_msg
+  LOAD v_msg
+  OUT
+  JMP end_main

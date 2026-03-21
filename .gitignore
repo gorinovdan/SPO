@@ -5,3 +5,5 @@
 *.aux
 *.log
 *.tex
+*__MACOSX
+*app.dSYM
