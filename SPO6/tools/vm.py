@@ -488,10 +488,11 @@ def run_vm(binary, spec, spec_by_opcode, max_steps, dump_state_path=None):
                 stack_push(0)
             ip += 1
         elif mnemonic == "OUT":
-            val = stack_pop()
+            val = to_int(stack_pop())
             if io_port == 1:
-                sys.stdout.write(str(val))
-                sys.stdout.flush()
+                # Port 1 models raw byte output from the VM.
+                sys.stdout.buffer.write(bytes([val & 0xFF]))
+                sys.stdout.buffer.flush()
             ip += 1
         else:
             raise ValueError(f"unsupported instruction {mnemonic}")
