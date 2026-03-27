@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VmDevicesConfiguration xmlns="Portable.TargetPlatform.Vm.Devices">
+  <DeviceType Name="SimplePic" Id="1" />
+  <DeviceType Name="SimpleClock" Id="2" />
+
+  <Device DeviceType="SimplePic" Name="pic" Id="1">
+    <IoPortMap PortType="state" Id="1" BankName="pic_state" Mode="Linear">
+      <InitialBinding StartAddress="0x0" Length="41" />
+    </IoPortMap>
+    <IoPortMap PortType="handlers-map" Id="2" BankName="data_mem" Mode="RAM">
+      <InitialBinding StartAddress="0x0" Length="4" />
+    </IoPortMap>
+    <Parameter Name="HandlersTableEntrySize" Value="4" />
+  </Device>
+
+  <Device DeviceType="SimpleClock" Name="clock" Id="2">
+    <IoPortMap PortType="state" Id="1" BankName="clock_state" Mode="Linear">
+      <InitialBinding StartAddress="0x0" Length="72" />
+    </IoPortMap>
+    <Signal Name="on-cycles" Id="1" Interrupt="0" />
+    <Signal Name="on-ticks" Id="2" Interrupt="0" />
+  </Device>
+</VmDevicesConfiguration>
