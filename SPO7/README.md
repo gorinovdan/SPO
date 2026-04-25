@@ -58,5 +58,5 @@ OK
 
 ## Последняя проверка
 
-- `remote-demo`: `assemble = 77e2476a-ef6f-4ed7-b8bf-c9b6c16c7b94`, `run = 308eee2d-1ea7-4d25-9348-d9dbe8269780`
+- `remote-demo`: `assemble = b25363f4-03db-4b58-a57b-92604bf128b1`, `run = 0b067e78-0323-4027-8750-b23eb34b2135`
 - `probe-timer`: `assemble = 1adc5076-647e-4c76-81cc-7f4b11385fb2`, `run = 7aaea1b1-e9f8-4283-bd7e-aaf593fb758f`

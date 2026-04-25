@@ -99,8 +99,8 @@ make -C SPO7 remote-demo
 
 Последний успешный прогон:
 
-- `assemble = 77e2476a-ef6f-4ed7-b8bf-c9b6c16c7b94`
-- `run      = 308eee2d-1ea7-4d25-9348-d9dbe8269780`
+- `assemble = b25363f4-03db-4b58-a57b-92604bf128b1`
+- `run      = 0b067e78-0323-4027-8750-b23eb34b2135`
 
 Результат:
 

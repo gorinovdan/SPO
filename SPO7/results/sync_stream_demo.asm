@@ -1,42 +1,71 @@
 [section const_pool]
+; Small constants used by the hand-written VM program.
 k0: DD 0
 k1: DD 1
 k2: DD 2
 k4: DD 4
 k10: DD 10
 k101: DD 101
+
+; Kernel stack/call-stack base for interrupt handler execution.
 k2048: DD 2048
+
+; Relative SimpleClock period. The handler re-arms the clock before IRET.
 kperiod: DD 4
+
+; Timeline event characters written into v_trace.
+; P = producer wrote, C = consumer read, F = producer waited on full,
+; E = consumer waited on empty.
 kchar_P: DD 80
 kchar_C: DD 67
 kchar_F: DD 70
 kchar_E: DD 69
 
 [section data_mem]
+; Current scheduling discipline: 0 = FCFS, 1 = SPN.
 v_algo: DD 0
+
+; Logical timer step inside the current discipline.
 v_tick: DD 0
+
+; Producer/consumer positions in v_items and v_consumed.
 v_p_idx: DD 0
 v_c_idx: DD 0
+
+; Sequential stream state. Capacity is 2 words:
+; count = number of stored items, head = next read slot, tail = next write slot.
 v_stream_count: DD 0
 v_stream_head: DD 0
 v_stream_tail: DD 0
+
+; Passive wait counters. A passive wait means the thread yields to scheduler
+; instead of burning CPU in an active polling loop.
 v_full_waits: DD 0
 v_empty_waits: DD 0
+
+; Runtime statistics collected by the timer-driven scheduler.
 v_interrupts: DD 0
 v_dispatches: DD 0
 v_trace_idx: DD 0
+
+; Output loop index and one-byte timeline symbol selected by the last action.
 v_out_i: DD 0
 v_trace_code: DD 0
 
+; Test payload written by producer and expected back from consumer in FIFO order.
 v_items: DD 10
 v_items_1: DD 20
 v_items_2: DD 30
 v_items_3: DD 40
 
+; Ring buffer capacity 2: RESB 8 = two 4-byte VM words.
 v_stream_buf: RESB 8
+
+; Consumer output and action timeline.
 v_consumed: RESB 16
 v_trace: RESB 64
 
+; Deterministic stdout text. The VM writes chars with OUT one by one.
 v_output: DD 83
 v_output_1: DD 80
 v_output_2: DD 79
@@ -141,6 +170,7 @@ v_output_100: DD 10
 
 [section code]
 main:
+  ; Reset all runtime state before the first discipline (FCFS).
   PUSH_CONST k0
   STORE v_algo
   PUSH_CONST k0
@@ -166,6 +196,8 @@ main:
   PUSH_CONST k0
   STORE v_trace_idx
 
+  ; Configure the kernel context used after SimplePic jumps to rt_timer_handler.
+  ; POP_SYS 10..13 writes kernel sp/bp/dbp/csp.
   PUSH_CONST k2048
   POP_SYS 10
   PUSH_CONST k2048
@@ -175,10 +207,14 @@ main:
   PUSH_CONST k2048
   POP_SYS 13
 
+  ; Connect SimpleClock on-cycles interrupt id 2 to rt_timer_handler,
+  ; then program the first timer event.
   SET_CYCLES_HANDLER rt_timer_handler
   PUSH_CONST kperiod
   SET_PERIOD
 
+  ; Start user execution in idle. The real work is done by timer IRQs.
+  ; POP_SYS 5..9 prepares the context restored by IRET.
   PUSH_CODE rt_idle
   POP_SYS 5
   PUSH_CONST k0
@@ -192,17 +228,26 @@ main:
   IRET
 
 rt_idle:
+  ; Idle is intentionally endless; each useful step happens in rt_timer_handler.
   NOP
   JMP rt_idle
 
 rt_timer_handler:
+  ; Enter kernel mode: save interrupted idle context into irq_* and switch
+  ; to the kernel stack configured in main.
   IRQ_ENTER
+
+  ; Stop clock while the kernel handler runs. This prevents nested timer IRQs.
   PUSH_CONST k0
   SET_PERIOD
+
+  ; Count one timer-driven scheduler step.
   LOAD v_interrupts
   PUSH_CONST k1
   ADD
   STORE v_interrupts
+
+  ; Dispatch to the currently tested scheduling discipline.
   LOAD v_algo
   PUSH_CONST k0
   EQ
@@ -210,6 +255,10 @@ rt_timer_handler:
   JMP rt_handler_fcfs
 
 rt_handler_fcfs:
+  ; FCFS scenario timeline:
+  ; ticks 0,1,2 try producer writes; tick 2 blocks because capacity is 2.
+  ; ticks 3,4,5 try consumer reads; tick 5 blocks because stream is empty.
+  ; ticks 6,7 write remaining values; ticks 8,9 read them back.
   LOAD v_tick
   PUSH_CONST k0
   EQ
@@ -266,6 +315,9 @@ fcfs_t8:
   JMP fcfs_read
 
 rt_handler_spn:
+  ; SPN scenario gives consumer short actions earlier:
+  ; tick 0 reads first and blocks on empty, then write/read alternate.
+  ; This demonstrates a different schedule over the same stream object.
   LOAD v_tick
   PUSH_CONST k0
   EQ
@@ -322,6 +374,8 @@ spn_even:
   JMP spn_write
 
 fcfs_write:
+  ; stream_write for FCFS. If count == capacity, producer cannot write.
+  ; It records passive wait F and returns control to scheduler.
   LOAD v_stream_count
   PUSH_CONST k2
   EQ
@@ -339,6 +393,10 @@ fcfs_write:
   JMP fcfs_append
 
 fcfs_write_do:
+  ; Successful write:
+  ;   stream_buf[tail] = items[p_idx]
+  ;   tail = (tail + 1) % 2
+  ;   count++, p_idx++
   PUSH_ADDR v_stream_buf
   LOAD v_stream_tail
   INDEX
@@ -365,6 +423,7 @@ fcfs_write_do:
   STORE v_trace_code
 
 fcfs_append:
+  ; Append the selected action symbol to the timeline.
   PUSH_ADDR v_trace
   LOAD v_trace_idx
   INDEX
@@ -377,6 +436,8 @@ fcfs_append:
   JMP fcfs_after_action
 
 fcfs_read:
+  ; stream_read for FCFS. If count == 0, consumer cannot read.
+  ; It records passive wait E and yields to scheduler.
   LOAD v_stream_count
   PUSH_CONST k0
   EQ
@@ -394,6 +455,10 @@ fcfs_read:
   JMP fcfs_read_append
 
 fcfs_read_do:
+  ; Successful read:
+  ;   consumed[c_idx] = stream_buf[head]
+  ;   head = (head + 1) % 2
+  ;   count--, c_idx++
   PUSH_ADDR v_consumed
   LOAD v_c_idx
   INDEX
@@ -420,6 +485,7 @@ fcfs_read_do:
   STORE v_trace_code
 
 fcfs_read_append:
+  ; Append the selected action symbol to the timeline.
   PUSH_ADDR v_trace
   LOAD v_trace_idx
   INDEX
@@ -432,6 +498,8 @@ fcfs_read_append:
   JMP fcfs_after_action
 
 fcfs_after_action:
+  ; Advance logical time. After 10 steps, validate FCFS and reset
+  ; runtime state for the SPN scenario.
   LOAD v_tick
   PUSH_CONST k1
   ADD
@@ -443,6 +511,8 @@ fcfs_after_action:
   JMP validate_fcfs
 
 validate_fcfs:
+  ; Self-check for FCFS. All consumed values must match the producer payload,
+  ; waits must be full=1/empty=1, and timeline length must be 10.
   PUSH_ADDR v_consumed
   PUSH_CONST k0
   INDEX
@@ -526,6 +596,8 @@ validate_fcfs:
   JMP rt_return_idle
 
 spn_write:
+  ; stream_write for SPN. Same stream primitive as FCFS, but the scheduler
+  ; calls it in a different order, so wait counters differ.
   LOAD v_stream_count
   PUSH_CONST k2
   EQ
@@ -543,6 +615,7 @@ spn_write:
   JMP spn_append
 
 spn_write_do:
+  ; Successful producer write into the same ring buffer.
   PUSH_ADDR v_stream_buf
   LOAD v_stream_tail
   INDEX
@@ -573,6 +646,7 @@ spn_write_do:
   STORE v_trace_code
 
 spn_append:
+  ; Append SPN action symbol to timeline.
   PUSH_ADDR v_trace
   LOAD v_trace_idx
   INDEX
@@ -585,6 +659,8 @@ spn_append:
   JMP spn_after_action
 
 spn_read:
+  ; stream_read for SPN. Consumer may run before data exists and then
+  ; passively waits on empty.
   LOAD v_stream_count
   PUSH_CONST k0
   EQ
@@ -602,6 +678,7 @@ spn_read:
   JMP spn_read_append
 
 spn_read_do:
+  ; Successful consumer read from the ring buffer.
   PUSH_ADDR v_consumed
   LOAD v_c_idx
   INDEX
@@ -632,6 +709,7 @@ spn_read_do:
   STORE v_trace_code
 
 spn_read_append:
+  ; Append SPN action symbol to timeline.
   PUSH_ADDR v_trace
   LOAD v_trace_idx
   INDEX
@@ -644,6 +722,7 @@ spn_read_append:
   JMP spn_after_action
 
 spn_after_action:
+  ; Advance logical time. After 10 steps, validate SPN and print final report.
   LOAD v_tick
   PUSH_CONST k1
   ADD
@@ -655,6 +734,8 @@ spn_after_action:
   JMP validate_spn
 
 validate_spn:
+  ; Self-check for SPN. Data order must still be FIFO, but waits are
+  ; expected to be full=0/empty=2 for this schedule.
   PUSH_ADDR v_consumed
   PUSH_CONST k0
   INDEX
@@ -714,12 +795,14 @@ validate_spn:
   JMP print_output
 
 print_output:
+  ; All checks passed. Switch to stdout port 1 and emit deterministic text.
   PUSH_CONST k1
   SET_PORT
   PUSH_CONST k0
   STORE v_out_i
 
 print_output_loop:
+  ; Print v_output[0..100] one character at a time.
   LOAD v_out_i
   PUSH_CONST k101
   LT
@@ -736,6 +819,7 @@ print_output_loop:
   JMP print_output_loop
 
 print_output_done:
+  ; Stop the clock and return from IRQ to a halt context.
   PUSH_CONST k0
   SET_PERIOD
   PUSH_CODE rt_halt
@@ -751,15 +835,18 @@ print_output_done:
   IRET
 
 rt_return_idle:
+  ; Normal IRQ exit: re-arm external clock and return to idle.
   PUSH_CONST kperiod
   SET_PERIOD
   IRET
 
 rt_halt:
+  ; Final VM stop point.
   DI
   RET
 
 rt_fail:
+  ; Deliberate failure path for self-check errors.
   PUSH_CONST k1
   PUSH_CONST k0
   DIV
