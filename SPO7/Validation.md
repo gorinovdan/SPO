@@ -1,8 +1,8 @@
-# Validation SPO7 через Portable.RemoteTasks.Manager.exe
+# Validation SPO7
 
 Все команды выполняются из корня репозитория `SPO`.
 
-## Основной сценарий
+## VM demo
 
 ```bash
 make -C SPO7 remote-demo
@@ -10,27 +10,43 @@ make -C SPO7 remote-demo
 
 Команда:
 
-- копирует `tests/sync_stream_demo.asm` в `results/sync_stream_demo.asm`;
-- собирает бинарный модуль через `Assemble`;
-- запускает его через `ExecuteBinaryWithIo`, чтобы работали внешние `SimpleClock`/`SimplePic`;
-- проверяет `results/sync_stream_demo.stdout.txt` через `tools/check_sync_stream_output.py`.
+- копирует `tests/sql_pipeline_demo.asm` в `results/sql_pipeline_demo.asm`;
+- собирает бинарный модуль через `Portable.RemoteTasks.Manager.exe`;
+- запускает его через `ExecuteBinaryWithIo`, чтобы работали `SimpleClock`/`SimplePic`;
+- проверяет результат через `tools/check_sql_pipeline_output.py`.
 
-## Ручной запуск
+Последний успешный прогон:
+
+- `assemble = d0526229-a670-42b0-ae59-19c34a10bea0`
+- `run      = 0937d3a3-2dfd-4e25-b476-12d35df3b053`
+
+## SQL validation
+
+Подключение к базе:
 
 ```bash
-make -C SPO7 asm
-./SPO7/tools/run_remote.sh ./SPO7/results/sync_stream_demo.asm ./tools/vm_input.txt exec \
-  ./SPO7/results/sync_stream_demo.ptptb \
-  ./SPO7/results/sync_stream_demo.stdout.txt \
-  ./SPO7/results/sync_stream_demo.trace.txt
-python3 ./SPO7/tools/check_sync_stream_output.py ./SPO7/results/sync_stream_demo.stdout.txt
+ssh -p 2222 s338960@se.ifmo.ru
+psql -h pg -d ucheb
 ```
 
-Если `ExecuteBinaryWithIo` не сохранил `stdout.txt`, но VM run завершился без исключений:
+Запуск SQL-файла с локальной машины:
 
 ```bash
-python3 ./SPO7/tools/check_sync_stream_output.py --write-expected ./SPO7/results/sync_stream_demo.stdout.txt
-python3 ./SPO7/tools/check_sync_stream_output.py ./SPO7/results/sync_stream_demo.stdout.txt
+scp -P 2222 SPO7/sql/variant_lab3.sql s338960@se.ifmo.ru:/tmp/spo7_variant_lab3.sql
+ssh -p 2222 s338960@se.ifmo.ru \
+  "psql -h pg -d ucheb -v ON_ERROR_STOP=1 -f /tmp/spo7_variant_lab3.sql"
+```
+
+Проверенные row counts:
+
+```text
+Q1=1
+Q2=0
+Q3=5004
+Q4=40
+Q5=85
+Q6=0
+Q7=0
 ```
 
 ## Timer smoke-test
@@ -39,23 +55,7 @@ python3 ./SPO7/tools/check_sync_stream_output.py ./SPO7/results/sync_stream_demo
 make -C SPO7 probe-timer
 ```
 
-## Ожидаемый stdout
+Ранее проверенный timer probe:
 
-```text
-SPO7
-FCFS C=10,20,30,40 T=PPFCCEPPCC W=1/1 I=10 D=4
-SPN C=10,20,30,40 T=EPCEPCPCPC W=0/2 I=10 D=9
-OK
-```
-
-## Последний успешный прогон
-
-Основной sync-stream demo:
-
-- `assemble = b25363f4-03db-4b58-a57b-92604bf128b1`
-- `run      = 0b067e78-0323-4027-8750-b23eb34b2135`
-
-Timer probe:
-
-- `assemble = 1adc5076-647e-4c76-81cc-7f4b11385fb2`
-- `run      = 7aaea1b1-e9f8-4283-bd7e-aaf593fb758f`
+- `assemble = 09ad4ab8-847b-4f8f-9c45-361a201d5b32`
+- `run      = a45f0af3-db71-4c44-87f3-8daa8d72ce03`

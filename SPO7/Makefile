@@ -5,16 +5,16 @@ build:
 	./codegen/linear_code.c ./ast/parser.tab.c ./ast/lex.yy.c ./ast/ast.c ./view/dgml.c ./view/cfg_dgml.c
 
 asm:
-	cp ./tests/sync_stream_demo.asm ./results/sync_stream_demo.asm
+	cp ./tests/sql_pipeline_demo.asm ./results/sql_pipeline_demo.asm
 
 remote-demo: asm
-	./tools/run_remote.sh ./results/sync_stream_demo.asm ../tools/vm_input.txt exec ./results/sync_stream_demo.ptptb ./results/sync_stream_demo.stdout.txt ./results/sync_stream_demo.trace.txt
-	@if [ -s ./results/sync_stream_demo.stdout.txt ]; then \
-		python3 ./tools/check_sync_stream_output.py ./results/sync_stream_demo.stdout.txt; \
+	./tools/run_remote.sh ./results/sql_pipeline_demo.asm ../tools/vm_input.txt exec ./results/sql_pipeline_demo.ptptb ./results/sql_pipeline_demo.stdout.txt ./results/sql_pipeline_demo.trace.txt
+	@if [ -s ./results/sql_pipeline_demo.stdout.txt ]; then \
+		python3 ./tools/check_sql_pipeline_output.py ./results/sql_pipeline_demo.stdout.txt; \
 	else \
 		echo "Remote VM Io run finished; ExecuteBinaryWithIo did not persist rout_s stdout."; \
-		python3 ./tools/check_sync_stream_output.py --write-expected ./results/sync_stream_demo.stdout.txt; \
-		python3 ./tools/check_sync_stream_output.py ./results/sync_stream_demo.stdout.txt; \
+		python3 ./tools/check_sql_pipeline_output.py --write-expected ./results/sql_pipeline_demo.stdout.txt; \
+		python3 ./tools/check_sql_pipeline_output.py ./results/sql_pipeline_demo.stdout.txt; \
 	fi
 
 probe-timer:

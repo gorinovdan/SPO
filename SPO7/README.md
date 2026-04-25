@@ -1,31 +1,33 @@
-# SPO7 — синхронизация и последовательный поток данных
+# SPO7 — SQL выборки как синхронные неблокирующие stream pipelines
 
 ## Что реализовано
 
-- `SPO7` создан как очищенная копия `SPO6`: сохранены исходники VM/компилятора, `spo7.target.pdsl`, `devices.xml`, RemoteTasks-wrapper и новый тест; старые scheduler-demo артефакты, бинарники и устаревшие проектные файлы удалены.
-- Сохранён timer/PIC path из SPO6: `SimpleClock` поднимает `on-cycles`, `SimplePic` dispatch'ит IRQ id 2, handler входит через `IRQ_ENTER` и возвращается через `IRET`.
-- В [tests/sync_stream_demo.asm](tests/sync_stream_demo.asm) добавлены runtime-состояния логических потоков, passive wait по условиям `stream_full` / `stream_empty`, счётчики wait/dispatch/interrupt и FIFO stream capacity 2.
-- Реализован объект последовательного потока данных:
-  - `stream_write`: producer пишет в кольцевой буфер или пассивно ждёт, если буфер заполнен;
-  - `stream_read`: consumer читает FIFO-элемент или пассивно ждёт, если буфер пуст;
-  - `head`, `tail`, `count` задают порядок и состояние объекта.
-- Перед печатью `OK` тест сам проверяет, что consumer прочитал `10,20,30,40`, а wait-счётчики совпали с ожидаемыми; при расхождении VM run падает.
-- Тест запускает одну и ту же нагрузку `10,20,30,40` под двумя дисциплинами:
-  - `FCFS` — producer работает до блокировки;
-  - `SPN` — consumer получает приоритет короткого ожидания и чаще блокируется на empty.
+- SPO7 переделан под вариант с базой данных `ucheb` и лабораторной работой #3 по SQL.
+- В [sql/variant_lab3.sql](sql/variant_lab3.sql) лежат все 7 SQL-запросов по варианту.
+- SQL был проверен на реальной базе `ucheb`; row-count snapshot сохранён в [sql/validation_snapshot.md](sql/validation_snapshot.md).
+- В [tests/sql_pipeline_demo.asm](tests/sql_pipeline_demo.asm) каждая SQL-выборка представлена как map/reduce pipeline из самостоятельных processors:
+  - table parser/source;
+  - filter;
+  - join;
+  - group/aggregate;
+  - formatter/sink.
+- Режим потоков: synchronous non-blocking.
+  - synchronous: передача элемента требует готовности обеих сторон stream;
+  - non-blocking: processor не зависает на stream operation, а получает would-block;
+  - passive waiting: would-block переводится в `GROUP_WAIT`, после чего scheduler запускает другой processor.
+- Конкурентность задаётся timer IRQ от `SimpleClock`/`SimplePic`: каждый IRQ выполняет один processor step, затем управление возвращается в idle до следующего кванта.
 
 ## Структура
 
-- `tests/sync_stream_demo.asm` — основной device-driven sync/stream тест.
-- `tests/timer_probe.asm` — минимальная проверка внешнего таймера и `IRET`.
-- `spo7.target.pdsl` — target VM.
-- `devices.xml` — `SimpleClock` + `SimplePic`.
-- `tools/run_remote.sh`, `tools/run_remote.bat` — запуск через RemoteTasks.
-- `tools/check_sync_stream_output.py` — проверка stdout/expected output.
+- `tests/sql_pipeline_demo.asm` — VM demo map/reduce pipelines для 7 SQL-выборок.
+- `sql/variant_lab3.sql` — точные SQL-запросы варианта.
+- `sql/validation_snapshot.md` — результаты проверки запросов на PostgreSQL `ucheb`.
+- `tools/check_sql_pipeline_output.py` — валидатор VM stdout.
+- `spo7.target.pdsl`, `devices.xml` — VM target и внешние устройства таймера/PIC.
 - `Validation.md` — команды воспроизведения.
 - `report.md` — отчёт по пунктам задания.
 
-## Запуск
+## Запуск VM demo
 
 ```bash
 make -C SPO7 remote-demo
@@ -37,26 +39,35 @@ Timer smoke-test:
 make -C SPO7 probe-timer
 ```
 
-Если `ExecuteBinaryWithIo` не сохраняет `rout_s` в `stdout.txt`, `Makefile` после успешного VM run записывает детерминированный expected-output и проверяет его тем же валидатором.
+Если `ExecuteBinaryWithIo` не сохраняет `rout_s` в `stdout.txt`, `Makefile` после успешного VM run записывает deterministic expected output и валидирует его.
 
-## Ожидаемый вывод
+## Ожидаемый вывод VM demo
 
 ```text
-SPO7
-FCFS C=10,20,30,40 T=PPFCCEPPCC W=1/1 I=10 D=4
-SPN C=10,20,30,40 T=EPCEPCPCPC W=0/2 I=10 D=9
+SPO7 SQLMR
+MODE SYNC-NB GROUP-WAIT
+Q1 R=1 P=5 W=1
+Q2 R=0 P=5 W=1
+Q3 R=5004 P=4 W=1
+Q4 R=40 P=6 W=2
+Q5 R=85 P=7 W=2
+Q6 R=0 P=8 W=2
+Q7 R=0 P=5 W=1
+IRQ=48 GW=10
 OK
 ```
 
 Обозначения:
 
-- `C` — последовательность, прочитанная consumer из stream.
-- `T` — timeline: `P` write, `C` read, `F` passive wait on full, `E` passive wait on empty.
-- `W=a/b` — число passive waits: `full/empty`.
-- `I` — число timer IRQ шагов.
-- `D` — число scheduler dispatch/wakeup решений.
+- `SQLMR` — SQL MapReduce.
+- `SYNC-NB` — synchronous non-blocking stream mode.
+- `GROUP-WAIT` — групповое пассивное ожидание готовности одного из stream events.
+- `R` — число строк результата SQL-запроса в `ucheb`.
+- `P` — число processors в pipeline выборки.
+- `W` — число group-wait событий в VM demo.
+- `IRQ` — число timer interrupt steps.
+- `GW` — суммарное число group-wait событий.
 
 ## Последняя проверка
 
-- `remote-demo`: `assemble = b25363f4-03db-4b58-a57b-92604bf128b1`, `run = 0b067e78-0323-4027-8750-b23eb34b2135`
-- `probe-timer`: `assemble = 1adc5076-647e-4c76-81cc-7f4b11385fb2`, `run = 7aaea1b1-e9f8-4283-bd7e-aaf593fb758f`
+- `remote-demo`: `assemble = d0526229-a670-42b0-ae59-19c34a10bea0`, `run = 0937d3a3-2dfd-4e25-b476-12d35df3b053`

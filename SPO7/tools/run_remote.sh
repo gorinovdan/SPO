@@ -24,12 +24,12 @@ if [ ! -f "$EXE" ]; then
     exit 1
 fi
 
-ASM_FILE=${1:-"$PROJECT_DIR/results/sync_stream_demo.asm"}
+ASM_FILE=${1:-"$PROJECT_DIR/results/sql_pipeline_demo.asm"}
 INPUT_FILE=${2:-"$ROOT_DIR/tools/vm_input.txt"}
 RUN_MODE=${3:-exec}
-BIN_FILE=${4:-"$PROJECT_DIR/results/sync_stream_demo.ptptb"}
-STDOUT_FILE=${5:-"$PROJECT_DIR/results/sync_stream_demo.stdout.txt"}
-TRACE_FILE=${6:-"$PROJECT_DIR/results/sync_stream_demo.trace.txt"}
+BIN_FILE=${4:-"$PROJECT_DIR/results/sql_pipeline_demo.ptptb"}
+STDOUT_FILE=${5:-"$PROJECT_DIR/results/sql_pipeline_demo.stdout.txt"}
+TRACE_FILE=${6:-"$PROJECT_DIR/results/sql_pipeline_demo.trace.txt"}
 
 mkdir -p "$(dirname -- "$BIN_FILE")"
 mkdir -p "$(dirname -- "$STDOUT_FILE")"

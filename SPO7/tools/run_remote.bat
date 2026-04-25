@@ -16,19 +16,19 @@ set "TARGET_FILE=%PROJECT_DIR%\spo7.target.pdsl"
 set "DEVICES_FILE=%PROJECT_DIR%\devices.xml"
 
 set "ASM_FILE=%~1"
-if "%ASM_FILE%"=="" set "ASM_FILE=%PROJECT_DIR%\results\sync_stream_demo.asm"
+if "%ASM_FILE%"=="" set "ASM_FILE=%PROJECT_DIR%\results\sql_pipeline_demo.asm"
 for %%I in ("%ASM_FILE%") do set "ASM_FILE=%%~fI"
 
 set "BIN_FILE=%~4"
-if "%BIN_FILE%"=="" set "BIN_FILE=%PROJECT_DIR%\results\sync_stream_demo.ptptb"
+if "%BIN_FILE%"=="" set "BIN_FILE=%PROJECT_DIR%\results\sql_pipeline_demo.ptptb"
 for %%I in ("%BIN_FILE%") do set "BIN_FILE=%%~fI"
 
 set "STDOUT_FILE=%~5"
-if "%STDOUT_FILE%"=="" set "STDOUT_FILE=%PROJECT_DIR%\results\sync_stream_demo.stdout.txt"
+if "%STDOUT_FILE%"=="" set "STDOUT_FILE=%PROJECT_DIR%\results\sql_pipeline_demo.stdout.txt"
 for %%I in ("%STDOUT_FILE%") do set "STDOUT_FILE=%%~fI"
 
 set "TRACE_FILE=%~6"
-if "%TRACE_FILE%"=="" set "TRACE_FILE=%PROJECT_DIR%\results\sync_stream_demo.trace.txt"
+if "%TRACE_FILE%"=="" set "TRACE_FILE=%PROJECT_DIR%\results\sql_pipeline_demo.trace.txt"
 for %%I in ("%TRACE_FILE%") do set "TRACE_FILE=%%~fI"
 
 set "INPUT_FILE=%~2"
