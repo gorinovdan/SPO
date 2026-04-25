@@ -2,7 +2,7 @@
 
 ## 0. Итоговая оценка реализации
 
-SPO7 переделан под вариант: режим `синхронный, неблокирующий`, SQL-выборки по лабораторной работе #3 для базы `ucheb`, stream/map-reduce декомпозиция и group-wait passive waiting.
+SPO7 вариант: режим `синхронный, неблокирующий`, SQL-выборки по лабораторной работе #3 для базы `ucheb`, stream/map-reduce декомпозиция и group-wait passive waiting.
 
 Сделано:
 
@@ -15,7 +15,7 @@ SPO7 переделан под вариант: режим `синхронный,
 
 ## 1. Объекты синхронизации и внутренняя логика
 
-Основной объект синхронизации теперь не bounded buffer, а synchronous byte stream между processors.
+Основной объект синхронизации synchronous byte stream между processors.
 
 Семантика:
 
@@ -33,7 +33,7 @@ SPO7 переделан под вариант: режим `синхронный,
 
 ## 2. Модификация планировщика
 
-Планировщик сохранён timer-driven, как в SPO6/SPO7 до переработки:
+Планировщик сохранён timer-driven, как в SPO6:
 
 1. `SimpleClock` создаёт timer IRQ.
 2. `SimplePic` передаёт управление в `rt_timer_handler`.
@@ -72,15 +72,15 @@ SPO7 переделан под вариант: режим `синхронный,
 
 Точные SQL-запросы находятся в [variant_lab3.sql](/Users/lasat/Documents/Study/SPO/SPO7/sql/variant_lab3.sql).
 
-| Query | SQL смысл | Pipeline processors | SQL rows |
-|---|---|---:|---:|
-| Q1 | `Н_ТИПЫ_ВЕДОМОСТЕЙ RIGHT JOIN Н_ВЕДОМОСТИ`, фильтры по `ИД` | type parser, sheet parser, type filter, sheet filter, right join/format | 1 |
-| Q2 | `Н_ЛЮДИ INNER JOIN Н_ОБУЧЕНИЯ INNER JOIN Н_УЧЕНИКИ` | people parser, edu parser, students parser, filters, inner join/format | 0 |
-| Q3 | число пар `ФАМИЛИЯ, ИМЯ` без `DISTINCT` | people parser, key mapper, group by reducer, count formatter | 5004 |
-| Q4 | планы с ровно 2 группами на кафедре ВТ | groups parser, plans parser, dept filter, join, group/count/having | 40 |
-| Q5 | средние оценки группы 4100 выше средней группы 1101 | students/people/sheets parsers, mark mapper, joins, AVG reducers, compare/format | 85 |
-| Q6 | зачисленные до `2012-09-01` на 1 курс заочной формы, с `IN` | students/people/edu/plans/form parsers, IN subquery, filters, join/format | 0 |
-| Q7 | число отличников группы 3100 | students/sheets parsers, mark mapper, group by student, `MIN(mark)=5`, count | 0 |
+| Query | SQL смысл                                                   |                                                              Pipeline processors | SQL rows |
+| ----- | ----------------------------------------------------------- | -------------------------------------------------------------------------------: | -------: |
+| Q1    | `Н_ТИПЫ_ВЕДОМОСТЕЙ RIGHT JOIN Н_ВЕДОМОСТИ`, фильтры по `ИД` |          type parser, sheet parser, type filter, sheet filter, right join/format |        1 |
+| Q2    | `Н_ЛЮДИ INNER JOIN Н_ОБУЧЕНИЯ INNER JOIN Н_УЧЕНИКИ`         |           people parser, edu parser, students parser, filters, inner join/format |        0 |
+| Q3    | число пар `ФАМИЛИЯ, ИМЯ` без `DISTINCT`                     |                     people parser, key mapper, group by reducer, count formatter |     5004 |
+| Q4    | планы с ровно 2 группами на кафедре ВТ                      |               groups parser, plans parser, dept filter, join, group/count/having |       40 |
+| Q5    | средние оценки группы 4100 выше средней группы 1101         | students/people/sheets parsers, mark mapper, joins, AVG reducers, compare/format |       85 |
+| Q6    | зачисленные до `2012-09-01` на 1 курс заочной формы, с `IN` |        students/people/edu/plans/form parsers, IN subquery, filters, join/format |        0 |
+| Q7    | число отличников группы 3100                                |     students/sheets parsers, mark mapper, group by student, `MIN(mark)=5`, count |        0 |
 
 Q2, Q6 и Q7 дают пустой результат на реальной базе с точными константами варианта. Это зафиксировано в [validation_snapshot.md](/Users/lasat/Documents/Study/SPO/SPO7/sql/validation_snapshot.md), а VM demo отражает это как `R=0`.
 
