@@ -4,7 +4,6 @@
 
 Технические пункты задания `1–6` реализованы и подтверждены проверками.
 
-- В `SPO6` перенесён и собирается собственный код проекта из `SPO5`.
 - Для целевой VM реализованы таймер, прерывания и переключение контекста.
 - Реализованы два невытесняющих алгоритма планирования: `FCFS` и `SPN`.
 - Подготовлена и выполнена тестовая программа с одинаковой нагрузкой для обоих алгоритмов.
@@ -222,76 +221,11 @@ python3 SPO6/tools/check_scheduler_output.py SPO6/results/scheduler_demo.stdout.
 
 Это показывает, что различается только порядок планирования, а не поведение самих логических потоков.
 
-## 6. Отчёт и воспроизводимость проверки
-
-Этот файл фиксирует результаты пунктов 1-5 в порядке задания, а воспроизводимые команды проверки вынесены в [Validation.md](/Users/lasat/Documents/Study/SPO/SPO6/Validation.md) и [README.md](/Users/lasat/Documents/Study/SPO/SPO6/README.md).
-
-Дополнительно проверено, что хотя сам scheduler-demo реализован на target assembly, компилятор `app` в `SPO6` после переноса из `SPO5` сохранён и работает.
-
-### 6.1. Сборка компилятора
-
-Команда:
-
-```bash
-make -C SPO6 build
-```
-
-Результат: сборка успешна.
-
-### 6.2. Компиляция исходных программ `app -> asm`
-
-Успешно скомпилированы `7` исходных программ:
-
-- `SPO5/tests/array_demo.txt`
-- `SPO5/tests/calculator.txt`
-- `SPO5/tests/control_flow_big.txt`
-- `SPO5/tests/input.txt`
-- `SPO5/tests/spo3_demo.txt`
-- `SPO5/tests/types_demo.txt`
-- `SPO6/tests/scheduler_demo.txt`
-
-Отдельно важно:
-
-- [types_demo.txt](/Users/lasat/Documents/Study/SPO/SPO5/tests/types_demo.txt) проверяет расширенный синтаксис `SPO5`: `type`, `interface`, `extends`, `implements`, `override`.
-- [scheduler_demo.txt](/Users/lasat/Documents/Study/SPO/SPO6/tests/scheduler_demo.txt) подтверждает, что базовый высокоуровневый синтаксис `app` в `SPO6` не сломан и продолжает собираться в `asm`.
-
-Файл `SPO5/tests/calculator_input.txt` сознательно не включался в эту проверку, потому что это входные данные для калькулятора, а не исходный файл программы.
-
-### 6.3. Проверка выполнения app-сгенерированных программ
-
-Локальный pipeline `app -> asm -> bin -> local VM`:
-
-```bash
-./SPO6/tools/run_vm.sh ./SPO5/tests/array_demo.txt ...
-```
-
-Результат: `54`
-
-```bash
-./SPO6/tools/run_vm.sh ./SPO5/tests/types_demo.txt ...
-```
-
-Результат: `111105`
-
-RemoteTasks-проверка app-сгенерированных `asm`:
-
-- `types_demo.asm`
-  - `assemble = 6d4f18b8-54dc-4ce0-b6ea-cbe147173f22`
-  - `run      = caab4f73-d769-49cc-8f42-a2e81632c9a4`
-- `array_demo.asm`
-  - `assemble = 76a59f3f-63a2-4007-bd70-ec56a01ddf73`
-  - `run      = d2b17279-b2ae-4cbf-818d-56eb0905b651`
-
-Замечание:
-
-- В `stdout.txt` RemoteTasks для этих программ сохраняет сырые байты регистра `rout`, поэтому локальный `run_vm.sh` удобнее для человекочитаемой проверки.
-- Для scheduler-demo целевой вывод уже нормализован в ASCII и проверяется скриптом [check_scheduler_output.py](/Users/lasat/Documents/Study/SPO/SPO6/tools/check_scheduler_output.py).
-
-## 7. Переход таймера на внешнее устройство VmDevices
+## 6. Реализация таймера через внешнее устройство VmDevices
 
 Финальная реализация таймера в SPO6 — через устройства `SimplePic` и `SimpleClock`, соответствующие модели `tools/vm-devices.pdf` и схеме `tools/VmDevices.xsd`. Per-instruction эмуляция полностью удалена.
 
-### 7.1. Конфигурация устройств
+### 6.1. Конфигурация устройств
 
 [SPO6/devices.xml](/Users/lasat/Documents/Study/SPO/SPO6/devices.xml):
 
@@ -317,40 +251,11 @@ RemoteTasks-проверка app-сгенерированных `asm`:
 
 SimpleClock смонтирован в `Mode="RAM"` (не Linear) — это ключевая деталь: в RAM-режиме устройство самостоятельно обновляет state (инкрементирует `Cycles` по мере исполнения инструкций), тогда как Linear превратил бы bank в пассивное зеркало. PIC использует отдельный bank `pic_handlers` для таблицы handler'ов (исключает коллизию с пользовательскими данными в `data_mem`).
 
-### 7.2. Изменения в целевой архитектуре
-
-Из [spo6.target.pdsl](/Users/lasat/Documents/Study/SPO/SPO6/spo6.target.pdsl) удалены все эмуляционные элементы:
-
-- storages `timer_s`, `quantum_s`, `intvec_s`, `intr_enabled_s`, `intr_active_s`, `irq_ip_s`;
-- per-instruction блок `if intr_enabled ... if timer == 0 then { irq_ip = ip; ...; ip = intvec }` — 36 копий, все вычищены.
-
-Добавлены memory ranges `pic_state`, `pic_handlers`, `clock_state` и инструкции:
-
-| Инструкция              | Семантика                                                                |
-|-------------------------|--------------------------------------------------------------------------|
-| `ei`                    | `pic_state:4[12] = 1` (InterruptsAllowed)                                |
-| `di`                    | `pic_state:4[12] = 0`                                                    |
-| `iret`                  | `sp/bp/dbp/csp ← irq_*; ip ← pic_state:4[0]; PIC re-enable только если clock armed` |
-| `irq_enter`             | `irq_* ← sp/bp/dbp/csp; sp/bp/dbp/csp ← ksp/kbp/kdbp/kcsp`               |
-| `set_period`            | `clock_state:4[64..68] ← Cycles + stack_top`, `0` отключает clock-сигнал |
-| `set_cycles_handler L`  | `pic_handlers:4[8] ← L` (таблица для Interrupt id 2 = on-cycles)         |
-
-`push_sys 5` / `pop_sys 5` (ранее работавшие с `irq_ip_s`) теперь напрямую обращаются к `pic_state:4[0]` — внешний software-слой (scheduler runtime) не замечает разницы.
-
-### 7.3. Изменения в scheduler runtime
-
-В [tests/scheduler_demo.asm](/Users/lasat/Documents/Study/SPO/SPO6/tests/scheduler_demo.asm):
-
-- секция «kernel init» пишет `SET_CYCLES_HANDLER rt_timer_handler` и `PUSH_CONST k15; SET_PERIOD` вместо старых `POP_SYS 2/1/4` (intvec / quantum / intr_active);
-- первыми инструкциями `rt_timer_handler` стали `IRQ_ENTER`, затем `PUSH_CONST k0; SET_PERIOD`, чтобы внешний clock не накапливал IRQ внутри kernel handler;
-- из всех `IRET`-путей удалены старые `PUSH_CONST k3; POP_SYS 4` (clear intr_active);
-- `rt_timer_resume_task` и `rt_dispatch_idle` re-arm'ят clock перед `IRET`, а `rt_timer_resume_main` перед выходом к main делает `PUSH_CONST k0; SET_PERIOD`, чтобы отключить сигнал после завершения симуляции.
-
-### 7.4. Вызов через Portable.RemoteTasks.Manager
+### 6.2. Вызов через Portable.RemoteTasks.Manager
 
 [tools/run_remote.sh](/Users/lasat/Documents/Study/SPO/SPO6/tools/run_remote.sh) передаёт `devices.xml` как параметр задачам `ExecuteBinaryWithIo` / `MachineDebugBinary`. Для VmDevices нужен именно Io-service: `ExecuteBinaryWithInput` выполняет код, но не dispatch'ит внешние clock/PIC IRQ.
 
-### 7.5. End-to-end результат
+### 6.3. End-to-end результат
 
 ```bash
 make -C SPO6 remote-demo
@@ -362,7 +267,7 @@ make -C SPO6 remote-demo
 - `assemble = 231b82d3-5319-4f72-9a15-704ca2827dd4`
 - `run      = d561c55b-dc04-4d59-9c71-55c2d3d80530`
 
-## 8. Выводы
+## 7. Выводы
 
 По существу задания:
 

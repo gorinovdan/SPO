@@ -1,7 +1,6 @@
 # SPO6 — планирование задач в многопоточной среде
 
 ## Что реализовано
-- `SPO6` сделан как полноценная копия проекта `SPO5`: в директорию перенесены `ast`, `analysis`, `cfg`, `codegen`, `view`, `vm`, `main.c`, project-файлы и утилиты.
 - Таймер и прерывания переведены на **внешние устройства VM-утилиты**: `SimplePic` + `SimpleClock` монтируются через [devices.xml](devices.xml) к memory ranges `pic_state` / `pic_handlers` / `clock_state` в `spo6.target.pdsl`. Per-instruction эмуляции таймера нет — `Cycles` тикает сам clock-device, `on-cycles` сигнал транслируется PIC в прерывание id 2.
 - Добавлены инструкции `irq_enter` (сохранение user-context + switch в kernel), `iret` (восстановление из `irq_*`, `ip ← pic_state[0]`), `set_period` (программирование `CyclesSignalPeriod`), `set_cycles_handler` (запись в `pic_handlers[8]`), `ei` / `di` (`pic_state[12]` gate).
 - Тестовая программа `tests/scheduler_demo.asm` использует реальные таймерные прерывания и настоящее переключение контекста через PCB.
@@ -104,12 +103,3 @@ make -C SPO6 remote-demo
 ```bash
 make -C SPO6 remote-demo
 ```
-
-## Согласование с преподавателем
-
-Технически пакет подготовлен к согласованию:
-- отчёт собран;
-- remote-артефакты сохранены;
-- воспроизводимый сценарий проверки готов.
-
-Само согласование с преподавателем требует внешнего human review и не может быть выполнено автоматически из CLI. Для этого добавлен файл `teacher_review.md`.
