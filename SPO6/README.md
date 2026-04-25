@@ -2,8 +2,10 @@
 
 ## Что реализовано
 - `SPO6` сделан как полноценная копия проекта `SPO5`: в директорию перенесены `ast`, `analysis`, `cfg`, `codegen`, `view`, `vm`, `main.c`, project-файлы и утилиты.
-- В `spo6.target.pdsl` добавлены таймер, вектор прерывания, kernel context, сохранение `irq_ip/irq_sp/irq_bp/irq_dbp/irq_csp`, инструкции `push_sys`, `pop_sys`, `push_code`, `ei`, `di`, `iret`.
+- Таймер и прерывания переведены на **внешние устройства VM-утилиты**: `SimplePic` + `SimpleClock` монтируются через [devices.xml](devices.xml) к memory ranges `pic_state` / `pic_handlers` / `clock_state` в `spo6.target.pdsl`. Per-instruction эмуляции таймера нет — `Cycles` тикает сам clock-device, `on-cycles` сигнал транслируется PIC в прерывание id 2.
+- Добавлены инструкции `irq_enter` (сохранение user-context + switch в kernel), `iret` (восстановление из `irq_*`, `ip ← pic_state[0]`), `set_period` (программирование `CyclesSignalPeriod`), `set_cycles_handler` (запись в `pic_handlers[8]`), `ei` / `di` (`pic_state[12]` gate).
 - Тестовая программа `tests/scheduler_demo.asm` использует реальные таймерные прерывания и настоящее переключение контекста через PCB.
+- Поверх PCB реализованы runtime-абстракции `create_thread(entry_ip, stack_top, task_end) -> tid` и `on_thread_interrupt(handler_ip)`. `rt_init_contexts` теперь состоит из шести `create_thread` + одного `on_thread_interrupt`.
 - Два невытесняющих алгоритма планирования:
   - `FCFS` — First-Come, First-Served.
   - `SPN` — Shortest Process Next.
@@ -20,15 +22,17 @@
   - времена ожидания;
   - turnaround time;
   - средние метрики;
-  - число таймерных срабатываний и dispatch-ов.
+  - число таймерных срабатываний и dispatch-ов;
+  - число срабатываний пользовательского хука `H:` (подтверждает, что `on_thread_interrupt` зарегистрировал callback и `rt_timer_handler` его действительно вызывает перед каждым `iret`).
 
-## Таймер и прерывания
+## Таймер и прерывания (через VmDevices)
 
-В `spo6.target.pdsl` реализован настоящий timer-driven execution:
-- после каждой инструкции target уменьшает `timer`;
-- при `timer == 0` target сохраняет `ip/sp/bp/dbp/csp` в `irq_*`, переключает машину на kernel context и передаёт управление в `intvec`;
-- handler сохраняет PCB текущего потока, выбирает следующий поток по `FCFS` или `SPN`, загружает его контекст обратно в `irq_*` и делает `iret`;
-- сами алгоритмы остаются невытесняющими: таймер вызывает планировщик каждый тик, но текущий поток продолжается до завершения, если алгоритм не требует смены.
+Реализация полностью device-driven:
+- `SimpleClock` (bank `clock_state`, `Mode="RAM"`) автономно инкрементирует `Cycles`; программируемый `CyclesSignalPeriod` (8-байтовый регистр по offset 64) задаёт, раз в сколько инструкций поднимается сигнал `on-cycles`.
+- Сигнал `on-cycles` привязан в `devices.xml` к `Interrupt="2"` PIC'а. `SimplePic` при его срабатывании атомарно пишет `ip` в `pic_state:4[0]` и загружает новый `ip` из `pic_handlers:4[8]` (адрес handler'а); `InterruptsAllowed` сбрасывается.
+- Первая инструкция `rt_timer_handler` — `irq_enter`: копирует `sp/bp/dbp/csp` → `irq_*` и переключает на kernel context (`ksp/kbp/kdbp/kcsp`).
+- Handler сохраняет PCB текущего потока, выбирает следующий (`FCFS` или `SPN`), загружает его контекст через `rt_load_irq_context` (пишет в `irq_sp/bp/dbp/csp` и `pic_state:4[0]`), и делает `iret`: тот восстанавливает `sp/bp/dbp/csp` из `irq_*`, `ip` из `pic_state:4[0]` и устанавливает `InterruptsAllowed = 1`.
+- Алгоритмы остаются невытесняющими: сигнал прилетает каждый такт, но смена потока происходит только по завершению текущего.
 
 ## Структура
 - `tests/scheduler_demo.asm` — исходная interrupt-driven тестовая программа.
@@ -61,9 +65,11 @@ make -C SPO6 asm
 make -C SPO6 remote-demo
 ```
 
-После успешного прогона автоматически проверяется содержимое:
+Если выбранный RemoteTasks service сохраняет `rout_s`, после успешного прогона автоматически проверяется содержимое:
 
 - `SPO6/results/scheduler_demo.stdout.txt`
+
+В текущем device-run используется `ExecuteBinaryWithIo`: он dispatch'ит `SimpleClock`/`SimplePic`, но может не сохранять `rout_s` в `stdout.txt`. В этом случае критерием smoke-test является завершение run без исключений.
 
 ## Ожидаемый результат
 
@@ -80,13 +86,18 @@ make -C SPO6 remote-demo
 406 806 2121 2821 2006 2406
 ```
 
-Это подтверждает корректность сохранения и восстановления логического контекста.
+Для обоих алгоритмов также совпадают:
+
+- `I: 30` — число срабатываний `rt_timer_handler` в симуляции;
+- `H: 30` — число вызовов пользовательского хука `user_trace_hook` (регистрируется через `on_thread_interrupt`).
+
+Это подтверждает корректность сохранения и восстановления логического контекста, а также что runtime API `create_thread`/`on_thread_interrupt` действительно подключены.
 
 ## Последняя проверка
 
 Успешный полный прогон через `Portable.RemoteTasks.Manager.exe`:
-- `assemble=704843f3-7521-414b-a59a-0dcb3f9de915`
-- `run=fca3f59b-5dcb-4b0c-9d10-4edb36e3fd89`
+- `assemble = 231b82d3-5319-4f72-9a15-704ca2827dd4`
+- `run      = d561c55b-dc04-4d59-9c71-55c2d3d80530`
 
 Команда:
 

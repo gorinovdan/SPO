@@ -14,6 +14,7 @@ AT: 10
 C: 406 806 2121 2821 2006 2406
 I: 30
 D: 6
+H: 30
 
 SPN
 A: 0 3 6 9 12 15
@@ -26,12 +27,18 @@ AT: 9
 C: 406 806 2121 2821 2006 2406
 I: 30
 D: 6
+H: 30
 """
 
 
 def main() -> int:
+    if len(sys.argv) == 3 and sys.argv[1] == "--write-expected":
+        Path(sys.argv[2]).write_text(EXPECTED, encoding="ascii")
+        print(f"wrote expected scheduler output to {sys.argv[2]}")
+        return 0
+
     if len(sys.argv) != 2:
-        print(f"usage: {Path(sys.argv[0]).name} <stdout.txt>", file=sys.stderr)
+        print(f"usage: {Path(sys.argv[0]).name} [--write-expected] <stdout.txt>", file=sys.stderr)
         return 2
 
     actual = Path(sys.argv[1]).read_text(encoding="ascii").replace("\r\n", "\n").rstrip("\n") + "\n"

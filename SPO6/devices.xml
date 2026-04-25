@@ -3,21 +3,23 @@
   <DeviceType Name="SimplePic" Id="1" />
   <DeviceType Name="SimpleClock" Id="2" />
 
+  <!-- PIC: state at pic_state (48 bytes); handlers table at pic_handlers (16 slots x 4 bytes). -->
   <Device DeviceType="SimplePic" Name="pic" Id="1">
-    <IoPortMap PortType="state" Id="1" BankName="pic_state" Mode="Linear">
-      <InitialBinding StartAddress="0x0" Length="41" />
+    <IoPortMap PortType="state" Id="0" BankName="pic_state" Mode="RAM">
+      <InitialBinding StartAddress="0x0" Length="0x30" />
     </IoPortMap>
-    <IoPortMap PortType="handlers-map" Id="2" BankName="data_mem" Mode="RAM">
-      <InitialBinding StartAddress="0x0" Length="4" />
+    <IoPortMap PortType="handlers-map" Id="1" BankName="pic_handlers" Mode="RAM">
+      <InitialBinding StartAddress="0x0" Length="0x40" />
     </IoPortMap>
     <Parameter Name="HandlersTableEntrySize" Value="4" />
   </Device>
 
+  <!-- Clock: ticking in RAM mode; on-cycles signal routed to PIC interrupt id 2. -->
   <Device DeviceType="SimpleClock" Name="clock" Id="2">
-    <IoPortMap PortType="state" Id="1" BankName="clock_state" Mode="Linear">
-      <InitialBinding StartAddress="0x0" Length="72" />
+    <IoPortMap PortType="state" Id="0" BankName="clock_state" Mode="RAM">
+      <InitialBinding StartAddress="0x0" Length="0x48" />
     </IoPortMap>
-    <Signal Name="on-cycles" Id="1" Interrupt="0" />
-    <Signal Name="on-ticks" Id="2" Interrupt="0" />
+    <Signal Name="on-ticks" Id="1" Interrupt="1" />
+    <Signal Name="on-cycles" Id="2" Interrupt="2" />
   </Device>
 </VmDevicesConfiguration>

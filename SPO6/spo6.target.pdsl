@@ -29,27 +29,13 @@ architecture vm32 {
         view rin = rin_s;
         view rout = rout_s;
 
-        // Timer and interrupt controller
-        storage timer_s[32];
-        storage quantum_s[32];
-        storage intvec_s[32];
-        storage intr_enabled_s[32];
-        storage intr_active_s[32];
-
-        view timer = timer_s;
-        view quantum = quantum_s;
-        view intvec = intvec_s;
-        view intr_enabled = intr_enabled_s;
-        view intr_active = intr_active_s;
-
-        // Saved interrupted context
-        storage irq_ip_s[32];
+        // Saved interrupted context (sp/bp/dbp/csp saved in software on IRQ entry).
+        // irq_ip lives in pic_state:4[0] (InterruptedInstructionAddress), set by PIC.
         storage irq_sp_s[32];
         storage irq_bp_s[32];
         storage irq_dbp_s[32];
         storage irq_csp_s[32];
 
-        view irq_ip = irq_ip_s;
         view irq_sp = irq_sp_s;
         view irq_bp = irq_bp_s;
         view irq_dbp = irq_dbp_s;
@@ -108,6 +94,27 @@ architecture vm32 {
             granularity = 0;
         }
 
+        // External SimplePic state bank (InterruptedInstructionAddress, InterruptsAllowed, ...).
+        range pic_state [0x00000000 .. 0x00000030] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        // External SimplePic handlers table; entry k at offset k*4 holds handler ip.
+        range pic_handlers [0x00000000 .. 0x00000100] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        // External SimpleClock state bank (Ticks, Cycles, CyclesSignalPeriod, ...).
+        range clock_state [0x00000000 .. 0x00000048] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
     instructions:
 
         encode imm32 field = immediate[32];
@@ -117,25 +124,6 @@ architecture vm32 {
 
         instruction nop = { 0000 0000 } {
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         // Data movement and constants
@@ -145,25 +133,6 @@ architecture vm32 {
             stack_mem:4[sp] = value;
             sp = sp + 4;
             ip = ip + 5;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction push-addr = { 0000 0010, data32 as addr } {
@@ -171,50 +140,12 @@ architecture vm32 {
             stack_mem:4[sp] = abs_addr;
             sp = sp + 4;
             ip = ip + 5;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction push-code = { 0010 0111, code32 as target } {
             stack_mem:4[sp] = target;
             sp = sp + 4;
             ip = ip + 5;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction load = { 0000 0011, data32 as addr } {
@@ -226,25 +157,6 @@ architecture vm32 {
                 stack_mem:4[sp] = data_mem:4[abs_addr];
             sp = sp + 4;
             ip = ip + 5;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction store = { 0000 0100, data32 as addr } {
@@ -257,25 +169,6 @@ architecture vm32 {
             else
                 data_mem:4[abs_addr] = value;
             ip = ip + 5;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction load-ind = { 0000 0101 } {
@@ -285,25 +178,6 @@ architecture vm32 {
             stack_mem:4[sp] = value;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction store-ind = { 0000 0110 } {
@@ -313,49 +187,11 @@ architecture vm32 {
             let addr = stack_mem:4[sp];
             data_mem:4[addr] = value;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction pop = { 0000 0111 } {
             sp = sp - 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         // Arithmetic and logic
@@ -368,25 +204,6 @@ architecture vm32 {
             stack_mem:4[sp] = a + b;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction sub = { 0000 1001 } {
@@ -397,25 +214,6 @@ architecture vm32 {
             stack_mem:4[sp] = a - b;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction mul = { 0000 1010 } {
@@ -426,25 +224,6 @@ architecture vm32 {
             stack_mem:4[sp] = a * b;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction div = { 0000 1011 } {
@@ -455,25 +234,6 @@ architecture vm32 {
             stack_mem:4[sp] = a / b;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction rem = { 0000 1100 } {
@@ -484,25 +244,6 @@ architecture vm32 {
             stack_mem:4[sp] = a % b;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction neg = { 0000 1101 } {
@@ -511,25 +252,6 @@ architecture vm32 {
             stack_mem:4[sp] = 0 - a;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction and-op = { 0000 1110 } {
@@ -543,25 +265,6 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction or-op = { 0000 1111 } {
@@ -575,25 +278,6 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction lt = { 0001 0000 } {
@@ -607,25 +291,6 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction gt = { 0001 0001 } {
@@ -639,25 +304,6 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction le = { 0001 0010 } {
@@ -671,25 +317,6 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction ge = { 0001 0011 } {
@@ -703,25 +330,6 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction eq = { 0001 0100 } {
@@ -735,25 +343,6 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction ne = { 0001 0101 } {
@@ -767,49 +356,11 @@ architecture vm32 {
             stack_mem:4[sp] = res;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         // Control flow
         instruction jmp = { 0001 0110, code32 as target } {
             ip = target;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction jz = { 0001 0111, code32 as target } {
@@ -819,25 +370,6 @@ architecture vm32 {
                 ip = target;
             else
                 ip = ip + 5;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         // Negative targets are builtins (print/printf/read)
@@ -851,25 +383,6 @@ architecture vm32 {
                 stack_mem:4[sp] = 0;
                 sp = sp + 4;
                 ip = ip + 9;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
             }
             else {
                 call_stack:4[csp] = ip + 9;
@@ -880,25 +393,6 @@ architecture vm32 {
                 csp = csp + 4;
                 dbp = dbp + df_size;
                 ip = target;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
             }
         };
 
@@ -913,25 +407,6 @@ architecture vm32 {
                 csp = csp - 4;
                 ip = call_stack:4[csp];
             }
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction retf = { 0010 0001 } {
@@ -945,49 +420,11 @@ architecture vm32 {
                 csp = csp - 4;
                 ip = call_stack:4[csp];
             }
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction enter = { 0001 1010, imm32 as nlocals } {
             bp = sp;
             ip = ip + 5;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction leave = { 0001 1011 } {
@@ -1002,25 +439,6 @@ architecture vm32 {
             if csp >= 12 then
                 dbp = call_stack:4[csp - 4];
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         // Indexing
@@ -1032,25 +450,6 @@ architecture vm32 {
             stack_mem:4[sp] = start;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction index-op = { 0001 1101 } {
@@ -1062,25 +461,6 @@ architecture vm32 {
             stack_mem:4[sp] = addr;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         // IO
@@ -1088,25 +468,6 @@ architecture vm32 {
             sp = sp - 4;
             io = stack_mem:4[sp];
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction in-op = { 0001 1111 } {
@@ -1116,25 +477,6 @@ architecture vm32 {
             stack_mem:4[sp] = value;
             sp = sp + 4;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         instruction out-op = { 0010 0000 } {
@@ -1143,47 +485,19 @@ architecture vm32 {
             if io == 1 then
                 rout = value;
             ip = ip + 1;
-            if intr_enabled != 0 && intr_active == 0 && quantum > 0 then {
-                if timer > 0 then
-                    timer = timer - 1;
-                if timer == 0 then {
-                    irq_ip = ip;
-                    irq_sp = sp;
-                    irq_bp = bp;
-                    irq_dbp = dbp;
-                    irq_csp = csp;
-                    intr_active = 1;
-                    intr_enabled = 0;
-                    sp = ksp;
-                    bp = kbp;
-                    dbp = kdbp;
-                    csp = kcsp;
-                    ip = intvec;
-                    timer = quantum;
-                }
-            }
         };
 
         // System control
-        // sys ids:
-        // 0 timer, 1 quantum, 2 intvec, 3 intr_enabled, 4 intr_active
-        // 5 irq_ip, 6 irq_sp, 7 irq_bp, 8 irq_dbp, 9 irq_csp
-        // 10 ksp, 11 kbp, 12 kdbp, 13 kcsp
-        // 14 ip, 15 sp, 16 bp, 17 dbp, 18 csp, 19 df_size
+        // sys_id layout (timer/quantum/intvec/intr_enabled/intr_active slots removed —
+        // they were emulation-only; timer now lives in SimpleClock, enable flag in PIC):
+        //  5 irq_ip   (aliased to pic_state:4[0] = InterruptedInstructionAddress)
+        //  6 irq_sp, 7 irq_bp, 8 irq_dbp, 9 irq_csp
+        // 10 ksp,   11 kbp,  12 kdbp,    13 kcsp
+        // 14 ip,    15 sp,   16 bp,      17 dbp,  18 csp, 19 df_size
         instruction push-sys = { 0010 0010, imm32 as sys_id } {
             let value = 0;
-            if sys_id == 0 then
-                value = timer;
-            else if sys_id == 1 then
-                value = quantum;
-            else if sys_id == 2 then
-                value = intvec;
-            else if sys_id == 3 then
-                value = intr_enabled;
-            else if sys_id == 4 then
-                value = intr_active;
-            else if sys_id == 5 then
-                value = irq_ip;
+            if sys_id == 5 then
+                value = pic_state:4[0];
             else if sys_id == 6 then
                 value = irq_sp;
             else if sys_id == 7 then
@@ -1220,18 +534,8 @@ architecture vm32 {
         instruction pop-sys = { 0010 0011, imm32 as sys_id } {
             sp = sp - 4;
             let value = stack_mem:4[sp];
-            if sys_id == 0 then
-                timer = value;
-            else if sys_id == 1 then
-                quantum = value;
-            else if sys_id == 2 then
-                intvec = value;
-            else if sys_id == 3 then
-                intr_enabled = value;
-            else if sys_id == 4 then
-                intr_active = value;
-            else if sys_id == 5 then
-                irq_ip = value;
+            if sys_id == 5 then
+                pic_state:4[0] = value;
             else if sys_id == 6 then
                 irq_sp = value;
             else if sys_id == 7 then
@@ -1251,25 +555,69 @@ architecture vm32 {
             ip = ip + 5;
         };
 
+        // ei / di toggle PIC InterruptsAllowed (pic_state:4[12]).
         instruction ei-op = { 0010 0100 } {
-            intr_enabled = 1;
+            pic_state:4[12] = 1;
             ip = ip + 1;
         };
 
         instruction di-op = { 0010 0101 } {
-            intr_enabled = 0;
+            pic_state:4[12] = 0;
             ip = ip + 1;
         };
 
+        // IRET restores the user-context registers saved on IRQ entry (by irq-enter),
+        // reloads ip from PIC's InterruptedInstructionAddress, and re-enables interrupts.
         instruction iret-op = { 0010 0110 } {
             sp = irq_sp;
             bp = irq_bp;
             dbp = irq_dbp;
             csp = irq_csp;
-            ip = irq_ip;
-            intr_active = 0;
-            intr_enabled = 1;
-            timer = quantum;
+            ip = pic_state:4[0];
+            if clock_state:4[64] == 0 then
+                pic_state:4[12] = 0;
+            else
+                pic_state:4[12] = 1;
+        };
+
+        // IRQ entry trampoline: atomically saves user context into irq_* and
+        // switches the CPU to kernel sp/bp/dbp/csp. The PIC has already stored
+        // user ip into pic_state:4[0] before jumping to the handler.
+        instruction irq-enter = { 0010 1000 } {
+            irq_sp = sp;
+            irq_bp = bp;
+            irq_dbp = dbp;
+            irq_csp = csp;
+            sp = ksp;
+            bp = kbp;
+            dbp = kdbp;
+            csp = kcsp;
+            ip = ip + 1;
+        };
+
+        // Program SimpleClock CyclesSignalPeriod from stack top (8-byte register).
+        instruction set-period = { 0010 1001 } {
+            sp = sp - 4;
+            let period = stack_mem:4[sp];
+            if period == 0 then {
+                clock_state:4[64] = 0;
+                pic_state:4[20] = 0;
+            }
+            else {
+                let cycles = clock_state:4[48];
+                clock_state:4[64] = cycles + period;
+            }
+            clock_state:4[68] = 0;
+            ip = ip + 1;
+        };
+
+        // Install a handler for PIC interrupt id `slot` into pic_handlers[slot*4].
+        // Takes handler code address as immediate operand.
+        instruction set-cycles-handler = { 0010 1010, code32 as handler } {
+            pic_state:4[8] = 4;
+            pic_state:4[16] = 1;
+            pic_handlers:4[8] = handler;
+            ip = ip + 5;
         };
 
     mnemonics:
@@ -1319,5 +667,8 @@ architecture vm32 {
         mnemonic ei for ei-op () "";
         mnemonic di for di-op () "";
         mnemonic iret for iret-op () "";
+        mnemonic irq_enter for irq-enter () "";
+        mnemonic set_period for set-period () "";
+        mnemonic set_cycles_handler for set-cycles-handler (handler) "{1}";
 
 }

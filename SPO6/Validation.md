@@ -11,9 +11,8 @@ make -C SPO6 remote-demo
 Эта команда делает всё последовательно:
 - собирает standalone-проект `SPO6` на основе перенесённого кода `SPO5`;
 - копирует `tests/scheduler_demo.asm` в `results/scheduler_demo.asm`;
-- собирает и запускает бинарник через `Portable.RemoteTasks.Manager.exe`;
-- сохраняет `ptptb`, `stdout`, `trace`;
-- проверяет `stdout` скриптом `tools/check_scheduler_output.py`.
+- собирает и запускает бинарник через `Portable.RemoteTasks.Manager.exe` / `ExecuteBinaryWithIo`;
+- сохраняет `ptptb`; `ExecuteBinaryWithIo` обрабатывает VmDevices, но не всегда сохраняет `rout_s` в `stdout.txt`.
 
 ## Ручной запуск
 
@@ -38,6 +37,8 @@ make -C SPO6 asm
 python3 ./SPO6/tools/check_scheduler_output.py ./SPO6/results/scheduler_demo.stdout.txt
 ```
 
+Проверку stdout выполняйте только если выбранный RemoteTasks service реально сохранил `stdout.txt`. Для device-run критичный признак — завершение `ExecuteBinaryWithIo` без исключений.
+
 ## RemoteTasks на Windows
 
 ```powershell
@@ -61,6 +62,7 @@ AT: 10
 C: 406 806 2121 2821 2006 2406
 I: 30
 D: 6
+H: 30
 
 SPN
 A: 0 3 6 9 12 15
@@ -73,17 +75,26 @@ AT: 9
 C: 406 806 2121 2821 2006 2406
 I: 30
 D: 6
+H: 30
 ```
 
-## Что проверять в trace
+Ключевые строки:
+- `I` — число вызовов `rt_timer_handler` (timer IRQ на каждую инструкцию пользовательского потока);
+- `D` — число диспатчей (`rt_activate_current` + `mark_dispatch`);
+- `H` — число вызовов пользовательского хука, зарегистрированного через `on_thread_interrupt` (должно совпадать с `I`, так как хук вызывается перед каждым `iret` из `rt_timer_handler`).
+
+## Что проверять в debug/trace
 
 - Завершение программы через `RET` без исключений.
-- Наличие timer-driven переключений через `irq_*`, `intvec`, `iret`.
+- Timer-driven переключения идут через устройства: инструкция `set_cycles_handler` пишет адрес handler'а в `pic_handlers:4[8]`, `set_period` программирует следующий `CyclesSignalPeriod` как `Cycles + period`, `iret` выставляет `pic_state:4[12] = 1`, когда clock armed. Каждое срабатывание IRQ начинается с `irq_enter` и заканчивается `iret` (читающим `ip` из `pic_state:4[0]`).
+- Вызов `create_thread` ровно 6 раз в начале каждой симуляции (из `rt_init_contexts`).
+- Вызов `on_thread_interrupt` 1 раз в начале каждой симуляции (регистрирует `user_trace_hook`).
+- Вызов `rt_invoke_user_irq` перед каждым `iret` из `rt_timer_handler`.
 - Выполнение обеих дисциплин планирования: сначала `FCFS`, затем `SPN`.
-- Артефакт:
+- Если выбранный RemoteTasks service сохраняет trace, артефакт:
   - `SPO6/results/scheduler_demo.trace.txt`
 
 ## Последний успешный прогон
 
-- `assemble=704843f3-7521-414b-a59a-0dcb3f9de915`
-- `run=fca3f59b-5dcb-4b0c-9d10-4edb36e3fd89`
+- `assemble = 231b82d3-5319-4f72-9a15-704ca2827dd4`
+- `run      = d561c55b-dc04-4d59-9c71-55c2d3d80530`

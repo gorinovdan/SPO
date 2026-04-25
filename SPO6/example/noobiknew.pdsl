@@ -1,0 +1,1000 @@
+architecture noobik {
+registers:
+    /* General purpose registers (64-bit) */
+    storage sR0 [64];
+    storage sR1 [64];
+    storage sR2 [64];
+    storage sR3 [64];
+    storage sR4 [64];
+    storage sR5 [64];
+    storage sR6 [64];
+    storage sR7 [64];
+
+    view R0 = sR0;
+    view R1 = sR1;
+    view R2 = sR2;
+    view R3 = sR3;
+    view R4 = sR4;
+    view R5 = sR5;
+    view R6 = sR6;
+    view R7 = sR7;
+
+    /* Instruction + stack pointers */
+    storage sIP [64];
+    storage sSP [64];
+    storage sFP [64];
+
+    view IP = sIP;
+    view SP = sSP;
+    view FP = sFP;
+
+    /* Flags register (bit views) */
+    storage sFLAGS [5];
+
+    view N = sFLAGS[0];
+    view Z = sFLAGS[1];
+    view V = sFLAGS[2];
+    view C = sFLAGS[3];
+    view E = sFLAGS[4];
+
+    /*
+      Hidden I/O registers (used as ports).
+      Assignment requirement: "инструкции ввода-вывода с использованием скрытого регистра
+      в качестве порта ввода-вывода".
+    */
+    storage sINP [64];
+    storage sOUTP [64];
+
+    view INP = sINP;
+    view OUTP = sOUTP;
+
+memory:
+    /*
+      Variant 11 memory banks: "code and data, stack".
+      We expose one common address space for code+data (codeDataMem) and a separate stack bank.
+      From PDF: "granularity – требование к выровненности обращений к диапазону".
+      We use granularity = 0 (no alignment requirement).
+    */
+
+    range codeDataMem [0x00000000 .. 0xFFFFFFFFFFFFFFFF] {
+        cell = 8;
+        endianess = little-endian;
+        granularity = 0;
+    }
+
+    range stackMem [0x00000000 .. 0xFFFFFFFFFFFFFFFF] {
+        cell = 8;
+        endianess = little-endian;
+        granularity = 0;
+    }
+
+instructions:
+    /*
+      Fixed-width 64-bit instruction encoding.
+      A minimal, consistent layout (high-level):
+        - opcode8
+        - size2 (sz8/sz16/sz32/sz64)
+        - reg fields as needed
+        - remaining bits: immediate/offset or padding
+    */
+
+    encode reg field = register {
+        R0 = 0000,
+        R1 = 0001,
+        R2 = 0010,
+        R3 = 0011,
+        R4 = 0100,
+        R5 = 0101,
+        R6 = 0110,
+        R7 = 0111,
+        IP = 1000,
+        SP = 1001,
+        FP = 1010
+    };
+
+    /* Keep imm32 definition aligned with the myArch reference */
+    encode imm32 field = immediate [32];
+    encode off32 field = immediate [32] offset;
+
+    encode size sequence = alternatives {
+        sz8 = {00},
+        sz16 = {01},
+        sz32 = {10},
+        sz64 = {11}
+    };
+
+    /* =====================================
+       Helpers (documented semantics)
+       =====================================
+       - Stack grows downward: PUSH pre-decrements SP.
+       - Stack slot size for PUSH/POP is always 8 bytes (qword), independent of size field.
+       - Pointer arithmetic for *_PTR/STACK uses signed off32.
+    */
+
+    /* ================================
+       DATA MOVEMENT / CONSTANTS
+       ================================ */
+
+    /* LDI32: load 32-bit immediate into reg (zero-extended) */
+    instruction LDI32 = { 0000 0001, 11, reg as to, 0000, 00 0000 0000 0000, imm32 as value } {
+        to = value & 0x00000000FFFFFFFF;
+        IP = IP + 8;
+    };
+
+    /* LDI_LO: load low 32 bits of 64-bit constant (clears high 32 bits) */
+    instruction LDI_LO = { 0000 0011, 11, reg as to, 0000, 00 0000 0000 0000, imm32 as value } {
+        to = value & 0x00000000FFFFFFFF;
+        IP = IP + 8;
+    };
+
+    /* LDI_HI: load high 32 bits of 64-bit constant (OR into high half, low half unchanged) */
+    instruction LDI_HI = { 0000 0100, 11, reg as to, 0000, 00 0000 0000 0000, imm32 as value } {
+        to = to | ((value & 0x00000000FFFFFFFF) << 32);
+        IP = IP + 8;
+    };
+
+    /* MOV: reg to reg (two-address style: dst = src) */
+    instruction MOV = { 0000 0010, 11, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        dst = src;
+        IP = IP + 8;
+    };
+
+    /* ADDI: dst = dst + imm32 (imm is zero-extended); size selects truncation/masking */
+    instruction ADDI = { 0001 0100, sequence size, reg as dst, 0000, 00 0000 0000 0000, imm32 as value } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            let b = value & 0x00000000000000FF;
+            let r = (a + b) & 0x00000000000000FF;
+            dst = r;
+            C = (r < a) & 1;
+            N = (r >> 7) & 1;
+            if ((((a ^ r) & (b ^ r) & 0x0000000000000080) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            let b = value & 0x000000000000FFFF;
+            let r = (a + b) & 0x000000000000FFFF;
+            dst = r;
+            C = (r < a) & 1;
+            N = (r >> 15) & 1;
+            if ((((a ^ r) & (b ^ r) & 0x0000000000008000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            let b = value & 0x00000000FFFFFFFF;
+            let r = (a + b) & 0x00000000FFFFFFFF;
+            dst = r;
+            C = (r < a) & 1;
+            N = (r >> 31) & 1;
+            if ((((a ^ r) & (b ^ r) & 0x0000000080000000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            let b = value & 0x00000000FFFFFFFF;
+            let r = (a + b) & 0xFFFFFFFFFFFFFFFF;
+            dst = r;
+            C = (r < a) & 1;
+            N = (r >> 63) & 1;
+            if ((((a ^ r) & (b ^ r) & 0x8000000000000000) != 0)) then { V = 1; } else { V = 0; }
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        IP = IP + 8;
+    };
+
+    /* SUBI: dst = dst - imm32 (imm is zero-extended); size selects truncation/masking */
+    instruction SUBI = { 0001 0101, sequence size, reg as dst, 0000, 00 0000 0000 0000, imm32 as value } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            let b = value & 0x00000000000000FF;
+            let r = (a - b) & 0x00000000000000FF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 7) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000000000080) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            let b = value & 0x000000000000FFFF;
+            let r = (a - b) & 0x000000000000FFFF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 15) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000000008000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            let b = value & 0x00000000FFFFFFFF;
+            let r = (a - b) & 0x00000000FFFFFFFF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 31) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000080000000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            let b = value & 0x00000000FFFFFFFF;
+            let r = (a - b) & 0xFFFFFFFFFFFFFFFF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 63) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x8000000000000000) != 0)) then { V = 1; } else { V = 0; }
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        IP = IP + 8;
+    };
+
+    /* ================================
+       ARITHMETIC / LOGIC (two-address)
+       dst = dst op src
+       ================================ */
+
+    instruction ADD = { 0001 0000, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let res = dst + src;
+            let tmp = dst;
+            dst = res & 0x00000000000000FF;
+            C = (dst < (tmp & 0x00000000000000FF)) & 1;
+            N = (dst >> 7) & 1;
+            V = ((((tmp ^ dst) & (src ^ dst)) >> 7) & 1);
+        } else when sz16 then {
+            let res = dst + src;
+            let tmp = dst;
+            dst = res & 0x000000000000FFFF;
+            C = (dst < (tmp & 0x000000000000FFFF)) & 1;
+            N = (dst >> 15) & 1;
+            V = ((((tmp ^ dst) & (src ^ dst)) >> 15) & 1);
+        } else when sz32 then {
+            let res = dst + src;
+            let tmp = dst;
+            dst = res & 0x00000000FFFFFFFF;
+            C = (dst < (tmp & 0x00000000FFFFFFFF)) & 1;
+            N = (dst >> 31) & 1;
+            V = ((((tmp ^ dst) & (src ^ dst)) >> 31) & 1);
+        } else when sz64 then {
+            let res = dst + src;
+            let tmp = dst;
+            dst = res & 0xFFFFFFFFFFFFFFFF;
+            C = (dst < tmp) & 1;
+            N = (dst >> 63) & 1;
+            V = ((((tmp ^ dst) & (src ^ dst)) >> 63) & 1);
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        IP = IP + 8;
+    };
+
+    instruction SUB = { 0001 0001, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            let b = src & 0x00000000000000FF;
+            let r = (a - b) & 0x00000000000000FF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 7) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000000000080) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            let b = src & 0x000000000000FFFF;
+            let r = (a - b) & 0x000000000000FFFF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 15) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000000008000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            let b = src & 0x00000000FFFFFFFF;
+            let r = (a - b) & 0x00000000FFFFFFFF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 31) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000080000000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            let b = src & 0xFFFFFFFFFFFFFFFF;
+            let r = (a - b) & 0xFFFFFFFFFFFFFFFF;
+            dst = r;
+            C = (a < b) & 1;
+            N = (r >> 63) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x8000000000000000) != 0)) then { V = 1; } else { V = 0; }
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        IP = IP + 8;
+    };
+
+    instruction AND = { 0001 0010, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            dst = (dst & src) & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            dst = (dst & src) & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            dst = (dst & src) & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            dst = (dst & src) & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        IP = IP + 8;
+    };
+
+    instruction OR = { 0001 0011, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            dst = (dst | src) & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            dst = (dst | src) & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            dst = (dst | src) & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            dst = (dst | src) & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        IP = IP + 8;
+    };
+
+    instruction XOR = { 0001 0110, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            dst = (dst ^ src) & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            dst = (dst ^ src) & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            dst = (dst ^ src) & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            dst = (dst ^ src) & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        E = 0;
+        IP = IP + 8;
+    };
+
+    instruction NOT = { 0001 0111, sequence size, reg as dst, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            dst = (~dst) & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            dst = (~dst) & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            dst = (~dst) & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            dst = (~dst) & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        E = 0;
+        IP = IP + 8;
+    };
+
+    instruction NEG = { 0001 1000, sequence size, reg as dst, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            if (a == 0x80) then { V = 1; } else { V = 0; }
+            dst = ((~a) + 1) & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            if (a == 0x8000) then { V = 1; } else { V = 0; }
+            dst = ((~a) + 1) & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            if (a == 0x80000000) then { V = 1; } else { V = 0; }
+            dst = ((~a) + 1) & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            if (a == 0x8000000000000000) then { V = 1; } else { V = 0; }
+            dst = ((~a) + 1) & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        C = 0;
+        E = 0;
+        IP = IP + 8;
+    };
+
+    instruction MUL = { 0001 1001, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let r = (dst & 0x00000000000000FF) * (src & 0x00000000000000FF);
+            dst = r & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            let r = (dst & 0x000000000000FFFF) * (src & 0x000000000000FFFF);
+            dst = r & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            let r = (dst & 0x00000000FFFFFFFF) * (src & 0x00000000FFFFFFFF);
+            dst = r & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            let r = (dst & 0xFFFFFFFFFFFFFFFF) * (src & 0xFFFFFFFFFFFFFFFF);
+            dst = r & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        E = 0;
+        IP = IP + 8;
+    };
+
+    instruction DIV = { 0001 1010, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            let b = src & 0x00000000000000FF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a / b) & 0x00000000000000FF;
+                E = 0;
+            }
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            let b = src & 0x000000000000FFFF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a / b) & 0x000000000000FFFF;
+                E = 0;
+            }
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            let b = src & 0x00000000FFFFFFFF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a / b) & 0x00000000FFFFFFFF;
+                E = 0;
+            }
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            let b = src & 0xFFFFFFFFFFFFFFFF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a / b) & 0xFFFFFFFFFFFFFFFF;
+                E = 0;
+            }
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        IP = IP + 8;
+    };
+
+    instruction MOD = { 0001 1011, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            let b = src & 0x00000000000000FF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a % b) & 0x00000000000000FF;
+                E = 0;
+            }
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            let b = src & 0x000000000000FFFF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a % b) & 0x000000000000FFFF;
+                E = 0;
+            }
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            let b = src & 0x00000000FFFFFFFF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a % b) & 0x00000000FFFFFFFF;
+                E = 0;
+            }
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            let b = src & 0xFFFFFFFFFFFFFFFF;
+            if (b == 0x0) then {
+                E = 1;
+            } else {
+                dst = (a % b) & 0xFFFFFFFFFFFFFFFF;
+                E = 0;
+            }
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        IP = IP + 8;
+    };
+
+    instruction SHL = { 0001 1100, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            let sh = (src & 0x00000000000000FF) & 0x7;
+            dst = (a << sh) & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            let sh = (src & 0x000000000000FFFF) & 0xF;
+            dst = (a << sh) & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            let sh = (src & 0x00000000FFFFFFFF) & 0x1F;
+            dst = (a << sh) & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            let sh = (src & 0xFFFFFFFFFFFFFFFF) & 0x3F;
+            dst = (a << sh) & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        E = 0;
+        IP = IP + 8;
+    };
+
+    instruction SHR = { 0001 1101, sequence size, reg as dst, reg as src, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let a = dst & 0x00000000000000FF;
+            let sh = (src & 0x00000000000000FF) & 0x7;
+            dst = (a >> sh) & 0x00000000000000FF;
+            N = (dst >> 7) & 1;
+        } else when sz16 then {
+            let a = dst & 0x000000000000FFFF;
+            let sh = (src & 0x000000000000FFFF) & 0xF;
+            dst = (a >> sh) & 0x000000000000FFFF;
+            N = (dst >> 15) & 1;
+        } else when sz32 then {
+            let a = dst & 0x00000000FFFFFFFF;
+            let sh = (src & 0x00000000FFFFFFFF) & 0x1F;
+            dst = (a >> sh) & 0x00000000FFFFFFFF;
+            N = (dst >> 31) & 1;
+        } else when sz64 then {
+            let a = dst & 0xFFFFFFFFFFFFFFFF;
+            let sh = (src & 0xFFFFFFFFFFFFFFFF) & 0x3F;
+            dst = (a >> sh) & 0xFFFFFFFFFFFFFFFF;
+            N = (dst >> 63) & 1;
+        }
+
+        if (dst == 0x0) then { Z = 1; } else { Z = 0; }
+        V = 0;
+        C = 0;
+        E = 0;
+        IP = IP + 8;
+    };
+
+    /* ================================
+       LOAD/STORE families
+       Naming requested: LD_* and ST_* with postfixes.
+       - *_DATA uses absolute address in common bank (codeDataMem)
+       - *_PTR uses base register + signed off32 in common bank
+       - *_STACK uses base register + signed off32 in stack bank
+       ================================ */
+
+    /* LD_DATA: dst <- codeDataMem[addr32] */
+    instruction LD_DATA = { 0010 0000, sequence size, reg as dst, 0000, 00 0000 0000 0000, imm32 as addr } {
+        when sz8 then {
+            dst = codeDataMem:8[addr] & 0x00000000000000FF;
+        } else when sz16 then {
+            dst = codeDataMem:8[addr] & 0x000000000000FFFF;
+        } else when sz32 then {
+            dst = codeDataMem:8[addr] & 0x00000000FFFFFFFF;
+        } else when sz64 then {
+            dst = codeDataMem:8[addr] & 0xFFFFFFFFFFFFFFFF;
+        }
+        IP = IP + 8;
+    };
+
+    /* ST_DATA: codeDataMem[addr32] <- src */
+    instruction ST_DATA = { 0010 0001, sequence size, reg as src, 0000, 00 0000 0000 0000, imm32 as addr } {
+        when sz8 then {
+            codeDataMem:8[addr] = src & 0x00000000000000FF;
+        } else when sz16 then {
+            codeDataMem:8[addr] = src & 0x000000000000FFFF;
+        } else when sz32 then {
+            codeDataMem:8[addr] = src & 0x00000000FFFFFFFF;
+        } else when sz64 then {
+            codeDataMem:8[addr] = src & 0xFFFFFFFFFFFFFFFF;
+        }
+        IP = IP + 8;
+    };
+
+    /* LD_PTR: dst <- codeDataMem[base + off32] */
+    instruction LD_PTR = { 0010 0010, sequence size, reg as dst, reg as base, 00 0000 0000 0000, off32 as off } {
+        let o = off;
+        if (((o >> 31) & 1) == 1) then {
+            o = o | 0xFFFFFFFF00000000;
+        }
+        let addr = (base + o) & 0xFFFFFFFFFFFFFFFF;
+        when sz8 then {
+            dst = codeDataMem:8[addr] & 0x00000000000000FF;
+        } else when sz16 then {
+            dst = codeDataMem:8[addr] & 0x000000000000FFFF;
+        } else when sz32 then {
+            dst = codeDataMem:8[addr] & 0x00000000FFFFFFFF;
+        } else when sz64 then {
+            dst = codeDataMem:8[addr] & 0xFFFFFFFFFFFFFFFF;
+        }
+        IP = IP + 8;
+    };
+
+    /* ST_PTR: codeDataMem[base + off32] <- src */
+    instruction ST_PTR = { 0010 0011, sequence size, reg as src, reg as base, 00 0000 0000 0000, off32 as off } {
+        let o = off;
+        if (((o >> 31) & 1) == 1) then {
+            o = o | 0xFFFFFFFF00000000;
+        }
+        let addr = (base + o) & 0xFFFFFFFFFFFFFFFF;
+        when sz8 then {
+            codeDataMem:8[addr] = src & 0x00000000000000FF;
+        } else when sz16 then {
+            codeDataMem:8[addr] = src & 0x000000000000FFFF;
+        } else when sz32 then {
+            codeDataMem:8[addr] = src & 0x00000000FFFFFFFF;
+        } else when sz64 then {
+            codeDataMem:8[addr] = src & 0xFFFFFFFFFFFFFFFF;
+        }
+        IP = IP + 8;
+    };
+
+    /* LD_STACK: dst <- stackMem[base + off32] (base typically FP or SP) */
+    instruction LD_STACK = { 0010 0100, sequence size, reg as dst, reg as base, 00 0000 0000 0000, off32 as off } {
+        let o = off;
+        if (((o >> 31) & 1) == 1) then {
+            o = o | 0xFFFFFFFF00000000;
+        }
+        let addr = (base + o) & 0xFFFFFFFFFFFFFFFF;
+        when sz8 then {
+            dst = stackMem:8[addr] & 0x00000000000000FF;
+        } else when sz16 then {
+            dst = stackMem:8[addr] & 0x000000000000FFFF;
+        } else when sz32 then {
+            dst = stackMem:8[addr] & 0x00000000FFFFFFFF;
+        } else when sz64 then {
+            dst = stackMem:8[addr] & 0xFFFFFFFFFFFFFFFF;
+        }
+        IP = IP + 8;
+    };
+
+    /* ST_STACK: stackMem[base + off32] <- src */
+    instruction ST_STACK = { 0010 0101, sequence size, reg as src, reg as base, 00 0000 0000 0000, off32 as off } {
+        let o = off;
+        if (((o >> 31) & 1) == 1) then {
+            o = o | 0xFFFFFFFF00000000;
+        }
+        let addr = (base + o) & 0xFFFFFFFFFFFFFFFF;
+        when sz8 then {
+            stackMem:8[addr] = src & 0x00000000000000FF;
+        } else when sz16 then {
+            stackMem:8[addr] = src & 0x000000000000FFFF;
+        } else when sz32 then {
+            stackMem:8[addr] = src & 0x00000000FFFFFFFF;
+        } else when sz64 then {
+            stackMem:8[addr] = src & 0xFFFFFFFFFFFFFFFF;
+        }
+        IP = IP + 8;
+    };
+
+    /* ================================
+       STACK / CALLING
+       ================================ */
+
+    /* PUSHQ src: SP = SP - 8; stackMem[SP] = src */
+    instruction PUSHQ = { 0011 0000, 11, reg as src, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        SP = SP - 8;
+        /* ':8' means 8-byte access (like dataM:8 in the variant-9 reference). */
+        stackMem:8[SP] = src & 0xFFFFFFFFFFFFFFFF;
+        IP = IP + 8;
+    };
+
+    /* POPQ dst: dst = stackMem[SP]; SP = SP + 8 */
+    instruction POPQ = { 0011 0001, 11, reg as dst, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        dst = stackMem:8[SP];
+        SP = SP + 8;
+        IP = IP + 8;
+    };
+
+    /* CALL abs32: push return address; jump */
+    instruction CALL = { 0011 0010, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        SP = SP - 8;
+        stackMem:8[SP] = (IP + 8) & 0xFFFFFFFFFFFFFFFF;
+        IP = target;
+    };
+
+    /* RET: pop return address; jump */
+    instruction RET = { 0011 0011, 11, 0000, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        let ra = stackMem:8[SP];
+        SP = SP + 8;
+        IP = ra;
+    };
+
+    /* PUSHF: push FLAGS (5-bit, zero-extended) onto stack */
+    instruction PUSHF = { 0011 0100, 11, 0000, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        SP = SP - 8;
+        stackMem:8[SP] = sFLAGS & 0x000000000000001F;
+        IP = IP + 8;
+    };
+
+    /* POPF: pop FLAGS from stack (only low 5 bits used) */
+    instruction POPF = { 0011 0101, 11, 0000, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        let val = stackMem:8[SP];
+        N = (val >> 0) & 1;
+        Z = (val >> 1) & 1;
+        V = (val >> 2) & 1;
+        C = (val >> 3) & 1;
+        E = (val >> 4) & 1;
+        SP = SP + 8;
+        IP = IP + 8;
+    };
+
+    /* ================================
+       COMPARE + BRANCHES (flags)
+       ================================ */
+
+    /* CMP op1, op2: sets flags based on (op1 - op2) in selected size, op1/op2 are unchanged */
+    instruction CMP = { 0100 0000, sequence size, reg as op1, reg as op2, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        when sz8 then {
+            let a = op1 & 0x00000000000000FF;
+            let b = op2 & 0x00000000000000FF;
+            let r = (a - b) & 0x00000000000000FF;
+            Z = (r == 0x0) & 1;
+            N = (r >> 7) & 1;
+            C = (a < b) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000000000080) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz16 then {
+            let a = op1 & 0x000000000000FFFF;
+            let b = op2 & 0x000000000000FFFF;
+            let r = (a - b) & 0x000000000000FFFF;
+            Z = (r == 0x0) & 1;
+            N = (r >> 15) & 1;
+            C = (a < b) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000000008000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz32 then {
+            let a = op1 & 0x00000000FFFFFFFF;
+            let b = op2 & 0x00000000FFFFFFFF;
+            let r = (a - b) & 0x00000000FFFFFFFF;
+            Z = (r == 0x0) & 1;
+            N = (r >> 31) & 1;
+            C = (a < b) & 1;
+            if ((((a ^ b) & (a ^ r) & 0x0000000080000000) != 0)) then { V = 1; } else { V = 0; }
+        } else when sz64 then {
+            let r = (op1 - op2) & 0xFFFFFFFFFFFFFFFF;
+            Z = (r == 0x0) & 1;
+            N = (r >> 63) & 1;
+            C = (op1 < op2) & 1;
+            if ((((op1 ^ op2) & (op1 ^ r) & 0x8000000000000000) != 0)) then { V = 1; } else { V = 0; }
+        }
+        IP = IP + 8;
+    };
+
+    instruction JZ = { 0100 0001, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        if (Z == 1) then { IP = target; } else { IP = IP + 8; }
+    };
+
+    instruction JNZ = { 0100 0010, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        if (Z == 0) then { IP = target; } else { IP = IP + 8; }
+    };
+
+    instruction JMP = { 0100 0011, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        IP = target;
+    };
+
+    /* Signed branches (like variant 9):
+       GT: (N == V) && (Z == 0)
+       GE: (N == V)
+       LT: (N != V)
+       LE: (N != V) || (Z == 1)
+    */
+    instruction JG = { 0100 0100, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        if ((N == V) && (Z == 0)) then { IP = target; } else { IP = IP + 8; }
+    };
+
+    instruction JGE = { 0100 0101, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        if (N == V) then { IP = target; } else { IP = IP + 8; }
+    };
+
+    instruction JL = { 0100 0110, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        if (N != V) then { IP = target; } else { IP = IP + 8; }
+    };
+
+    instruction JLE = { 0100 0111, 11, 0000, 0000, 00 0000 0000 0000, imm32 as target } {
+        if ((N != V) || (Z == 1)) then { IP = target; } else { IP = IP + 8; }
+    };
+
+    /* ================================
+       I/O (hidden ports)
+       ================================ */
+
+    instruction IN = { 0101 0000, 11, reg as to, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        to = INP;
+        IP = IP + 8;
+    };
+
+    instruction OUT = { 0101 0001, 11, reg as from, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        OUTP = from;
+        IP = IP + 8;
+    };
+
+    /* ================================
+       MISC
+       ================================ */
+
+    instruction NOP = { 1111 1110, 11, 0000, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+        IP = IP + 8;
+    };
+
+    instruction HLT = { 1111 1111, 11, 0000, 0000, 00 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 } {
+    };
+
+mnemonics:
+    format plain1 is "{1}";
+    format plain2 is "{1}, {2}";
+    format plain3 is "{1}, {2}, {3}";
+
+    /* Size-aware mnemonics (variant-9 style): prefix b/w/d/q for sz8/sz16/sz32/sz64 */
+    mnemonic ADD for ADD(dst, src) "b {1}, {2}" when sz8,
+                 for ADD(dst, src) "w {1}, {2}" when sz16,
+                 for ADD(dst, src) "d {1}, {2}" when sz32,
+                 for ADD(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic SUB for SUB(dst, src) "b {1}, {2}" when sz8,
+                 for SUB(dst, src) "w {1}, {2}" when sz16,
+                 for SUB(dst, src) "d {1}, {2}" when sz32,
+                 for SUB(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic AND for AND(dst, src) "b {1}, {2}" when sz8,
+                 for AND(dst, src) "w {1}, {2}" when sz16,
+                 for AND(dst, src) "d {1}, {2}" when sz32,
+                 for AND(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic OR  for OR(dst, src)  "b {1}, {2}" when sz8,
+                 for OR(dst, src)  "w {1}, {2}" when sz16,
+                 for OR(dst, src)  "d {1}, {2}" when sz32,
+                 for OR(dst, src)  "q {1}, {2}" when sz64;
+
+    mnemonic XOR for XOR(dst, src) "b {1}, {2}" when sz8,
+                 for XOR(dst, src) "w {1}, {2}" when sz16,
+                 for XOR(dst, src) "d {1}, {2}" when sz32,
+                 for XOR(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic NOT for NOT(dst) "b {1}" when sz8,
+                 for NOT(dst) "w {1}" when sz16,
+                 for NOT(dst) "d {1}" when sz32,
+                 for NOT(dst) "q {1}" when sz64;
+
+    mnemonic NEG for NEG(dst) "b {1}" when sz8,
+                 for NEG(dst) "w {1}" when sz16,
+                 for NEG(dst) "d {1}" when sz32,
+                 for NEG(dst) "q {1}" when sz64;
+
+    mnemonic MUL for MUL(dst, src) "b {1}, {2}" when sz8,
+                 for MUL(dst, src) "w {1}, {2}" when sz16,
+                 for MUL(dst, src) "d {1}, {2}" when sz32,
+                 for MUL(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic DIV for DIV(dst, src) "b {1}, {2}" when sz8,
+                 for DIV(dst, src) "w {1}, {2}" when sz16,
+                 for DIV(dst, src) "d {1}, {2}" when sz32,
+                 for DIV(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic MOD for MOD(dst, src) "b {1}, {2}" when sz8,
+                 for MOD(dst, src) "w {1}, {2}" when sz16,
+                 for MOD(dst, src) "d {1}, {2}" when sz32,
+                 for MOD(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic SHL for SHL(dst, src) "b {1}, {2}" when sz8,
+                 for SHL(dst, src) "w {1}, {2}" when sz16,
+                 for SHL(dst, src) "d {1}, {2}" when sz32,
+                 for SHL(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic SHR for SHR(dst, src) "b {1}, {2}" when sz8,
+                 for SHR(dst, src) "w {1}, {2}" when sz16,
+                 for SHR(dst, src) "d {1}, {2}" when sz32,
+                 for SHR(dst, src) "q {1}, {2}" when sz64;
+
+    mnemonic CMP for CMP(op1, op2) "b {1}, {2}" when sz8,
+                 for CMP(op1, op2) "w {1}, {2}" when sz16,
+                 for CMP(op1, op2) "d {1}, {2}" when sz32,
+                 for CMP(op1, op2) "q {1}, {2}" when sz64;
+
+    mnemonic MOV for MOV(dst, src) plain2;
+    mnemonic LDI32 for LDI32(to, value) plain2;
+    mnemonic LDI_LO for LDI_LO(to, value) plain2;
+    mnemonic LDI_HI for LDI_HI(to, value) plain2;
+
+    mnemonic ADDI for ADDI(dst, value) "b {1}, {2}" when sz8,
+                 for ADDI(dst, value) "w {1}, {2}" when sz16,
+                 for ADDI(dst, value) "d {1}, {2}" when sz32,
+                 for ADDI(dst, value) "q {1}, {2}" when sz64;
+
+    mnemonic SUBI for SUBI(dst, value) "b {1}, {2}" when sz8,
+                 for SUBI(dst, value) "w {1}, {2}" when sz16,
+                 for SUBI(dst, value) "d {1}, {2}" when sz32,
+                 for SUBI(dst, value) "q {1}, {2}" when sz64;
+
+    mnemonic LD_DATA for LD_DATA(dst, addr) "b {1}, {2}" when sz8,
+                     for LD_DATA(dst, addr) "w {1}, {2}" when sz16,
+                     for LD_DATA(dst, addr) "d {1}, {2}" when sz32,
+                     for LD_DATA(dst, addr) "q {1}, {2}" when sz64;
+
+    mnemonic ST_DATA for ST_DATA(src, addr) "b {1}, {2}" when sz8,
+                     for ST_DATA(src, addr) "w {1}, {2}" when sz16,
+                     for ST_DATA(src, addr) "d {1}, {2}" when sz32,
+                     for ST_DATA(src, addr) "q {1}, {2}" when sz64;
+
+    mnemonic LD_PTR for LD_PTR(dst, base, off) "b {1}, [{2}, {3}]" when sz8,
+                    for LD_PTR(dst, base, off) "w {1}, [{2}, {3}]" when sz16,
+                    for LD_PTR(dst, base, off) "d {1}, [{2}, {3}]" when sz32,
+                    for LD_PTR(dst, base, off) "q {1}, [{2}, {3}]" when sz64;
+
+    mnemonic ST_PTR for ST_PTR(src, base, off) "b {1}, [{2}, {3}]" when sz8,
+                    for ST_PTR(src, base, off) "w {1}, [{2}, {3}]" when sz16,
+                    for ST_PTR(src, base, off) "d {1}, [{2}, {3}]" when sz32,
+                    for ST_PTR(src, base, off) "q {1}, [{2}, {3}]" when sz64;
+
+    mnemonic LD_STACK for LD_STACK(dst, base, off) "b {1}, stack[{2}, {3}]" when sz8,
+                      for LD_STACK(dst, base, off) "w {1}, stack[{2}, {3}]" when sz16,
+                      for LD_STACK(dst, base, off) "d {1}, stack[{2}, {3}]" when sz32,
+                      for LD_STACK(dst, base, off) "q {1}, stack[{2}, {3}]" when sz64;
+
+    mnemonic ST_STACK for ST_STACK(src, base, off) "b {1}, stack[{2}, {3}]" when sz8,
+                      for ST_STACK(src, base, off) "w {1}, stack[{2}, {3}]" when sz16,
+                      for ST_STACK(src, base, off) "d {1}, stack[{2}, {3}]" when sz32,
+                      for ST_STACK(src, base, off) "q {1}, stack[{2}, {3}]" when sz64;
+
+    mnemonic PUSHQ for PUSHQ(src) plain1;
+    mnemonic POPQ for POPQ(dst) plain1;
+    mnemonic CALL for CALL(target) plain1;
+    mnemonic RET for RET();
+    mnemonic PUSHF for PUSHF();
+    mnemonic POPF for POPF();
+
+    mnemonic JZ for JZ(target) plain1;
+    mnemonic JNZ for JNZ(target) plain1;
+    mnemonic JMP for JMP(target) plain1;
+
+    mnemonic JG for JG(target) plain1;
+    mnemonic JGE for JGE(target) plain1;
+    mnemonic JL for JL(target) plain1;
+    mnemonic JLE for JLE(target) plain1;
+
+    mnemonic IN for IN(to) plain1;
+    mnemonic OUT for OUT(from) plain1;
+
+    mnemonic NOP for NOP();
+    mnemonic HLT for HLT();
+}

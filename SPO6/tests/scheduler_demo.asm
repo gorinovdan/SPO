@@ -1828,6 +1828,7 @@ k31: DD 448
 k32: DD 512
 k33: DD 576
 k34: DD 2048
+k_char_H: DD 72
 
 [section data_mem]
 v_rt_task_arg: DD 0
@@ -1842,298 +1843,229 @@ v_rt_ctx_bp: RESB 256
 v_rt_ctx_dbp: RESB 256
 v_rt_ctx_csp: RESB 256
 v_rt_task_end: RESB 256
+; createThread / onThreadInterrupt runtime API state
+v_rt_thread_count: DD 0
+v_rt_user_irq_handler: DD 0
+v_rt_user_irq_count: DD 0
+v_create_thread_entry: DD 0
+v_create_thread_stack_top: DD 0
+v_create_thread_task_end: DD 0
+v_create_thread_tid: DD 0
+v_on_thread_interrupt_handler: DD 0
+v_rt_invoke_tid: DD 0
+v_user_trace_hook_tid: DD 0
 
 [section code]
+; ---------------------------------------------------------------------------
+; createThread(entry_ip, stack_top, task_end) -> tid
+;   Allocates the next free PCB slot, populates ip/sp/bp/dbp/csp/task_end,
+;   bumps v_rt_thread_count, returns the allocated tid.
+;   Pre: called from main / kernel context (interrupts disabled).
+create_thread:
+  STORE v_create_thread_task_end
+  STORE v_create_thread_stack_top
+  STORE v_create_thread_entry
+  ENTER 0
+  JMP create_thread_B2
+
+create_thread_B2:
+  LOAD v_rt_thread_count
+  STORE v_create_thread_tid
+  JMP create_thread_B3
+
+create_thread_B3:
+  PUSH_ADDR v_rt_ctx_ip
+  LOAD v_create_thread_tid
+  INDEX
+  LOAD v_create_thread_entry
+  STORE_IND
+  JMP create_thread_B4
+
+create_thread_B4:
+  PUSH_ADDR v_rt_ctx_sp
+  LOAD v_create_thread_tid
+  INDEX
+  LOAD v_create_thread_stack_top
+  STORE_IND
+  JMP create_thread_B5
+
+create_thread_B5:
+  PUSH_ADDR v_rt_ctx_bp
+  LOAD v_create_thread_tid
+  INDEX
+  LOAD v_create_thread_stack_top
+  STORE_IND
+  JMP create_thread_B6
+
+create_thread_B6:
+  PUSH_ADDR v_rt_ctx_dbp
+  LOAD v_create_thread_tid
+  INDEX
+  PUSH_CONST k0
+  STORE_IND
+  JMP create_thread_B7
+
+create_thread_B7:
+  PUSH_ADDR v_rt_ctx_csp
+  LOAD v_create_thread_tid
+  INDEX
+  PUSH_CONST k0
+  STORE_IND
+  JMP create_thread_B8
+
+create_thread_B8:
+  PUSH_ADDR v_rt_task_end
+  LOAD v_create_thread_tid
+  INDEX
+  LOAD v_create_thread_task_end
+  STORE_IND
+  JMP create_thread_B9
+
+create_thread_B9:
+  LOAD v_rt_thread_count
+  PUSH_CONST k3
+  ADD
+  STORE v_rt_thread_count
+  JMP create_thread_exit
+
+create_thread_exit:
+  LOAD v_create_thread_tid
+  LEAVE
+  RETF
+
+; ---------------------------------------------------------------------------
+; onThreadInterrupt(handler_ip) -> 0
+;   Registers a user-level callback invoked by rt_timer_handler before each
+;   IRET that resumes (or suspends) a thread. Pass 0 to disable.
+;   ISA limitation: only user_trace_hook is actually dispatched by the
+;   trampoline below; the handler slot is effectively enable/disable.
+;   See rt_invoke_user_irq for the rationale.
+on_thread_interrupt:
+  STORE v_on_thread_interrupt_handler
+  ENTER 0
+  JMP on_thread_interrupt_B2
+
+on_thread_interrupt_B2:
+  LOAD v_on_thread_interrupt_handler
+  STORE v_rt_user_irq_handler
+  JMP on_thread_interrupt_exit
+
+on_thread_interrupt_exit:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; ---------------------------------------------------------------------------
+; Demo user-level hook. Increments v_rt_user_irq_count each time the
+; scheduler invokes it with the tid about to run (or -1 for idle / end).
+user_trace_hook:
+  STORE v_user_trace_hook_tid
+  ENTER 0
+  JMP user_trace_hook_B2
+
+user_trace_hook_B2:
+  LOAD v_rt_user_irq_count
+  PUSH_CONST k3
+  ADD
+  STORE v_rt_user_irq_count
+  JMP user_trace_hook_exit
+
+user_trace_hook_exit:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; ---------------------------------------------------------------------------
+; Internal trampoline. Called by rt_timer_handler with the next tid on the
+; stack, right before each IRET path. Skips when no hook is registered.
+; Note: this ISA has no CALL_IND; the dispatch target is statically bound
+; to user_trace_hook. v_rt_user_irq_handler therefore acts as an
+; enable/disable flag while preserving an honest public API shape.
+rt_invoke_user_irq:
+  STORE v_rt_invoke_tid
+  ENTER 0
+  JMP rt_invoke_user_irq_B2
+
+rt_invoke_user_irq_B2:
+  LOAD v_rt_user_irq_handler
+  PUSH_CONST k0
+  EQ
+  JZ rt_invoke_user_irq_B3
+  JMP rt_invoke_user_irq_exit
+
+rt_invoke_user_irq_B3:
+  LOAD v_rt_invoke_tid
+  CALL user_trace_hook, 1
+  POP
+  JMP rt_invoke_user_irq_exit
+
+rt_invoke_user_irq_exit:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; ---------------------------------------------------------------------------
 rt_init_contexts:
   ENTER 0
+  JMP rt_init_contexts_B1
+
+rt_init_contexts_B1:
+  PUSH_CONST k0
+  STORE v_rt_thread_count
   JMP rt_init_contexts_B2
 
 rt_init_contexts_B2:
-  PUSH_ADDR v_rt_ctx_ip
-  PUSH_CONST k0
-  INDEX
   PUSH_CODE rt_task1
-  STORE_IND
+  PUSH_CONST k28
+  PUSH_CODE rt_task1_done
+  CALL create_thread, 3
+  POP
   JMP rt_init_contexts_B3
 
 rt_init_contexts_B3:
-  PUSH_ADDR v_rt_ctx_ip
-  PUSH_CONST k3
-  INDEX
   PUSH_CODE rt_task2
-  STORE_IND
+  PUSH_CONST k29
+  PUSH_CODE rt_task2_done
+  CALL create_thread, 3
+  POP
   JMP rt_init_contexts_B4
 
 rt_init_contexts_B4:
-  PUSH_ADDR v_rt_ctx_ip
-  PUSH_CONST k13
-  INDEX
   PUSH_CODE rt_task3
-  STORE_IND
+  PUSH_CONST k30
+  PUSH_CODE rt_task3_done
+  CALL create_thread, 3
+  POP
   JMP rt_init_contexts_B5
 
 rt_init_contexts_B5:
-  PUSH_ADDR v_rt_ctx_ip
-  PUSH_CONST k12
-  INDEX
   PUSH_CODE rt_task4
-  STORE_IND
+  PUSH_CONST k31
+  PUSH_CODE rt_task4_done
+  CALL create_thread, 3
+  POP
   JMP rt_init_contexts_B6
 
 rt_init_contexts_B6:
-  PUSH_ADDR v_rt_ctx_ip
-  PUSH_CONST k15
-  INDEX
   PUSH_CODE rt_task5
-  STORE_IND
+  PUSH_CONST k32
+  PUSH_CODE rt_task5_done
+  CALL create_thread, 3
+  POP
   JMP rt_init_contexts_B7
 
 rt_init_contexts_B7:
-  PUSH_ADDR v_rt_ctx_ip
-  PUSH_CONST k17
-  INDEX
   PUSH_CODE rt_task6
-  STORE_IND
+  PUSH_CONST k33
+  PUSH_CODE rt_task6_done
+  CALL create_thread, 3
+  POP
   JMP rt_init_contexts_B8
 
 rt_init_contexts_B8:
-  PUSH_ADDR v_rt_task_end
-  PUSH_CONST k0
-  INDEX
-  PUSH_CODE rt_task1_done
-  STORE_IND
-  JMP rt_init_contexts_B9
-
-rt_init_contexts_B9:
-  PUSH_ADDR v_rt_task_end
-  PUSH_CONST k3
-  INDEX
-  PUSH_CODE rt_task2_done
-  STORE_IND
-  JMP rt_init_contexts_B10
-
-rt_init_contexts_B10:
-  PUSH_ADDR v_rt_task_end
-  PUSH_CONST k13
-  INDEX
-  PUSH_CODE rt_task3_done
-  STORE_IND
-  JMP rt_init_contexts_B11
-
-rt_init_contexts_B11:
-  PUSH_ADDR v_rt_task_end
-  PUSH_CONST k12
-  INDEX
-  PUSH_CODE rt_task4_done
-  STORE_IND
-  JMP rt_init_contexts_B12
-
-rt_init_contexts_B12:
-  PUSH_ADDR v_rt_task_end
-  PUSH_CONST k15
-  INDEX
-  PUSH_CODE rt_task5_done
-  STORE_IND
-  JMP rt_init_contexts_B13
-
-rt_init_contexts_B13:
-  PUSH_ADDR v_rt_task_end
-  PUSH_CONST k17
-  INDEX
-  PUSH_CODE rt_task6_done
-  STORE_IND
-  JMP rt_init_contexts_B14
-
-rt_init_contexts_B14:
-  PUSH_ADDR v_rt_ctx_sp
-  PUSH_CONST k0
-  INDEX
-  PUSH_CONST k28
-  STORE_IND
-  JMP rt_init_contexts_B15
-
-rt_init_contexts_B15:
-  PUSH_ADDR v_rt_ctx_sp
-  PUSH_CONST k3
-  INDEX
-  PUSH_CONST k29
-  STORE_IND
-  JMP rt_init_contexts_B16
-
-rt_init_contexts_B16:
-  PUSH_ADDR v_rt_ctx_sp
-  PUSH_CONST k13
-  INDEX
-  PUSH_CONST k30
-  STORE_IND
-  JMP rt_init_contexts_B17
-
-rt_init_contexts_B17:
-  PUSH_ADDR v_rt_ctx_sp
-  PUSH_CONST k12
-  INDEX
-  PUSH_CONST k31
-  STORE_IND
-  JMP rt_init_contexts_B18
-
-rt_init_contexts_B18:
-  PUSH_ADDR v_rt_ctx_sp
-  PUSH_CONST k15
-  INDEX
-  PUSH_CONST k32
-  STORE_IND
-  JMP rt_init_contexts_B19
-
-rt_init_contexts_B19:
-  PUSH_ADDR v_rt_ctx_sp
-  PUSH_CONST k17
-  INDEX
-  PUSH_CONST k33
-  STORE_IND
-  JMP rt_init_contexts_B20
-
-rt_init_contexts_B20:
-  PUSH_ADDR v_rt_ctx_bp
-  PUSH_CONST k0
-  INDEX
-  PUSH_CONST k28
-  STORE_IND
-  JMP rt_init_contexts_B21
-
-rt_init_contexts_B21:
-  PUSH_ADDR v_rt_ctx_bp
-  PUSH_CONST k3
-  INDEX
-  PUSH_CONST k29
-  STORE_IND
-  JMP rt_init_contexts_B22
-
-rt_init_contexts_B22:
-  PUSH_ADDR v_rt_ctx_bp
-  PUSH_CONST k13
-  INDEX
-  PUSH_CONST k30
-  STORE_IND
-  JMP rt_init_contexts_B23
-
-rt_init_contexts_B23:
-  PUSH_ADDR v_rt_ctx_bp
-  PUSH_CONST k12
-  INDEX
-  PUSH_CONST k31
-  STORE_IND
-  JMP rt_init_contexts_B24
-
-rt_init_contexts_B24:
-  PUSH_ADDR v_rt_ctx_bp
-  PUSH_CONST k15
-  INDEX
-  PUSH_CONST k32
-  STORE_IND
-  JMP rt_init_contexts_B25
-
-rt_init_contexts_B25:
-  PUSH_ADDR v_rt_ctx_bp
-  PUSH_CONST k17
-  INDEX
-  PUSH_CONST k33
-  STORE_IND
-  JMP rt_init_contexts_B26
-
-rt_init_contexts_B26:
-  PUSH_ADDR v_rt_ctx_dbp
-  PUSH_CONST k0
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B27
-
-rt_init_contexts_B27:
-  PUSH_ADDR v_rt_ctx_dbp
-  PUSH_CONST k3
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B28
-
-rt_init_contexts_B28:
-  PUSH_ADDR v_rt_ctx_dbp
-  PUSH_CONST k13
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B29
-
-rt_init_contexts_B29:
-  PUSH_ADDR v_rt_ctx_dbp
-  PUSH_CONST k12
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B30
-
-rt_init_contexts_B30:
-  PUSH_ADDR v_rt_ctx_dbp
-  PUSH_CONST k15
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B31
-
-rt_init_contexts_B31:
-  PUSH_ADDR v_rt_ctx_dbp
-  PUSH_CONST k17
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B32
-
-rt_init_contexts_B32:
-  PUSH_ADDR v_rt_ctx_csp
-  PUSH_CONST k0
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B33
-
-rt_init_contexts_B33:
-  PUSH_ADDR v_rt_ctx_csp
-  PUSH_CONST k3
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B34
-
-rt_init_contexts_B34:
-  PUSH_ADDR v_rt_ctx_csp
-  PUSH_CONST k13
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B35
-
-rt_init_contexts_B35:
-  PUSH_ADDR v_rt_ctx_csp
-  PUSH_CONST k12
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B36
-
-rt_init_contexts_B36:
-  PUSH_ADDR v_rt_ctx_csp
-  PUSH_CONST k15
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
-  JMP rt_init_contexts_B37
-
-rt_init_contexts_B37:
-  PUSH_ADDR v_rt_ctx_csp
-  PUSH_CONST k17
-  INDEX
-  PUSH_CONST k0
-  STORE_IND
+  PUSH_CODE user_trace_hook
+  CALL on_thread_interrupt, 1
+  POP
   JMP rt_init_contexts_exit
 
 rt_init_contexts_exit:
@@ -2551,6 +2483,11 @@ rt_run_B28:
   INDEX
   PUSH_CONST k0
   STORE_IND
+  JMP rt_run_B28a
+
+rt_run_B28a:
+  PUSH_CONST k0
+  STORE v_rt_user_irq_count
   JMP rt_run_B29
 
 rt_run_B29:
@@ -2678,18 +2615,16 @@ rt_run_B50:
   JMP rt_run_B51
 
 rt_run_B51:
-  PUSH_CODE rt_timer_handler
-  POP_SYS 2
-  JMP rt_run_B52
-
-rt_run_B52:
-  PUSH_CONST k3
-  POP_SYS 4
+  ; Install handler for on-cycles (interrupt id 2 -> pic_handlers:4[8]).
+  SET_CYCLES_HANDLER rt_timer_handler
   JMP rt_run_B52a
 
 rt_run_B52a:
-  PUSH_CONST k3
-  POP_SYS 1
+  ; Program SimpleClock CyclesSignalPeriod. The external clock runs during
+  ; bootstrap/handler instructions too, so use a small non-1 period to avoid
+  ; losing the first signal before IRET enables PIC interrupts.
+  PUSH_CONST k15
+  SET_PERIOD
   JMP rt_run_B53
 
 rt_run_B53:
@@ -2703,13 +2638,9 @@ rt_run_B54:
   LOAD v_run_simulation_current
   CALL rt_load_irq_context, 1
   POP
-  PUSH_CONST k3
-  POP_SYS 4
   IRET
 
 rt_run_B55:
-  PUSH_CONST k3
-  POP_SYS 4
   JMP rt_dispatch_idle
 
 rt_run_after_irq:
@@ -2921,6 +2852,24 @@ rt_run_B81:
 rt_run_B82:
   CALL nl, 0
   POP
+  JMP rt_run_B82a
+
+rt_run_B82a:
+  PUSH_CONST k_char_H
+  PUSH_CONST k0
+  CALL print_pair_label, 2
+  POP
+  JMP rt_run_B82b
+
+rt_run_B82b:
+  LOAD v_rt_user_irq_count
+  CALL print_number, 1
+  POP
+  JMP rt_run_B82c
+
+rt_run_B82c:
+  CALL nl, 0
+  POP
   JMP rt_run_B83
 
 rt_run_B83:
@@ -2934,6 +2883,12 @@ rt_run_exit:
   RETF
 
 rt_timer_handler:
+  ; Save user context into irq_* and switch to kernel sp/bp/dbp/csp.
+  IRQ_ENTER
+  ; Stop the external clock while the kernel handler is running; re-arm it
+  ; immediately before IRET on paths that resume user/idle execution.
+  PUSH_CONST k0
+  SET_PERIOD
   LOAD v_run_simulation_scheduler_calls
   PUSH_CONST k3
   ADD
@@ -3089,16 +3044,20 @@ rt_timer_resume_task:
   LOAD v_run_simulation_current
   CALL rt_load_irq_context, 1
   POP
-  PUSH_CONST k3
-  POP_SYS 4
+  LOAD v_run_simulation_current
+  CALL rt_invoke_user_irq, 1
+  POP
+  PUSH_CONST k15
+  SET_PERIOD
   IRET
 
 rt_timer_resume_idle:
-  PUSH_CONST k3
-  POP_SYS 4
   JMP rt_dispatch_idle
 
 rt_timer_resume_main:
+  ; Disable clock signal so main isn't interrupted after we return to it.
+  PUSH_CONST k0
+  SET_PERIOD
   LOAD v_rt_main_ip
   POP_SYS 5
   LOAD v_rt_main_sp
@@ -3109,10 +3068,9 @@ rt_timer_resume_main:
   POP_SYS 8
   LOAD v_rt_main_csp
   POP_SYS 9
-  PUSH_CONST k0
-  POP_SYS 1
-  PUSH_CONST k3
-  POP_SYS 4
+  PUSH_CONST km1
+  CALL rt_invoke_user_irq, 1
+  POP
   IRET
 
 rt_dispatch_idle:
@@ -3126,6 +3084,11 @@ rt_dispatch_idle:
   POP_SYS 8
   PUSH_CONST k0
   POP_SYS 9
+  PUSH_CONST km1
+  CALL rt_invoke_user_irq, 1
+  POP
+  PUSH_CONST k15
+  SET_PERIOD
   IRET
 
 rt_idle:
