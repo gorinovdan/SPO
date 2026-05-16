@@ -1,3 +1,5 @@
+.PHONY: build asm remote-demo remote-unsupported remote-interactive remote-tasks local-demo local-unsupported probe-timer clean
+
 build:
 	cd ./ast && flex -l ./lexer.l
 	cd ./ast && bison -dv ./parser.y
@@ -15,6 +17,12 @@ remote-demo: asm
 remote-unsupported: asm
 	./tools/run_remote.sh ./results/btrfs_unsupported.asm ../tools/vm_input.txt exec ./results/btrfs_unsupported.ptptb ./results/btrfs_unsupported.stdout.txt ./results/btrfs_unsupported.trace.txt
 	python3 ./tools/check_btrfs_unsupported.py ./results/btrfs_unsupported.stdout.txt
+
+remote-interactive: asm
+	./tools/run_remote_interactive.sh ./results/btrfs_ftp_demo.asm ./results/btrfs_ftp_demo.ptptb
+
+remote-tasks:
+	./tools/run_remote_interactive.sh --list
 
 local-demo:
 	python3 ./tools/asm.py -s ./vm/spec.json -i ./tests/btrfs_ftp_demo.asm -o ./results/btrfs_ftp_demo.local.ptptb

@@ -41,6 +41,18 @@ make -C SPO8 remote-demo
 make -C SPO8 remote-unsupported
 ```
 
+Интерактивный запуск через RemoteTasks:
+
+```bash
+make -C SPO8 remote-interactive
+```
+
+Цель запускает `ExecuteBinaryWithInteractiveInput`: после баннера можно вручную вводить `PWD`, `LIST`, `CWD docs`, `RETR info.txt`, `QUIT`. В начале запуска дополнительно печатается свежая запись RemoteTasks с `id` задачи; из другого терминала её можно обновить командой:
+
+```bash
+make -C SPO8 remote-tasks
+```
+
 Ожидаемый вывод основного сценария — см. [results/btrfs_ftp_demo.stdout.txt](results/btrfs_ftp_demo.stdout.txt).
 
 ## Как читается образ
