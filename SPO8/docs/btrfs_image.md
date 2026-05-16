@@ -2,7 +2,7 @@
 
 Тестовый образ хранится в [tests/btrfs_ftp_demo.asm](../tests/btrfs_ftp_demo.asm) в секции `data_mem` и инспектируется VM-программой через байтовые операции `INDEXB / LOADB_IND / STOREB_IND` (расширения [spo8.target.pdsl](../spo8.target.pdsl)).
 
-Образ сделан компактным, но не сценарным: команды `LIST`, `CWD` и `RETR` сканируют записи FS-tree leaf, а не выбирают заранее прошитые ответы. Источник: [Btrfs On-disk Format](https://btrfs.wiki.kernel.org/index.php/On-disk_Format), [Btrfs Data Structures](https://btrfs.wiki.kernel.org/index.php/Data_Structures).
+Образ сделан компактным, но не сценарным: команды `LIST`, `CWD`, `RETR` и `COPY` сканируют записи FS-tree leaf, а не выбирают заранее прошитые ответы. Источник: [Btrfs On-disk Format](https://btrfs.wiki.kernel.org/index.php/On-disk_Format), [Btrfs Data Structures](https://btrfs.wiki.kernel.org/index.php/Data_Structures).
 
 ## Реальный Btrfs vs тестовый образ
 
@@ -89,6 +89,7 @@ inode 262: /pictures/notes.txt size=17 inline (DIR_ITEM из pictures, EXTENT_DA
 | `LIST` | обход `DIR_ITEM` текущего каталога | source → formatter → sink |
 | `CWD` | смена `v_current_dir` через resolve `DIR_ITEM` | lookup |
 | `RETR` | обход `DIR_ITEM` → `INODE_ITEM` → `EXTENT_DATA` | source → sink |
+| `COPY` | файл копируется как `RETR`, каталог обходится очередью inode по `DIR_ITEM` | recursive source → sink |
 | `SYST` | служебная FTP-команда (215) | sink |
 | `NOOP` | служебная FTP-команда (200) | sink |
 | `HELP` | список поддерживаемых команд (214) | sink |

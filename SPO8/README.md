@@ -5,7 +5,7 @@
 ## Что реализовано
 
 - [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm) — VM-программа: держит тестовый Btrfs-образ в `data_mem`, проверяет superblock, обходит FS tree, отдаёт ответы по FTP.
-- Команды PASSIVE FTP: `SYST`, `NOOP`, `HELP`, `PASV`, `TYPE`, `PWD`, `LIST`, `CWD`, `RETR`, `QUIT`.
+- Команды PASSIVE FTP: `SYST`, `NOOP`, `HELP`, `PASV`, `TYPE`, `PWD`, `LIST`, `CWD`, `RETR`, `COPY`, `QUIT`.
 - Каталоги/файлы извлекаются из Btrfs-структур: superblock magic, root tree/FS tree references, compact FS-tree leaf с `DIR_ITEM`, `INODE_ITEM` и inline `EXTENT_DATA`.
 - Вывод идёт через единый sink `stream_write_byte` — та же модель `synchronous non-blocking + GROUP-WAIT`, что и в [SPO7](../SPO7/README.md).
 - Негативный путь «FS не поддерживается» — отдельный тест [tests/btrfs_unsupported.asm](tests/btrfs_unsupported.asm).
@@ -47,7 +47,7 @@ make -C SPO8 remote-unsupported
 make -C SPO8 remote-interactive
 ```
 
-Цель запускает `ExecuteBinaryWithInteractiveInput`: после баннера можно вручную вводить `PWD`, `LIST`, `CWD docs`, `RETR info.txt`, `QUIT`. В начале запуска дополнительно печатается свежая запись RemoteTasks с `id` задачи; из другого терминала её можно обновить командой:
+Цель запускает `ExecuteBinaryWithInteractiveInput`: после баннера можно вручную вводить `PWD`, `LIST`, `CWD docs`, `RETR info.txt`, `COPY docs`, `QUIT`. В начале запуска дополнительно печатается свежая запись RemoteTasks с `id` задачи; из другого терминала её можно обновить командой:
 
 ```bash
 make -C SPO8 remote-tasks

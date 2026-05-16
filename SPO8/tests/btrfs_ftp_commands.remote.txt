@@ -12,11 +12,13 @@ RETR info.txt
 RETR help.txt
 CWD ..
 PWD
+COPY docs
 CWD pictures
 LIST
 RETR notes.txt
 CWD /
 RETR readme.txt
+COPY readme.txt
 RETR missing.txt
 CWD ghost
 QUIT

@@ -15,7 +15,7 @@ RT_HOST="${RT_HOST:-5.19.208.160}"
 RT_PORT="${RT_PORT:-10001}"
 RT_REMOTE_FLAGS="${RT_REMOTE_FLAGS:--sh $RT_HOST -sp $RT_PORT -okssl}"
 RT_TASK_LIST_RANGE="${RT_TASK_LIST_RANGE:-0..5}"
-RT_TASK_ID_DELAY="${RT_TASK_ID_DELAY:-2}"
+RT_TASK_ID_DELAY="${RT_TASK_ID_DELAY:-3}"
 export Portable_RemoteTasks_Manager_Login="$LOGIN"
 export Portable_RemoteTasks_Manager_Password="$PASSWORD"
 
@@ -121,7 +121,7 @@ echo "assemble=$ASM_ID" >&2
 echo "binary=$BIN_FILE" >&2
 echo "RemoteTasks interactive task will be listed below after startup." >&2
 echo "Wait for 'RemoteTasks task entry' if you need to show the task id." >&2
-echo "Then type FTP commands: PWD, LIST, CWD docs, RETR info.txt, QUIT." >&2
+echo "Then type FTP commands: PWD, LIST, CWD docs, RETR info.txt, COPY docs, QUIT." >&2
 echo >&2
 
 (

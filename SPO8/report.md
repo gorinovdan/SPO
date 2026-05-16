@@ -63,7 +63,7 @@ Btrfs хранит метаданные в copy-on-write B+-деревьях. Д
 - обход `DIR_ITEM` для каталогов;
 - чтение размера и типа из `INODE_ITEM`;
 - чтение inline `EXTENT_DATA`;
-- FTP-подобный интерфейс для `LIST`, `CWD`, `PWD`, `RETR`.
+- FTP-подобный интерфейс для `LIST`, `CWD`, `PWD`, `RETR`, `COPY`.
 
 Не реализовано, потому что не требуется для подготовленного inline-образа:
 
@@ -124,7 +124,7 @@ main
   -> ftp_loop
        -> read_line
        -> dispatch_command
-            -> cmd_list / cmd_cwd / cmd_retr / emit_pwd
+            -> cmd_list / cmd_cwd / cmd_retr / cmd_copy / emit_pwd
                  -> fs_find_dirent_by_arg
                  -> fs_load_inode_size
                  -> fs_find_extent_data
@@ -147,7 +147,7 @@ main
 
 `dispatch_command` вызывает `compute_arg_offset`, затем проверяет командные токены через `cmd_starts_with`. Сравнение идёт по полному имени команды и границе токена, поэтому случайные префиксы не распознаются как валидные команды.
 
-`arg_eq` сравнивает аргумент после команды с именем каталога или файла. Это используется в `CWD` и `RETR`.
+`arg_eq` сравнивает аргумент после команды с именем каталога или файла. Это используется в `CWD`, `RETR` и `COPY`.
 
 ### 5.3. LIST
 
@@ -199,6 +199,25 @@ for i in 0..img_dirent_count-1:
 
 `fs_find_extent_data` дополнительно проверяет `extent_type == 0`. В этой работе `0` означает inline extent: данные лежат прямо в leaf FS tree. Например, `RETR info.txt` находит inode `259`, получает размер `19`, находит data id для строки `BTRFS TREE WALK OK\n` и отдаёт эти байты через stream sink.
 
+### 5.6. COPY
+
+`cmd_copy` добавлен как явная команда копирования файла или каталога. Для обычного файла команда выполняет тот же путь извлечения, что и `RETR`: `DIR_ITEM -> INODE_ITEM -> EXTENT_DATA -> stream`.
+
+Для каталога `COPY` запускает обход дерева каталогов через очередь inode:
+
+```text
+queue = [target_dir_inode]
+while queue is not empty:
+    dir = pop(queue)
+    for each DIR_ITEM where parent == dir:
+        if type == file:
+            copy file by inode
+        if type == directory:
+            push child directory inode
+```
+
+Например, `COPY docs` копирует оба inline-файла каталога `docs`: `info.txt` и `help.txt`. `COPY readme.txt` показывает путь копирования одного файла отдельной командой, а не только стандартным FTP `RETR`.
+
 ## 6. Stream-модель SPO7
 
 Внутри FTP/Btrfs-логики нет прямой записи результата мимо sink. Все строки, числа, листинги и payload проходят через `stream_write_byte`.
@@ -215,15 +234,15 @@ for i in 0..img_dirent_count-1:
 Итоговая статистика:
 
 ```text
-STATS cmd=22 lookup=13 stream=1166 gw=167
+STATS cmd=24 lookup=15 stream=1518 gw=218
 ```
 
 Смысл:
 
-- `cmd=22` — обработано 22 FTP-команды;
-- `lookup=13` — выполнено 13 операций обращения к FS tree (`LIST`, `CWD`, `RETR`);
-- `stream=1166` — 1166 байт прошли через `stream_write_byte`;
-- `gw=167` — 167 passive `GROUP-WAIT` событий.
+- `cmd=24` — обработано 24 FTP-команды;
+- `lookup=15` — выполнено 15 операций обращения к FS tree (`LIST`, `CWD`, `RETR`, `COPY`);
+- `stream=1518` — 1518 байт прошли через `stream_write_byte`;
+- `gw=218` — 218 passive `GROUP-WAIT` событий.
 
 ## 7. PASSIVE FTP-интерфейс
 
@@ -247,11 +266,12 @@ STATS cmd=22 lookup=13 stream=1166 gw=167
 | `LIST`   | список имён и атрибутов             |
 | `CWD`    | смена каталога                      |
 | `RETR`   | извлечение файла                    |
+| `COPY`   | копирование файла или каталога      |
 | `QUIT`   | завершение и статистика             |
 
-Копирование директории в FTP обычно строится из `LIST`, `CWD` и последовательных `RETR` файлов. Поэтому отдельной recursive-команды нет, но необходимые операции для клиентского обхода каталога реализованы.
+Копирование директории в FTP обычно строится из `LIST`, `CWD` и последовательных `RETR` файлов. Чтобы закрыть формулировку задания буквально, дополнительно реализована команда `COPY`: для файла она работает как явный вариант `RETR`, для каталога рекурсивно обходит `DIR_ITEM` и копирует найденные обычные файлы.
 
-Основной сценарий покрывает корень, подкаталоги `docs` и `pictures`, успешные `RETR`, ошибочные `RETR missing.txt` и `CWD ghost`. Для локальной VM он хранится в [tests/btrfs_ftp_commands.txt](tests/btrfs_ftp_commands.txt) как ASCII-коды по одному числу на строку, для RemoteTasks — в [tests/btrfs_ftp_commands.remote.txt](tests/btrfs_ftp_commands.remote.txt) обычным текстом.
+Основной сценарий покрывает корень, подкаталоги `docs` и `pictures`, успешные `RETR`, `COPY docs`, `COPY readme.txt`, ошибочные `RETR missing.txt` и `CWD ghost`. Для локальной VM он хранится в [tests/btrfs_ftp_commands.txt](tests/btrfs_ftp_commands.txt) как ASCII-коды по одному числу на строку, для RemoteTasks — в [tests/btrfs_ftp_commands.remote.txt](tests/btrfs_ftp_commands.remote.txt) обычным текстом.
 
 ## 8. Проверка корректности
 
@@ -278,4 +298,18 @@ make -C SPO8 remote-unsupported
 
 ## 9. Вывод
 
-Реализация закрывает общий алгоритм задания: сначала проверяется поддержка Btrfs, затем запускается FTP-диалог с `LIST`, `RETR`, `PWD`, `CWD`. Извлечение данных выполняется через сканирование компактных Btrfs-подобных `DIR_ITEM`, `INODE_ITEM` и `EXTENT_DATA` структур в памяти VM. Вывод построен на stream-модели SPO7 и проверяется локально и через RemoteTasks без подмены ожидаемым stdout.
+Реализация закрывает общий алгоритм задания: сначала проверяется поддержка Btrfs, затем запускается FTP-диалог с `LIST`, `RETR`, `COPY`, `PWD`, `CWD`. Извлечение данных выполняется через сканирование компактных Btrfs-подобных `DIR_ITEM`, `INODE_ITEM` и `EXTENT_DATA` структур в памяти VM. Вывод построен на stream-модели SPO7 и проверяется локально и через RemoteTasks без подмены ожидаемым stdout.
+
+## 10. Пример
+```bash
+PWD
+LIST
+RETR readme.txt
+COPY docs
+CWD pictures
+LIST
+RETR notes.txt
+CWD /
+COPY /
+QUIT
+```

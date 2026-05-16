@@ -9,7 +9,7 @@
 ;   2) ftp_loop читает команды из byte stream stdin (port 0)
 ;      и обрабатывает их через dispatch_command — пункт 2:
 ;      диалоговый режим в стиле PASSIVE FTP.
-;   3) Команды LIST/RETR/CWD/PWD реализуют требования 2a/2b/2c.
+;   3) Команды LIST/RETR/COPY/CWD/PWD реализуют требования 2a/2b/2c.
 ;      Дополнительно поддержаны PASV, SYST, NOOP, HELP, TYPE и QUIT,
 ;      чтобы FTP-сценарий выглядел естественно.
 ; =====================================================================
@@ -24,6 +24,7 @@ k4:   DD 4
 k5:   DD 5
 k6:   DD 6
 k7:   DD 7        ; v_stream_window: каждые 7 байт фиксируем passive wait
+k8:   DD 8        ; размер очереди каталогов для COPY
 k10:  DD 10       ; \n
 k13:  DD 13       ; \r
 k32:  DD 32       ; ' ' — разделитель между командой и аргументом
@@ -103,6 +104,20 @@ v_found_size:    DD 0
 v_found_type:    DD 0
 v_found_data_id: DD 0
 v_name_id:       DD 0
+
+; Состояние COPY: очередь каталогов для рекурсивного обхода DIR_ITEM.
+v_copy_target: DD 0
+v_copy_dir:    DD 0
+v_copy_head:   DD 0
+v_copy_tail:   DD 0
+v_copy_queue:  DD 0
+v_copy_queue_1: DD 0
+v_copy_queue_2: DD 0
+v_copy_queue_3: DD 0
+v_copy_queue_4: DD 0
+v_copy_queue_5: DD 0
+v_copy_queue_6: DD 0
+v_copy_queue_7: DD 0
 
 ; ---------------------------------------------------------------------
 ; Раздел 3. Буферы.
@@ -274,6 +289,8 @@ m_cwd:    DB "CWD"
 m_cwd_z:  DB 0
 m_retr:   DB "RETR"
 m_retr_z: DB 0
+m_copy:   DB "COPY"
+m_copy_z: DB 0
 m_quit:   DB "QUIT"
 m_quit_z: DB 0
 m_syst:   DB "SYST"
@@ -361,6 +378,14 @@ s_size_z:    DB 0
 s_extent:    DB " extent=inline"
 s_extent_lf: DB 10
 s_extent_z:  DB 0
+s_150_copy_dir: DB "150 recursive directory copy follows"
+s_150_copy_dir_lf: DB 10
+s_150_copy_dir_z: DB 0
+s_copy_file: DB "COPY file "
+s_copy_file_z: DB 0
+s_226_copy: DB "226 copy complete"
+s_226_copy_lf: DB 10
+s_226_copy_z: DB 0
 s_215:       DB "215 UNIX Type: L8"
 s_215_lf:    DB 10
 s_215_z:     DB 0
@@ -373,7 +398,7 @@ s_200_type_z: DB 0
 s_help_1:    DB "214-Supported commands:"
 s_help_1_lf: DB 10
 s_help_1_z:  DB 0
-s_help_2:    DB "214 PASV PWD LIST CWD RETR SYST NOOP HELP TYPE QUIT"
+s_help_2:    DB "214 PASV PWD LIST CWD RETR COPY SYST NOOP HELP TYPE QUIT"
 s_help_2_lf: DB 10
 s_help_2_z:  DB 0
 s_221:       DB "221 bye"
@@ -689,8 +714,19 @@ dispatch_check_retr:
   PUSH_ADDR m_retr
   PUSH_CONST k4
   CALL cmd_starts_with, 2
-  JZ dispatch_check_syst
+  JZ dispatch_check_copy
   CALL cmd_retr, 0
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_copy:
+  PUSH_ADDR m_copy
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_syst
+  CALL cmd_copy, 0
   POP
   PUSH_CONST k1
   LEAVE
@@ -1300,6 +1336,252 @@ emit_file:
   PUSH_ADDR s_226
   CALL emit_ztext, 1
   POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; cmd_copy — явная команда копирования файла или каталога.
+; Файл копируется как RETR. Каталог обходится рекурсивно через очередь
+; inode каталогов: DIR_ITEM -> INODE_ITEM -> EXTENT_DATA.
+; Аргументы: "/", ".", ".." или имя элемента текущей директории.
+; =====================================================================
+cmd_copy:
+  ENTER 0
+  LOAD v_lookup_count
+  PUSH_CONST k1
+  ADD
+  STORE v_lookup_count
+
+  ; COPY без аргумента не имеет смысла.
+  LOAD v_arg_off
+  PUSH_CONST k0
+  EQ
+  JZ cmd_copy_check_root
+  JMP cmd_copy_missing
+
+cmd_copy_check_root:
+  PUSH_ADDR p_root
+  CALL arg_eq, 1
+  JZ cmd_copy_check_dot
+  LOAD img_root_inode
+  STORE v_copy_target
+  PUSH_CONST k_btrfs_ft_dir
+  STORE v_found_type
+  JMP cmd_copy_dispatch
+
+cmd_copy_check_dot:
+  PUSH_ADDR p_dot
+  CALL arg_eq, 1
+  JZ cmd_copy_check_dotdot
+  LOAD v_current_dir
+  STORE v_copy_target
+  PUSH_CONST k_btrfs_ft_dir
+  STORE v_found_type
+  JMP cmd_copy_dispatch
+
+cmd_copy_check_dotdot:
+  PUSH_ADDR p_dotdot
+  CALL arg_eq, 1
+  JZ cmd_copy_lookup
+  CALL fs_parent_of_current, 0
+  STORE v_copy_target
+  PUSH_CONST k_btrfs_ft_dir
+  STORE v_found_type
+  JMP cmd_copy_dispatch
+
+cmd_copy_lookup:
+  CALL fs_find_dirent_by_arg, 0
+  JZ cmd_copy_missing
+  LOAD v_found_inode
+  STORE v_copy_target
+
+cmd_copy_dispatch:
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_reg
+  EQ
+  JZ cmd_copy_check_dir
+  LOAD v_copy_target
+  CALL copy_emit_inode_file, 1
+  JZ cmd_copy_missing
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+cmd_copy_check_dir:
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_dir
+  EQ
+  JZ cmd_copy_missing
+  LOAD v_copy_target
+  CALL copy_dir_tree, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+cmd_copy_missing:
+  PUSH_ADDR s_550
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; copy_dir_tree(root_inode) — рекурсивно копирует все обычные файлы
+; внутри каталога root_inode. Подкаталоги добавляются в очередь.
+; =====================================================================
+copy_dir_tree:
+  STORE v_copy_target
+  ENTER 0
+  PUSH_ADDR s_150_copy_dir
+  CALL emit_ztext, 1
+  POP
+
+  PUSH_CONST k0
+  STORE v_copy_head
+  PUSH_CONST k0
+  STORE v_copy_tail
+
+  ; queue[tail++] = root_inode
+  PUSH_ADDR v_copy_queue
+  LOAD v_copy_tail
+  INDEX
+  LOAD v_copy_target
+  STORE_IND
+  LOAD v_copy_tail
+  PUSH_CONST k1
+  ADD
+  STORE v_copy_tail
+
+copy_dir_queue_loop:
+  LOAD v_copy_head
+  LOAD v_copy_tail
+  LT
+  JZ copy_dir_done
+
+  PUSH_ADDR v_copy_queue
+  LOAD v_copy_head
+  INDEX
+  LOAD_IND
+  STORE v_copy_dir
+  LOAD v_copy_head
+  PUSH_CONST k1
+  ADD
+  STORE v_copy_head
+
+  PUSH_CONST k0
+  STORE v_scan_i
+
+copy_dir_scan_loop:
+  LOAD v_scan_i
+  LOAD img_dirent_count
+  LT
+  JZ copy_dir_queue_loop
+
+  PUSH_ADDR img_dirent_parent
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  LOAD v_copy_dir
+  EQ
+  JZ copy_dir_next
+
+  PUSH_ADDR img_dirent_inode
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  STORE v_file_inode
+
+  PUSH_ADDR img_dirent_type
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  STORE v_found_type
+
+  PUSH_ADDR img_dirent_name_id
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  STORE v_name_id
+
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_reg
+  EQ
+  JZ copy_dir_check_subdir
+
+  PUSH_ADDR s_copy_file
+  CALL emit_ztext, 1
+  POP
+  LOAD v_name_id
+  CALL emit_name_by_id, 1
+  POP
+  PUSH_ADDR s_newline
+  CALL emit_ztext, 1
+  POP
+  LOAD v_file_inode
+  CALL copy_emit_inode_file, 1
+  POP
+  JMP copy_dir_next
+
+copy_dir_check_subdir:
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_dir
+  EQ
+  JZ copy_dir_next
+  LOAD v_copy_tail
+  PUSH_CONST k8
+  LT
+  JZ copy_dir_next
+  PUSH_ADDR v_copy_queue
+  LOAD v_copy_tail
+  INDEX
+  LOAD v_file_inode
+  STORE_IND
+  LOAD v_copy_tail
+  PUSH_CONST k1
+  ADD
+  STORE v_copy_tail
+
+copy_dir_next:
+  LOAD v_scan_i
+  PUSH_CONST k1
+  ADD
+  STORE v_scan_i
+  JMP copy_dir_scan_loop
+
+copy_dir_done:
+  PUSH_ADDR s_226_copy
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; copy_emit_inode_file(inode) — копирует обычный файл по inode.
+; Возвращает 1, если inline extent найден, иначе 0.
+; =====================================================================
+copy_emit_inode_file:
+  STORE v_file_inode
+  ENTER 0
+  LOAD v_file_inode
+  CALL fs_load_inode_size, 1
+  STORE v_file_size
+  LOAD v_file_inode
+  CALL fs_find_extent_data, 1
+  JZ copy_emit_inode_file_missing
+  LOAD v_file_inode
+  LOAD v_file_size
+  LOAD v_found_data_id
+  CALL emit_file, 3
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+copy_emit_inode_file_missing:
   PUSH_CONST k0
   LEAVE
   RETF

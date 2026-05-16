@@ -13,7 +13,7 @@ FS OK magic=_BHRfS_M root_dir=6 nodesize=4096
 200 NOOP ok
 > HELP
 214-Supported commands:
-214 PASV PWD LIST CWD RETR SYST NOOP HELP TYPE QUIT
+214 PASV PWD LIST CWD RETR COPY SYST NOOP HELP TYPE QUIT
 > PASV
 227 Entering Passive Mode (0,0,0,0,0,1)
 > TYPE I
@@ -47,6 +47,17 @@ RETR works.
 250 CWD ok
 > PWD
 257 "/"
+> COPY docs
+150 recursive directory copy follows
+COPY file info.txt
+150 inode=259 size=19 extent=inline
+BTRFS TREE WALK OK
+226 transfer complete
+COPY file help.txt
+150 inode=261 size=12 extent=inline
+RETR works.
+226 transfer complete
+226 copy complete
 > CWD pictures
 250 CWD ok
 > LIST
@@ -63,6 +74,10 @@ subtree readable
 150 inode=257 size=19 extent=inline
 Hello from SPO8 FS
 226 transfer complete
+> COPY readme.txt
+150 inode=257 size=19 extent=inline
+Hello from SPO8 FS
+226 transfer complete
 > RETR missing.txt
 550 not found
 > CWD ghost
@@ -71,7 +86,7 @@ Hello from SPO8 FS
 221 bye
 """
 
-EXPECTED = EXPECTED_PREFIX + """STATS cmd=22 lookup=13 stream=1166 gw=167
+EXPECTED = EXPECTED_PREFIX + """STATS cmd=24 lookup=15 stream=1518 gw=218
 OK
 """
 
@@ -95,7 +110,7 @@ def main() -> int:
         return 1
 
     stats = actual[len(EXPECTED_PREFIX):]
-    match = re.fullmatch(r"STATS cmd=22 lookup=13 stream=(\d+) gw=(\d+)\nOK\n", stats)
+    match = re.fullmatch(r"STATS cmd=24 lookup=15 stream=(\d+) gw=(\d+)\nOK\n", stats)
     if not match:
         print("Btrfs FTP stats mismatch", file=sys.stderr)
         print("--- actual stats ---", file=sys.stderr)
