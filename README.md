@@ -10,3 +10,5 @@
 - Лабораторная 3 (SPO3): [README](SPO3/README.md) | Отчёт (PDF): [SPO3/report-SPO3/report.pdf](SPO3/report-SPO3/report.pdf)
 - Лабораторная 5 (SPO5): [README](SPO5/README.md)
 - Лабораторная 6 (SPO6): [README](SPO6/README.md)
+- Лабораторная 7 (SPO7): [README](SPO7/README.md)
+- Лабораторная 8 (SPO8): [README](SPO8/README.md)

@@ -1,0 +1,3 @@
+SPO8 BTRFS FTP
+500 unsupported filesystem
+OK_NEG

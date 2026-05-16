@@ -1,0 +1,22 @@
+SYST
+NOOP
+HELP
+PASV
+TYPE I
+PWD
+LIST
+CWD docs
+PWD
+LIST
+RETR info.txt
+RETR help.txt
+CWD ..
+PWD
+CWD pictures
+LIST
+RETR notes.txt
+CWD /
+RETR readme.txt
+RETR missing.txt
+CWD ghost
+QUIT

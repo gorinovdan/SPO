@@ -1,0 +1,3293 @@
+Terminals which are not used
+
+   OTHER
+
+
+State 32 conflicts: 2 shift/reduce
+State 39 conflicts: 2 shift/reduce
+State 72 conflicts: 2 shift/reduce
+State 84 conflicts: 2 shift/reduce
+State 105 conflicts: 2 shift/reduce
+State 126 conflicts: 2 shift/reduce
+State 180 conflicts: 2 shift/reduce
+State 212 conflicts: 2 shift/reduce
+
+
+Grammar
+
+    0 $accept: source $end
+
+    1 source: source_item_set
+
+    2 source_item: func_def
+    3            | type_def
+    4            | interface_def
+
+    5 source_item_set: source_item
+    6                | source_item_set source_item
+
+    7 func_def: DEF func_signature statement_set END
+    8         | DEF func_signature END
+
+    9 type_def: TYPE_KW identifier type_member_set END
+   10         | TYPE_KW identifier EXTENDS identifier type_member_set END
+   11         | TYPE_KW identifier IMPLEMENTS interface_name_list type_member_set END
+   12         | TYPE_KW identifier EXTENDS identifier IMPLEMENTS interface_name_list type_member_set END
+   13         | TYPE_KW identifier END
+   14         | TYPE_KW identifier EXTENDS identifier END
+   15         | TYPE_KW identifier IMPLEMENTS interface_name_list END
+   16         | TYPE_KW identifier EXTENDS identifier IMPLEMENTS interface_name_list END
+
+   17 interface_def: INTERFACE identifier interface_member_set END
+   18              | INTERFACE identifier END
+
+   19 interface_name_list: identifier
+   20                    | interface_name_list ',' identifier
+
+   21 type_member_set: type_member
+   22                | type_member_set type_member
+
+   23 type_member: field_def
+   24            | method_def
+
+   25 field_def: identifier OF type_ref ';'
+
+   26 method_def: func_def
+   27           | OVERRIDE func_def
+
+   28 interface_member_set: interface_member
+   29                     | interface_member_set interface_member
+
+   30 interface_member: DEF func_signature ';'
+
+   31 statement: selection_statement
+   32          | iteration_statement
+   33          | BREAK ';'
+   34          | assignment_expr ';'
+   35          | var_decl
+   36          | block_statement
+
+   37 var_decl: identifier OF type_ref ';'
+   38         | identifier OF type_ref '=' assignment_expr ';'
+
+   39 statement_set: statement
+   40              | statement_set statement
+
+   41 in_block_set: statement
+   42             | func_def
+   43             | in_block_set statement
+   44             | in_block_set func_def
+
+   45 selection_statement: IF assignment_expr THEN statement ELSE statement
+   46                    | IF assignment_expr THEN statement
+
+   47 iteration_statement: WHILE assignment_expr statement_set END
+   48                    | WHILE assignment_expr END
+   49                    | UNTIL assignment_expr statement_set END
+   50                    | UNTIL assignment_expr END
+   51                    | statement WHILE assignment_expr ';'
+   52                    | statement UNTIL assignment_expr ';'
+
+   53 block_statement: BEGIN_T in_block_set END
+   54                | BEGIN_T in_block_set '}'
+   55                | '{' in_block_set END
+   56                | '{' in_block_set '}'
+   57                | BEGIN_T END
+   58                | BEGIN_T '}'
+   59                | '{' END
+   60                | '{' '}'
+
+   61 slice_range: assignment_expr
+   62            | assignment_expr '.' '.' assignment_expr
+
+   63 slice_range_list: slice_range
+   64                 | slice_range_list ',' slice_range
+
+   65 primary_expr: identifier
+   66             | literal
+   67             | '(' assignment_expr ')'
+
+   68 postfix_expr: primary_expr
+   69             | postfix_expr EMPTY_BRACKETS
+   70             | postfix_expr '(' argument_expr_list ')'
+   71             | postfix_expr '[' slice_range_list ']'
+   72             | postfix_expr '.' identifier
+
+   73 argument_expr_list: assignment_expr
+   74                   | argument_expr_list ',' assignment_expr
+
+   75 unary_expr: postfix_expr
+   76           | unary_operator unary_expr
+
+   77 multiplicative_expr: unary_expr
+   78                    | multiplicative_expr '*' unary_expr
+   79                    | multiplicative_expr '/' unary_expr
+   80                    | multiplicative_expr '%' unary_expr
+
+   81 additive_expr: multiplicative_expr
+   82              | additive_expr '+' multiplicative_expr
+   83              | additive_expr '-' multiplicative_expr
+
+   84 relational_expr: additive_expr
+   85                | relational_expr '<' additive_expr
+   86                | relational_expr '>' additive_expr
+   87                | relational_expr LE_OP additive_expr
+   88                | relational_expr GE_OP additive_expr
+
+   89 equality_expr: relational_expr
+   90              | equality_expr EQ_OP relational_expr
+   91              | equality_expr NE_OP relational_expr
+
+   92 logical_and_expr: equality_expr
+   93                 | logical_and_expr AND_OP equality_expr
+
+   94 logical_or_expr: logical_and_expr
+   95                | logical_or_expr OR_OP logical_and_expr
+
+   96 assignment_expr: logical_or_expr
+   97                | postfix_expr assignment_operator assignment_expr
+
+   98 assignment_operator: '='
+
+   99 unary_operator: UMINUS
+
+  100 literal: BOOL_VAL
+  101        | STRING_VAL
+  102        | CHAR_VAL
+  103        | HEX_VAL
+  104        | BITS_VAL
+  105        | DEC_VAL
+
+  106 func_signature: identifier '(' arg_def_list ')'
+  107               | identifier EMPTY_BRACKETS
+  108               | identifier '(' arg_def_list ')' OF type_ref
+  109               | identifier EMPTY_BRACKETS OF type_ref
+
+  110 arg_def_list: arg_def
+  111             | arg_def_list ',' arg_def
+
+  112 arg_def: identifier
+  113        | identifier OF type_ref
+
+  114 type_ref: builtin
+  115         | identifier
+  116         | array
+
+  117 array: builtin ARRAY '[' DEC_VAL ']'
+  118      | identifier ARRAY '[' DEC_VAL ']'
+
+  119 builtin: BOOL
+  120        | BYTE
+  121        | INT
+  122        | UINT
+  123        | LONG
+  124        | ULONG
+  125        | CHAR
+  126        | STRING
+
+  127 identifier: IDENTIFIER
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'%' (37) 80
+'(' (40) 67 70 106 108
+')' (41) 67 70 106 108
+'*' (42) 78
+'+' (43) 82
+',' (44) 20 64 74 111
+'-' (45) 83
+'.' (46) 62 72
+'/' (47) 79
+';' (59) 25 30 33 34 37 38 51 52
+'<' (60) 85
+'=' (61) 38 98
+'>' (62) 86
+'[' (91) 71 117 118
+']' (93) 71 117 118
+'{' (123) 55 56 59 60
+'}' (125) 54 56 58 60
+error (256)
+OTHER (258)
+IDENTIFIER (259) 127
+EMPTY_BRACKETS (260) 69 107 109
+ARRAY (261) 117 118
+OF (262) 25 37 38 108 109 113
+IF (263) 45 46
+THEN (264) 45 46
+ELSE (265) 45
+BEGIN_T (266) 53 54 57 58
+END (267) 7 8 9 10 11 12 13 14 15 16 17 18 47 48 49 50 53 55 57 59
+WHILE (268) 47 48 51
+UNTIL (269) 49 50 52
+BREAK (270) 33
+DEF (271) 7 8 30
+TYPE_KW (272) 9 10 11 12 13 14 15 16
+INTERFACE (273) 17 18
+EXTENDS (274) 10 12 14 16
+IMPLEMENTS (275) 11 12 15 16
+OVERRIDE (276) 27
+AND_OP (277) 93
+OR_OP (278) 95
+LE_OP (279) 87
+GE_OP (280) 88
+EQ_OP (281) 90
+NE_OP (282) 91
+UMINUS (283) 99
+BOOL_VAL (284) 100
+STRING_VAL (285) 101
+CHAR_VAL (286) 102
+HEX_VAL (287) 103
+BITS_VAL (288) 104
+DEC_VAL (289) 105 117 118
+BOOL (290) 119
+BYTE (291) 120
+INT (292) 121
+UINT (293) 122
+LONG (294) 123
+ULONG (295) 124
+CHAR (296) 125
+STRING (297) 126
+LOWER_THAN_ELSE (298)
+
+
+Nonterminals, with rules where they appear
+
+$accept (61)
+    on left: 0
+source (62)
+    on left: 1, on right: 0
+source_item (63)
+    on left: 2 3 4, on right: 5 6
+source_item_set (64)
+    on left: 5 6, on right: 1 6
+func_def (65)
+    on left: 7 8, on right: 2 26 27 42 44
+type_def (66)
+    on left: 9 10 11 12 13 14 15 16, on right: 3
+interface_def (67)
+    on left: 17 18, on right: 4
+interface_name_list (68)
+    on left: 19 20, on right: 11 12 15 16 20
+type_member_set (69)
+    on left: 21 22, on right: 9 10 11 12 22
+type_member (70)
+    on left: 23 24, on right: 21 22
+field_def (71)
+    on left: 25, on right: 23
+method_def (72)
+    on left: 26 27, on right: 24
+interface_member_set (73)
+    on left: 28 29, on right: 17 29
+interface_member (74)
+    on left: 30, on right: 28 29
+statement (75)
+    on left: 31 32 33 34 35 36, on right: 39 40 41 43 45 46 51 52
+var_decl (76)
+    on left: 37 38, on right: 35
+statement_set (77)
+    on left: 39 40, on right: 7 40 47 49
+in_block_set (78)
+    on left: 41 42 43 44, on right: 43 44 53 54 55 56
+selection_statement (79)
+    on left: 45 46, on right: 31
+iteration_statement (80)
+    on left: 47 48 49 50 51 52, on right: 32
+block_statement (81)
+    on left: 53 54 55 56 57 58 59 60, on right: 36
+slice_range (82)
+    on left: 61 62, on right: 63 64
+slice_range_list (83)
+    on left: 63 64, on right: 64 71
+primary_expr (84)
+    on left: 65 66 67, on right: 68
+postfix_expr (85)
+    on left: 68 69 70 71 72, on right: 69 70 71 72 75 97
+argument_expr_list (86)
+    on left: 73 74, on right: 70 74
+unary_expr (87)
+    on left: 75 76, on right: 76 77 78 79 80
+multiplicative_expr (88)
+    on left: 77 78 79 80, on right: 78 79 80 81 82 83
+additive_expr (89)
+    on left: 81 82 83, on right: 82 83 84 85 86 87 88
+relational_expr (90)
+    on left: 84 85 86 87 88, on right: 85 86 87 88 89 90 91
+equality_expr (91)
+    on left: 89 90 91, on right: 90 91 92 93
+logical_and_expr (92)
+    on left: 92 93, on right: 93 94 95
+logical_or_expr (93)
+    on left: 94 95, on right: 95 96
+assignment_expr (94)
+    on left: 96 97, on right: 34 38 45 46 47 48 49 50 51 52 61 62 67
+    73 74 97
+assignment_operator (95)
+    on left: 98, on right: 97
+unary_operator (96)
+    on left: 99, on right: 76
+literal (97)
+    on left: 100 101 102 103 104 105, on right: 66
+func_signature (98)
+    on left: 106 107 108 109, on right: 7 8 30
+arg_def_list (99)
+    on left: 110 111, on right: 106 108 111
+arg_def (100)
+    on left: 112 113, on right: 110 111
+type_ref (101)
+    on left: 114 115 116, on right: 25 37 38 108 109 113
+array (102)
+    on left: 117 118, on right: 116
+builtin (103)
+    on left: 119 120 121 122 123 124 125 126, on right: 114 117
+identifier (104)
+    on left: 127, on right: 9 10 11 12 13 14 15 16 17 18 19 20 25 37
+    38 65 72 106 107 108 109 112 113 115 118
+
+
+state 0
+
+    0 $accept: . source $end
+
+    DEF        shift, and go to state 1
+    TYPE_KW    shift, and go to state 2
+    INTERFACE  shift, and go to state 3
+
+    source           go to state 4
+    source_item      go to state 5
+    source_item_set  go to state 6
+    func_def         go to state 7
+    type_def         go to state 8
+    interface_def    go to state 9
+
+
+state 1
+
+    7 func_def: DEF . func_signature statement_set END
+    8         | DEF . func_signature END
+
+    IDENTIFIER  shift, and go to state 10
+
+    func_signature  go to state 11
+    identifier      go to state 12
+
+
+state 2
+
+    9 type_def: TYPE_KW . identifier type_member_set END
+   10         | TYPE_KW . identifier EXTENDS identifier type_member_set END
+   11         | TYPE_KW . identifier IMPLEMENTS interface_name_list type_member_set END
+   12         | TYPE_KW . identifier EXTENDS identifier IMPLEMENTS interface_name_list type_member_set END
+   13         | TYPE_KW . identifier END
+   14         | TYPE_KW . identifier EXTENDS identifier END
+   15         | TYPE_KW . identifier IMPLEMENTS interface_name_list END
+   16         | TYPE_KW . identifier EXTENDS identifier IMPLEMENTS interface_name_list END
+
+    IDENTIFIER  shift, and go to state 10
+
+    identifier  go to state 13
+
+
+state 3
+
+   17 interface_def: INTERFACE . identifier interface_member_set END
+   18              | INTERFACE . identifier END
+
+    IDENTIFIER  shift, and go to state 10
+
+    identifier  go to state 14
+
+
+state 4
+
+    0 $accept: source . $end
+
+    $end  shift, and go to state 15
+
+
+state 5
+
+    5 source_item_set: source_item .
+
+    $default  reduce using rule 5 (source_item_set)
+
+
+state 6
+
+    1 source: source_item_set .
+    6 source_item_set: source_item_set . source_item
+
+    DEF        shift, and go to state 1
+    TYPE_KW    shift, and go to state 2
+    INTERFACE  shift, and go to state 3
+
+    $default  reduce using rule 1 (source)
+
+    source_item    go to state 16
+    func_def       go to state 7
+    type_def       go to state 8
+    interface_def  go to state 9
+
+
+state 7
+
+    2 source_item: func_def .
+
+    $default  reduce using rule 2 (source_item)
+
+
+state 8
+
+    3 source_item: type_def .
+
+    $default  reduce using rule 3 (source_item)
+
+
+state 9
+
+    4 source_item: interface_def .
+
+    $default  reduce using rule 4 (source_item)
+
+
+state 10
+
+  127 identifier: IDENTIFIER .
+
+    $default  reduce using rule 127 (identifier)
+
+
+state 11
+
+    7 func_def: DEF func_signature . statement_set END
+    8         | DEF func_signature . END
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 19
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 32
+    var_decl             go to state 33
+    statement_set        go to state 34
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 12
+
+  106 func_signature: identifier . '(' arg_def_list ')'
+  107               | identifier . EMPTY_BRACKETS
+  108               | identifier . '(' arg_def_list ')' OF type_ref
+  109               | identifier . EMPTY_BRACKETS OF type_ref
+
+    EMPTY_BRACKETS  shift, and go to state 51
+    '('             shift, and go to state 52
+
+
+state 13
+
+    9 type_def: TYPE_KW identifier . type_member_set END
+   10         | TYPE_KW identifier . EXTENDS identifier type_member_set END
+   11         | TYPE_KW identifier . IMPLEMENTS interface_name_list type_member_set END
+   12         | TYPE_KW identifier . EXTENDS identifier IMPLEMENTS interface_name_list type_member_set END
+   13         | TYPE_KW identifier . END
+   14         | TYPE_KW identifier . EXTENDS identifier END
+   15         | TYPE_KW identifier . IMPLEMENTS interface_name_list END
+   16         | TYPE_KW identifier . EXTENDS identifier IMPLEMENTS interface_name_list END
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 53
+    DEF         shift, and go to state 1
+    EXTENDS     shift, and go to state 54
+    IMPLEMENTS  shift, and go to state 55
+    OVERRIDE    shift, and go to state 56
+
+    func_def         go to state 57
+    type_member_set  go to state 58
+    type_member      go to state 59
+    field_def        go to state 60
+    method_def       go to state 61
+    identifier       go to state 62
+
+
+state 14
+
+   17 interface_def: INTERFACE identifier . interface_member_set END
+   18              | INTERFACE identifier . END
+
+    END  shift, and go to state 63
+    DEF  shift, and go to state 64
+
+    interface_member_set  go to state 65
+    interface_member      go to state 66
+
+
+state 15
+
+    0 $accept: source $end .
+
+    $default  accept
+
+
+state 16
+
+    6 source_item_set: source_item_set source_item .
+
+    $default  reduce using rule 6 (source_item_set)
+
+
+state 17
+
+   45 selection_statement: IF . assignment_expr THEN statement ELSE statement
+   46                    | IF . assignment_expr THEN statement
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 67
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 18
+
+   53 block_statement: BEGIN_T . in_block_set END
+   54                | BEGIN_T . in_block_set '}'
+   57                | BEGIN_T . END
+   58                | BEGIN_T . '}'
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 69
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    DEF         shift, and go to state 1
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '}'         shift, and go to state 70
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    func_def             go to state 71
+    statement            go to state 72
+    var_decl             go to state 33
+    in_block_set         go to state 73
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 19
+
+    8 func_def: DEF func_signature END .
+
+    $default  reduce using rule 8 (func_def)
+
+
+state 20
+
+   47 iteration_statement: WHILE . assignment_expr statement_set END
+   48                    | WHILE . assignment_expr END
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 74
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 21
+
+   49 iteration_statement: UNTIL . assignment_expr statement_set END
+   50                    | UNTIL . assignment_expr END
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 75
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 22
+
+   33 statement: BREAK . ';'
+
+    ';'  shift, and go to state 76
+
+
+state 23
+
+   99 unary_operator: UMINUS .
+
+    $default  reduce using rule 99 (unary_operator)
+
+
+state 24
+
+  100 literal: BOOL_VAL .
+
+    $default  reduce using rule 100 (literal)
+
+
+state 25
+
+  101 literal: STRING_VAL .
+
+    $default  reduce using rule 101 (literal)
+
+
+state 26
+
+  102 literal: CHAR_VAL .
+
+    $default  reduce using rule 102 (literal)
+
+
+state 27
+
+  103 literal: HEX_VAL .
+
+    $default  reduce using rule 103 (literal)
+
+
+state 28
+
+  104 literal: BITS_VAL .
+
+    $default  reduce using rule 104 (literal)
+
+
+state 29
+
+  105 literal: DEC_VAL .
+
+    $default  reduce using rule 105 (literal)
+
+
+state 30
+
+   55 block_statement: '{' . in_block_set END
+   56                | '{' . in_block_set '}'
+   59                | '{' . END
+   60                | '{' . '}'
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 77
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    DEF         shift, and go to state 1
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '}'         shift, and go to state 78
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    func_def             go to state 71
+    statement            go to state 72
+    var_decl             go to state 33
+    in_block_set         go to state 79
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 31
+
+   67 primary_expr: '(' . assignment_expr ')'
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 80
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 32
+
+   39 statement_set: statement .
+   51 iteration_statement: statement . WHILE assignment_expr ';'
+   52                    | statement . UNTIL assignment_expr ';'
+
+    WHILE  shift, and go to state 81
+    UNTIL  shift, and go to state 82
+
+    WHILE     [reduce using rule 39 (statement_set)]
+    UNTIL     [reduce using rule 39 (statement_set)]
+    $default  reduce using rule 39 (statement_set)
+
+
+state 33
+
+   35 statement: var_decl .
+
+    $default  reduce using rule 35 (statement)
+
+
+state 34
+
+    7 func_def: DEF func_signature statement_set . END
+   40 statement_set: statement_set . statement
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 83
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 84
+    var_decl             go to state 33
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 35
+
+   31 statement: selection_statement .
+
+    $default  reduce using rule 31 (statement)
+
+
+state 36
+
+   32 statement: iteration_statement .
+
+    $default  reduce using rule 32 (statement)
+
+
+state 37
+
+   36 statement: block_statement .
+
+    $default  reduce using rule 36 (statement)
+
+
+state 38
+
+   68 postfix_expr: primary_expr .
+
+    $default  reduce using rule 68 (postfix_expr)
+
+
+state 39
+
+   69 postfix_expr: postfix_expr . EMPTY_BRACKETS
+   70             | postfix_expr . '(' argument_expr_list ')'
+   71             | postfix_expr . '[' slice_range_list ']'
+   72             | postfix_expr . '.' identifier
+   75 unary_expr: postfix_expr .
+   97 assignment_expr: postfix_expr . assignment_operator assignment_expr
+
+    EMPTY_BRACKETS  shift, and go to state 85
+    '='             shift, and go to state 86
+    '.'             shift, and go to state 87
+    '('             shift, and go to state 88
+    '['             shift, and go to state 89
+
+    '.'       [reduce using rule 75 (unary_expr)]
+    '('       [reduce using rule 75 (unary_expr)]
+    $default  reduce using rule 75 (unary_expr)
+
+    assignment_operator  go to state 90
+
+
+state 40
+
+   77 multiplicative_expr: unary_expr .
+
+    $default  reduce using rule 77 (multiplicative_expr)
+
+
+state 41
+
+   78 multiplicative_expr: multiplicative_expr . '*' unary_expr
+   79                    | multiplicative_expr . '/' unary_expr
+   80                    | multiplicative_expr . '%' unary_expr
+   81 additive_expr: multiplicative_expr .
+
+    '*'  shift, and go to state 91
+    '/'  shift, and go to state 92
+    '%'  shift, and go to state 93
+
+    $default  reduce using rule 81 (additive_expr)
+
+
+state 42
+
+   82 additive_expr: additive_expr . '+' multiplicative_expr
+   83              | additive_expr . '-' multiplicative_expr
+   84 relational_expr: additive_expr .
+
+    '+'  shift, and go to state 94
+    '-'  shift, and go to state 95
+
+    $default  reduce using rule 84 (relational_expr)
+
+
+state 43
+
+   85 relational_expr: relational_expr . '<' additive_expr
+   86                | relational_expr . '>' additive_expr
+   87                | relational_expr . LE_OP additive_expr
+   88                | relational_expr . GE_OP additive_expr
+   89 equality_expr: relational_expr .
+
+    LE_OP  shift, and go to state 96
+    GE_OP  shift, and go to state 97
+    '<'    shift, and go to state 98
+    '>'    shift, and go to state 99
+
+    $default  reduce using rule 89 (equality_expr)
+
+
+state 44
+
+   90 equality_expr: equality_expr . EQ_OP relational_expr
+   91              | equality_expr . NE_OP relational_expr
+   92 logical_and_expr: equality_expr .
+
+    EQ_OP  shift, and go to state 100
+    NE_OP  shift, and go to state 101
+
+    $default  reduce using rule 92 (logical_and_expr)
+
+
+state 45
+
+   93 logical_and_expr: logical_and_expr . AND_OP equality_expr
+   94 logical_or_expr: logical_and_expr .
+
+    AND_OP  shift, and go to state 102
+
+    $default  reduce using rule 94 (logical_or_expr)
+
+
+state 46
+
+   95 logical_or_expr: logical_or_expr . OR_OP logical_and_expr
+   96 assignment_expr: logical_or_expr .
+
+    OR_OP  shift, and go to state 103
+
+    $default  reduce using rule 96 (assignment_expr)
+
+
+state 47
+
+   34 statement: assignment_expr . ';'
+
+    ';'  shift, and go to state 104
+
+
+state 48
+
+   76 unary_expr: unary_operator . unary_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr    go to state 38
+    postfix_expr    go to state 105
+    unary_expr      go to state 106
+    unary_operator  go to state 48
+    literal         go to state 49
+    identifier      go to state 68
+
+
+state 49
+
+   66 primary_expr: literal .
+
+    $default  reduce using rule 66 (primary_expr)
+
+
+state 50
+
+   37 var_decl: identifier . OF type_ref ';'
+   38         | identifier . OF type_ref '=' assignment_expr ';'
+   65 primary_expr: identifier .
+
+    OF  shift, and go to state 107
+
+    $default  reduce using rule 65 (primary_expr)
+
+
+state 51
+
+  107 func_signature: identifier EMPTY_BRACKETS .
+  109               | identifier EMPTY_BRACKETS . OF type_ref
+
+    OF  shift, and go to state 108
+
+    $default  reduce using rule 107 (func_signature)
+
+
+state 52
+
+  106 func_signature: identifier '(' . arg_def_list ')'
+  108               | identifier '(' . arg_def_list ')' OF type_ref
+
+    IDENTIFIER  shift, and go to state 10
+
+    arg_def_list  go to state 109
+    arg_def       go to state 110
+    identifier    go to state 111
+
+
+state 53
+
+   13 type_def: TYPE_KW identifier END .
+
+    $default  reduce using rule 13 (type_def)
+
+
+state 54
+
+   10 type_def: TYPE_KW identifier EXTENDS . identifier type_member_set END
+   12         | TYPE_KW identifier EXTENDS . identifier IMPLEMENTS interface_name_list type_member_set END
+   14         | TYPE_KW identifier EXTENDS . identifier END
+   16         | TYPE_KW identifier EXTENDS . identifier IMPLEMENTS interface_name_list END
+
+    IDENTIFIER  shift, and go to state 10
+
+    identifier  go to state 112
+
+
+state 55
+
+   11 type_def: TYPE_KW identifier IMPLEMENTS . interface_name_list type_member_set END
+   15         | TYPE_KW identifier IMPLEMENTS . interface_name_list END
+
+    IDENTIFIER  shift, and go to state 10
+
+    interface_name_list  go to state 113
+    identifier           go to state 114
+
+
+state 56
+
+   27 method_def: OVERRIDE . func_def
+
+    DEF  shift, and go to state 1
+
+    func_def  go to state 115
+
+
+state 57
+
+   26 method_def: func_def .
+
+    $default  reduce using rule 26 (method_def)
+
+
+state 58
+
+    9 type_def: TYPE_KW identifier type_member_set . END
+   22 type_member_set: type_member_set . type_member
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 116
+    DEF         shift, and go to state 1
+    OVERRIDE    shift, and go to state 56
+
+    func_def     go to state 57
+    type_member  go to state 117
+    field_def    go to state 60
+    method_def   go to state 61
+    identifier   go to state 62
+
+
+state 59
+
+   21 type_member_set: type_member .
+
+    $default  reduce using rule 21 (type_member_set)
+
+
+state 60
+
+   23 type_member: field_def .
+
+    $default  reduce using rule 23 (type_member)
+
+
+state 61
+
+   24 type_member: method_def .
+
+    $default  reduce using rule 24 (type_member)
+
+
+state 62
+
+   25 field_def: identifier . OF type_ref ';'
+
+    OF  shift, and go to state 118
+
+
+state 63
+
+   18 interface_def: INTERFACE identifier END .
+
+    $default  reduce using rule 18 (interface_def)
+
+
+state 64
+
+   30 interface_member: DEF . func_signature ';'
+
+    IDENTIFIER  shift, and go to state 10
+
+    func_signature  go to state 119
+    identifier      go to state 12
+
+
+state 65
+
+   17 interface_def: INTERFACE identifier interface_member_set . END
+   29 interface_member_set: interface_member_set . interface_member
+
+    END  shift, and go to state 120
+    DEF  shift, and go to state 64
+
+    interface_member  go to state 121
+
+
+state 66
+
+   28 interface_member_set: interface_member .
+
+    $default  reduce using rule 28 (interface_member_set)
+
+
+state 67
+
+   45 selection_statement: IF assignment_expr . THEN statement ELSE statement
+   46                    | IF assignment_expr . THEN statement
+
+    THEN  shift, and go to state 122
+
+
+state 68
+
+   65 primary_expr: identifier .
+
+    $default  reduce using rule 65 (primary_expr)
+
+
+state 69
+
+   57 block_statement: BEGIN_T END .
+
+    $default  reduce using rule 57 (block_statement)
+
+
+state 70
+
+   58 block_statement: BEGIN_T '}' .
+
+    $default  reduce using rule 58 (block_statement)
+
+
+state 71
+
+   42 in_block_set: func_def .
+
+    $default  reduce using rule 42 (in_block_set)
+
+
+state 72
+
+   41 in_block_set: statement .
+   51 iteration_statement: statement . WHILE assignment_expr ';'
+   52                    | statement . UNTIL assignment_expr ';'
+
+    WHILE  shift, and go to state 81
+    UNTIL  shift, and go to state 82
+
+    WHILE     [reduce using rule 41 (in_block_set)]
+    UNTIL     [reduce using rule 41 (in_block_set)]
+    $default  reduce using rule 41 (in_block_set)
+
+
+state 73
+
+   43 in_block_set: in_block_set . statement
+   44             | in_block_set . func_def
+   53 block_statement: BEGIN_T in_block_set . END
+   54                | BEGIN_T in_block_set . '}'
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 123
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    DEF         shift, and go to state 1
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '}'         shift, and go to state 124
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    func_def             go to state 125
+    statement            go to state 126
+    var_decl             go to state 33
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 74
+
+   47 iteration_statement: WHILE assignment_expr . statement_set END
+   48                    | WHILE assignment_expr . END
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 127
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 32
+    var_decl             go to state 33
+    statement_set        go to state 128
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 75
+
+   49 iteration_statement: UNTIL assignment_expr . statement_set END
+   50                    | UNTIL assignment_expr . END
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 129
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 32
+    var_decl             go to state 33
+    statement_set        go to state 130
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 76
+
+   33 statement: BREAK ';' .
+
+    $default  reduce using rule 33 (statement)
+
+
+state 77
+
+   59 block_statement: '{' END .
+
+    $default  reduce using rule 59 (block_statement)
+
+
+state 78
+
+   60 block_statement: '{' '}' .
+
+    $default  reduce using rule 60 (block_statement)
+
+
+state 79
+
+   43 in_block_set: in_block_set . statement
+   44             | in_block_set . func_def
+   55 block_statement: '{' in_block_set . END
+   56                | '{' in_block_set . '}'
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 131
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    DEF         shift, and go to state 1
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '}'         shift, and go to state 132
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    func_def             go to state 125
+    statement            go to state 126
+    var_decl             go to state 33
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 80
+
+   67 primary_expr: '(' assignment_expr . ')'
+
+    ')'  shift, and go to state 133
+
+
+state 81
+
+   51 iteration_statement: statement WHILE . assignment_expr ';'
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 134
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 82
+
+   52 iteration_statement: statement UNTIL . assignment_expr ';'
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 135
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 83
+
+    7 func_def: DEF func_signature statement_set END .
+
+    $default  reduce using rule 7 (func_def)
+
+
+state 84
+
+   40 statement_set: statement_set statement .
+   51 iteration_statement: statement . WHILE assignment_expr ';'
+   52                    | statement . UNTIL assignment_expr ';'
+
+    WHILE  shift, and go to state 81
+    UNTIL  shift, and go to state 82
+
+    WHILE     [reduce using rule 40 (statement_set)]
+    UNTIL     [reduce using rule 40 (statement_set)]
+    $default  reduce using rule 40 (statement_set)
+
+
+state 85
+
+   69 postfix_expr: postfix_expr EMPTY_BRACKETS .
+
+    $default  reduce using rule 69 (postfix_expr)
+
+
+state 86
+
+   98 assignment_operator: '=' .
+
+    $default  reduce using rule 98 (assignment_operator)
+
+
+state 87
+
+   72 postfix_expr: postfix_expr '.' . identifier
+
+    IDENTIFIER  shift, and go to state 10
+
+    identifier  go to state 136
+
+
+state 88
+
+   70 postfix_expr: postfix_expr '(' . argument_expr_list ')'
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    argument_expr_list   go to state 137
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 138
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 89
+
+   71 postfix_expr: postfix_expr '[' . slice_range_list ']'
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    slice_range          go to state 139
+    slice_range_list     go to state 140
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 141
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 90
+
+   97 assignment_expr: postfix_expr assignment_operator . assignment_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 142
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 91
+
+   78 multiplicative_expr: multiplicative_expr '*' . unary_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr    go to state 38
+    postfix_expr    go to state 105
+    unary_expr      go to state 143
+    unary_operator  go to state 48
+    literal         go to state 49
+    identifier      go to state 68
+
+
+state 92
+
+   79 multiplicative_expr: multiplicative_expr '/' . unary_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr    go to state 38
+    postfix_expr    go to state 105
+    unary_expr      go to state 144
+    unary_operator  go to state 48
+    literal         go to state 49
+    identifier      go to state 68
+
+
+state 93
+
+   80 multiplicative_expr: multiplicative_expr '%' . unary_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr    go to state 38
+    postfix_expr    go to state 105
+    unary_expr      go to state 145
+    unary_operator  go to state 48
+    literal         go to state 49
+    identifier      go to state 68
+
+
+state 94
+
+   82 additive_expr: additive_expr '+' . multiplicative_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 146
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 95
+
+   83 additive_expr: additive_expr '-' . multiplicative_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 147
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 96
+
+   87 relational_expr: relational_expr LE_OP . additive_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 148
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 97
+
+   88 relational_expr: relational_expr GE_OP . additive_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 149
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 98
+
+   85 relational_expr: relational_expr '<' . additive_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 150
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 99
+
+   86 relational_expr: relational_expr '>' . additive_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 151
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 100
+
+   90 equality_expr: equality_expr EQ_OP . relational_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 152
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 101
+
+   91 equality_expr: equality_expr NE_OP . relational_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 153
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 102
+
+   93 logical_and_expr: logical_and_expr AND_OP . equality_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 154
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 103
+
+   95 logical_or_expr: logical_or_expr OR_OP . logical_and_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 105
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 155
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 104
+
+   34 statement: assignment_expr ';' .
+
+    $default  reduce using rule 34 (statement)
+
+
+state 105
+
+   69 postfix_expr: postfix_expr . EMPTY_BRACKETS
+   70             | postfix_expr . '(' argument_expr_list ')'
+   71             | postfix_expr . '[' slice_range_list ']'
+   72             | postfix_expr . '.' identifier
+   75 unary_expr: postfix_expr .
+
+    EMPTY_BRACKETS  shift, and go to state 85
+    '.'             shift, and go to state 87
+    '('             shift, and go to state 88
+    '['             shift, and go to state 89
+
+    '.'       [reduce using rule 75 (unary_expr)]
+    '('       [reduce using rule 75 (unary_expr)]
+    $default  reduce using rule 75 (unary_expr)
+
+
+state 106
+
+   76 unary_expr: unary_operator unary_expr .
+
+    $default  reduce using rule 76 (unary_expr)
+
+
+state 107
+
+   37 var_decl: identifier OF . type_ref ';'
+   38         | identifier OF . type_ref '=' assignment_expr ';'
+
+    IDENTIFIER  shift, and go to state 10
+    BOOL        shift, and go to state 156
+    BYTE        shift, and go to state 157
+    INT         shift, and go to state 158
+    UINT        shift, and go to state 159
+    LONG        shift, and go to state 160
+    ULONG       shift, and go to state 161
+    CHAR        shift, and go to state 162
+    STRING      shift, and go to state 163
+
+    type_ref    go to state 164
+    array       go to state 165
+    builtin     go to state 166
+    identifier  go to state 167
+
+
+state 108
+
+  109 func_signature: identifier EMPTY_BRACKETS OF . type_ref
+
+    IDENTIFIER  shift, and go to state 10
+    BOOL        shift, and go to state 156
+    BYTE        shift, and go to state 157
+    INT         shift, and go to state 158
+    UINT        shift, and go to state 159
+    LONG        shift, and go to state 160
+    ULONG       shift, and go to state 161
+    CHAR        shift, and go to state 162
+    STRING      shift, and go to state 163
+
+    type_ref    go to state 168
+    array       go to state 165
+    builtin     go to state 166
+    identifier  go to state 167
+
+
+state 109
+
+  106 func_signature: identifier '(' arg_def_list . ')'
+  108               | identifier '(' arg_def_list . ')' OF type_ref
+  111 arg_def_list: arg_def_list . ',' arg_def
+
+    ','  shift, and go to state 169
+    ')'  shift, and go to state 170
+
+
+state 110
+
+  110 arg_def_list: arg_def .
+
+    $default  reduce using rule 110 (arg_def_list)
+
+
+state 111
+
+  112 arg_def: identifier .
+  113        | identifier . OF type_ref
+
+    OF  shift, and go to state 171
+
+    $default  reduce using rule 112 (arg_def)
+
+
+state 112
+
+   10 type_def: TYPE_KW identifier EXTENDS identifier . type_member_set END
+   12         | TYPE_KW identifier EXTENDS identifier . IMPLEMENTS interface_name_list type_member_set END
+   14         | TYPE_KW identifier EXTENDS identifier . END
+   16         | TYPE_KW identifier EXTENDS identifier . IMPLEMENTS interface_name_list END
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 172
+    DEF         shift, and go to state 1
+    IMPLEMENTS  shift, and go to state 173
+    OVERRIDE    shift, and go to state 56
+
+    func_def         go to state 57
+    type_member_set  go to state 174
+    type_member      go to state 59
+    field_def        go to state 60
+    method_def       go to state 61
+    identifier       go to state 62
+
+
+state 113
+
+   11 type_def: TYPE_KW identifier IMPLEMENTS interface_name_list . type_member_set END
+   15         | TYPE_KW identifier IMPLEMENTS interface_name_list . END
+   20 interface_name_list: interface_name_list . ',' identifier
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 175
+    DEF         shift, and go to state 1
+    OVERRIDE    shift, and go to state 56
+    ','         shift, and go to state 176
+
+    func_def         go to state 57
+    type_member_set  go to state 177
+    type_member      go to state 59
+    field_def        go to state 60
+    method_def       go to state 61
+    identifier       go to state 62
+
+
+state 114
+
+   19 interface_name_list: identifier .
+
+    $default  reduce using rule 19 (interface_name_list)
+
+
+state 115
+
+   27 method_def: OVERRIDE func_def .
+
+    $default  reduce using rule 27 (method_def)
+
+
+state 116
+
+    9 type_def: TYPE_KW identifier type_member_set END .
+
+    $default  reduce using rule 9 (type_def)
+
+
+state 117
+
+   22 type_member_set: type_member_set type_member .
+
+    $default  reduce using rule 22 (type_member_set)
+
+
+state 118
+
+   25 field_def: identifier OF . type_ref ';'
+
+    IDENTIFIER  shift, and go to state 10
+    BOOL        shift, and go to state 156
+    BYTE        shift, and go to state 157
+    INT         shift, and go to state 158
+    UINT        shift, and go to state 159
+    LONG        shift, and go to state 160
+    ULONG       shift, and go to state 161
+    CHAR        shift, and go to state 162
+    STRING      shift, and go to state 163
+
+    type_ref    go to state 178
+    array       go to state 165
+    builtin     go to state 166
+    identifier  go to state 167
+
+
+state 119
+
+   30 interface_member: DEF func_signature . ';'
+
+    ';'  shift, and go to state 179
+
+
+state 120
+
+   17 interface_def: INTERFACE identifier interface_member_set END .
+
+    $default  reduce using rule 17 (interface_def)
+
+
+state 121
+
+   29 interface_member_set: interface_member_set interface_member .
+
+    $default  reduce using rule 29 (interface_member_set)
+
+
+state 122
+
+   45 selection_statement: IF assignment_expr THEN . statement ELSE statement
+   46                    | IF assignment_expr THEN . statement
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 180
+    var_decl             go to state 33
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 123
+
+   53 block_statement: BEGIN_T in_block_set END .
+
+    $default  reduce using rule 53 (block_statement)
+
+
+state 124
+
+   54 block_statement: BEGIN_T in_block_set '}' .
+
+    $default  reduce using rule 54 (block_statement)
+
+
+state 125
+
+   44 in_block_set: in_block_set func_def .
+
+    $default  reduce using rule 44 (in_block_set)
+
+
+state 126
+
+   43 in_block_set: in_block_set statement .
+   51 iteration_statement: statement . WHILE assignment_expr ';'
+   52                    | statement . UNTIL assignment_expr ';'
+
+    WHILE  shift, and go to state 81
+    UNTIL  shift, and go to state 82
+
+    WHILE     [reduce using rule 43 (in_block_set)]
+    UNTIL     [reduce using rule 43 (in_block_set)]
+    $default  reduce using rule 43 (in_block_set)
+
+
+state 127
+
+   48 iteration_statement: WHILE assignment_expr END .
+
+    $default  reduce using rule 48 (iteration_statement)
+
+
+state 128
+
+   40 statement_set: statement_set . statement
+   47 iteration_statement: WHILE assignment_expr statement_set . END
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 181
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 84
+    var_decl             go to state 33
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 129
+
+   50 iteration_statement: UNTIL assignment_expr END .
+
+    $default  reduce using rule 50 (iteration_statement)
+
+
+state 130
+
+   40 statement_set: statement_set . statement
+   49 iteration_statement: UNTIL assignment_expr statement_set . END
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    END         shift, and go to state 182
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 84
+    var_decl             go to state 33
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 131
+
+   55 block_statement: '{' in_block_set END .
+
+    $default  reduce using rule 55 (block_statement)
+
+
+state 132
+
+   56 block_statement: '{' in_block_set '}' .
+
+    $default  reduce using rule 56 (block_statement)
+
+
+state 133
+
+   67 primary_expr: '(' assignment_expr ')' .
+
+    $default  reduce using rule 67 (primary_expr)
+
+
+state 134
+
+   51 iteration_statement: statement WHILE assignment_expr . ';'
+
+    ';'  shift, and go to state 183
+
+
+state 135
+
+   52 iteration_statement: statement UNTIL assignment_expr . ';'
+
+    ';'  shift, and go to state 184
+
+
+state 136
+
+   72 postfix_expr: postfix_expr '.' identifier .
+
+    $default  reduce using rule 72 (postfix_expr)
+
+
+state 137
+
+   70 postfix_expr: postfix_expr '(' argument_expr_list . ')'
+   74 argument_expr_list: argument_expr_list . ',' assignment_expr
+
+    ','  shift, and go to state 185
+    ')'  shift, and go to state 186
+
+
+state 138
+
+   73 argument_expr_list: assignment_expr .
+
+    $default  reduce using rule 73 (argument_expr_list)
+
+
+state 139
+
+   63 slice_range_list: slice_range .
+
+    $default  reduce using rule 63 (slice_range_list)
+
+
+state 140
+
+   64 slice_range_list: slice_range_list . ',' slice_range
+   71 postfix_expr: postfix_expr '[' slice_range_list . ']'
+
+    ','  shift, and go to state 187
+    ']'  shift, and go to state 188
+
+
+state 141
+
+   61 slice_range: assignment_expr .
+   62            | assignment_expr . '.' '.' assignment_expr
+
+    '.'  shift, and go to state 189
+
+    $default  reduce using rule 61 (slice_range)
+
+
+state 142
+
+   97 assignment_expr: postfix_expr assignment_operator assignment_expr .
+
+    $default  reduce using rule 97 (assignment_expr)
+
+
+state 143
+
+   78 multiplicative_expr: multiplicative_expr '*' unary_expr .
+
+    $default  reduce using rule 78 (multiplicative_expr)
+
+
+state 144
+
+   79 multiplicative_expr: multiplicative_expr '/' unary_expr .
+
+    $default  reduce using rule 79 (multiplicative_expr)
+
+
+state 145
+
+   80 multiplicative_expr: multiplicative_expr '%' unary_expr .
+
+    $default  reduce using rule 80 (multiplicative_expr)
+
+
+state 146
+
+   78 multiplicative_expr: multiplicative_expr . '*' unary_expr
+   79                    | multiplicative_expr . '/' unary_expr
+   80                    | multiplicative_expr . '%' unary_expr
+   82 additive_expr: additive_expr '+' multiplicative_expr .
+
+    '*'  shift, and go to state 91
+    '/'  shift, and go to state 92
+    '%'  shift, and go to state 93
+
+    $default  reduce using rule 82 (additive_expr)
+
+
+state 147
+
+   78 multiplicative_expr: multiplicative_expr . '*' unary_expr
+   79                    | multiplicative_expr . '/' unary_expr
+   80                    | multiplicative_expr . '%' unary_expr
+   83 additive_expr: additive_expr '-' multiplicative_expr .
+
+    '*'  shift, and go to state 91
+    '/'  shift, and go to state 92
+    '%'  shift, and go to state 93
+
+    $default  reduce using rule 83 (additive_expr)
+
+
+state 148
+
+   82 additive_expr: additive_expr . '+' multiplicative_expr
+   83              | additive_expr . '-' multiplicative_expr
+   87 relational_expr: relational_expr LE_OP additive_expr .
+
+    '+'  shift, and go to state 94
+    '-'  shift, and go to state 95
+
+    $default  reduce using rule 87 (relational_expr)
+
+
+state 149
+
+   82 additive_expr: additive_expr . '+' multiplicative_expr
+   83              | additive_expr . '-' multiplicative_expr
+   88 relational_expr: relational_expr GE_OP additive_expr .
+
+    '+'  shift, and go to state 94
+    '-'  shift, and go to state 95
+
+    $default  reduce using rule 88 (relational_expr)
+
+
+state 150
+
+   82 additive_expr: additive_expr . '+' multiplicative_expr
+   83              | additive_expr . '-' multiplicative_expr
+   85 relational_expr: relational_expr '<' additive_expr .
+
+    '+'  shift, and go to state 94
+    '-'  shift, and go to state 95
+
+    $default  reduce using rule 85 (relational_expr)
+
+
+state 151
+
+   82 additive_expr: additive_expr . '+' multiplicative_expr
+   83              | additive_expr . '-' multiplicative_expr
+   86 relational_expr: relational_expr '>' additive_expr .
+
+    '+'  shift, and go to state 94
+    '-'  shift, and go to state 95
+
+    $default  reduce using rule 86 (relational_expr)
+
+
+state 152
+
+   85 relational_expr: relational_expr . '<' additive_expr
+   86                | relational_expr . '>' additive_expr
+   87                | relational_expr . LE_OP additive_expr
+   88                | relational_expr . GE_OP additive_expr
+   90 equality_expr: equality_expr EQ_OP relational_expr .
+
+    LE_OP  shift, and go to state 96
+    GE_OP  shift, and go to state 97
+    '<'    shift, and go to state 98
+    '>'    shift, and go to state 99
+
+    $default  reduce using rule 90 (equality_expr)
+
+
+state 153
+
+   85 relational_expr: relational_expr . '<' additive_expr
+   86                | relational_expr . '>' additive_expr
+   87                | relational_expr . LE_OP additive_expr
+   88                | relational_expr . GE_OP additive_expr
+   91 equality_expr: equality_expr NE_OP relational_expr .
+
+    LE_OP  shift, and go to state 96
+    GE_OP  shift, and go to state 97
+    '<'    shift, and go to state 98
+    '>'    shift, and go to state 99
+
+    $default  reduce using rule 91 (equality_expr)
+
+
+state 154
+
+   90 equality_expr: equality_expr . EQ_OP relational_expr
+   91              | equality_expr . NE_OP relational_expr
+   93 logical_and_expr: logical_and_expr AND_OP equality_expr .
+
+    EQ_OP  shift, and go to state 100
+    NE_OP  shift, and go to state 101
+
+    $default  reduce using rule 93 (logical_and_expr)
+
+
+state 155
+
+   93 logical_and_expr: logical_and_expr . AND_OP equality_expr
+   95 logical_or_expr: logical_or_expr OR_OP logical_and_expr .
+
+    AND_OP  shift, and go to state 102
+
+    $default  reduce using rule 95 (logical_or_expr)
+
+
+state 156
+
+  119 builtin: BOOL .
+
+    $default  reduce using rule 119 (builtin)
+
+
+state 157
+
+  120 builtin: BYTE .
+
+    $default  reduce using rule 120 (builtin)
+
+
+state 158
+
+  121 builtin: INT .
+
+    $default  reduce using rule 121 (builtin)
+
+
+state 159
+
+  122 builtin: UINT .
+
+    $default  reduce using rule 122 (builtin)
+
+
+state 160
+
+  123 builtin: LONG .
+
+    $default  reduce using rule 123 (builtin)
+
+
+state 161
+
+  124 builtin: ULONG .
+
+    $default  reduce using rule 124 (builtin)
+
+
+state 162
+
+  125 builtin: CHAR .
+
+    $default  reduce using rule 125 (builtin)
+
+
+state 163
+
+  126 builtin: STRING .
+
+    $default  reduce using rule 126 (builtin)
+
+
+state 164
+
+   37 var_decl: identifier OF type_ref . ';'
+   38         | identifier OF type_ref . '=' assignment_expr ';'
+
+    ';'  shift, and go to state 190
+    '='  shift, and go to state 191
+
+
+state 165
+
+  116 type_ref: array .
+
+    $default  reduce using rule 116 (type_ref)
+
+
+state 166
+
+  114 type_ref: builtin .
+  117 array: builtin . ARRAY '[' DEC_VAL ']'
+
+    ARRAY  shift, and go to state 192
+
+    $default  reduce using rule 114 (type_ref)
+
+
+state 167
+
+  115 type_ref: identifier .
+  118 array: identifier . ARRAY '[' DEC_VAL ']'
+
+    ARRAY  shift, and go to state 193
+
+    $default  reduce using rule 115 (type_ref)
+
+
+state 168
+
+  109 func_signature: identifier EMPTY_BRACKETS OF type_ref .
+
+    $default  reduce using rule 109 (func_signature)
+
+
+state 169
+
+  111 arg_def_list: arg_def_list ',' . arg_def
+
+    IDENTIFIER  shift, and go to state 10
+
+    arg_def     go to state 194
+    identifier  go to state 111
+
+
+state 170
+
+  106 func_signature: identifier '(' arg_def_list ')' .
+  108               | identifier '(' arg_def_list ')' . OF type_ref
+
+    OF  shift, and go to state 195
+
+    $default  reduce using rule 106 (func_signature)
+
+
+state 171
+
+  113 arg_def: identifier OF . type_ref
+
+    IDENTIFIER  shift, and go to state 10
+    BOOL        shift, and go to state 156
+    BYTE        shift, and go to state 157
+    INT         shift, and go to state 158
+    UINT        shift, and go to state 159
+    LONG        shift, and go to state 160
+    ULONG       shift, and go to state 161
+    CHAR        shift, and go to state 162
+    STRING      shift, and go to state 163
+
+    type_ref    go to state 196
+    array       go to state 165
+    builtin     go to state 166
+    identifier  go to state 167
+
+
+state 172
+
+   14 type_def: TYPE_KW identifier EXTENDS identifier END .
+
+    $default  reduce using rule 14 (type_def)
+
+
+state 173
+
+   12 type_def: TYPE_KW identifier EXTENDS identifier IMPLEMENTS . interface_name_list type_member_set END
+   16         | TYPE_KW identifier EXTENDS identifier IMPLEMENTS . interface_name_list END
+
+    IDENTIFIER  shift, and go to state 10
+
+    interface_name_list  go to state 197
+    identifier           go to state 114
+
+
+state 174
+
+   10 type_def: TYPE_KW identifier EXTENDS identifier type_member_set . END
+   22 type_member_set: type_member_set . type_member
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 198
+    DEF         shift, and go to state 1
+    OVERRIDE    shift, and go to state 56
+
+    func_def     go to state 57
+    type_member  go to state 117
+    field_def    go to state 60
+    method_def   go to state 61
+    identifier   go to state 62
+
+
+state 175
+
+   15 type_def: TYPE_KW identifier IMPLEMENTS interface_name_list END .
+
+    $default  reduce using rule 15 (type_def)
+
+
+state 176
+
+   20 interface_name_list: interface_name_list ',' . identifier
+
+    IDENTIFIER  shift, and go to state 10
+
+    identifier  go to state 199
+
+
+state 177
+
+   11 type_def: TYPE_KW identifier IMPLEMENTS interface_name_list type_member_set . END
+   22 type_member_set: type_member_set . type_member
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 200
+    DEF         shift, and go to state 1
+    OVERRIDE    shift, and go to state 56
+
+    func_def     go to state 57
+    type_member  go to state 117
+    field_def    go to state 60
+    method_def   go to state 61
+    identifier   go to state 62
+
+
+state 178
+
+   25 field_def: identifier OF type_ref . ';'
+
+    ';'  shift, and go to state 201
+
+
+state 179
+
+   30 interface_member: DEF func_signature ';' .
+
+    $default  reduce using rule 30 (interface_member)
+
+
+state 180
+
+   45 selection_statement: IF assignment_expr THEN statement . ELSE statement
+   46                    | IF assignment_expr THEN statement .
+   51 iteration_statement: statement . WHILE assignment_expr ';'
+   52                    | statement . UNTIL assignment_expr ';'
+
+    ELSE   shift, and go to state 202
+    WHILE  shift, and go to state 81
+    UNTIL  shift, and go to state 82
+
+    WHILE     [reduce using rule 46 (selection_statement)]
+    UNTIL     [reduce using rule 46 (selection_statement)]
+    $default  reduce using rule 46 (selection_statement)
+
+
+state 181
+
+   47 iteration_statement: WHILE assignment_expr statement_set END .
+
+    $default  reduce using rule 47 (iteration_statement)
+
+
+state 182
+
+   49 iteration_statement: UNTIL assignment_expr statement_set END .
+
+    $default  reduce using rule 49 (iteration_statement)
+
+
+state 183
+
+   51 iteration_statement: statement WHILE assignment_expr ';' .
+
+    $default  reduce using rule 51 (iteration_statement)
+
+
+state 184
+
+   52 iteration_statement: statement UNTIL assignment_expr ';' .
+
+    $default  reduce using rule 52 (iteration_statement)
+
+
+state 185
+
+   74 argument_expr_list: argument_expr_list ',' . assignment_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 203
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 186
+
+   70 postfix_expr: postfix_expr '(' argument_expr_list ')' .
+
+    $default  reduce using rule 70 (postfix_expr)
+
+
+state 187
+
+   64 slice_range_list: slice_range_list ',' . slice_range
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    slice_range          go to state 204
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 141
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 188
+
+   71 postfix_expr: postfix_expr '[' slice_range_list ']' .
+
+    $default  reduce using rule 71 (postfix_expr)
+
+
+state 189
+
+   62 slice_range: assignment_expr '.' . '.' assignment_expr
+
+    '.'  shift, and go to state 205
+
+
+state 190
+
+   37 var_decl: identifier OF type_ref ';' .
+
+    $default  reduce using rule 37 (var_decl)
+
+
+state 191
+
+   38 var_decl: identifier OF type_ref '=' . assignment_expr ';'
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 206
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 192
+
+  117 array: builtin ARRAY . '[' DEC_VAL ']'
+
+    '['  shift, and go to state 207
+
+
+state 193
+
+  118 array: identifier ARRAY . '[' DEC_VAL ']'
+
+    '['  shift, and go to state 208
+
+
+state 194
+
+  111 arg_def_list: arg_def_list ',' arg_def .
+
+    $default  reduce using rule 111 (arg_def_list)
+
+
+state 195
+
+  108 func_signature: identifier '(' arg_def_list ')' OF . type_ref
+
+    IDENTIFIER  shift, and go to state 10
+    BOOL        shift, and go to state 156
+    BYTE        shift, and go to state 157
+    INT         shift, and go to state 158
+    UINT        shift, and go to state 159
+    LONG        shift, and go to state 160
+    ULONG       shift, and go to state 161
+    CHAR        shift, and go to state 162
+    STRING      shift, and go to state 163
+
+    type_ref    go to state 209
+    array       go to state 165
+    builtin     go to state 166
+    identifier  go to state 167
+
+
+state 196
+
+  113 arg_def: identifier OF type_ref .
+
+    $default  reduce using rule 113 (arg_def)
+
+
+state 197
+
+   12 type_def: TYPE_KW identifier EXTENDS identifier IMPLEMENTS interface_name_list . type_member_set END
+   16         | TYPE_KW identifier EXTENDS identifier IMPLEMENTS interface_name_list . END
+   20 interface_name_list: interface_name_list . ',' identifier
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 210
+    DEF         shift, and go to state 1
+    OVERRIDE    shift, and go to state 56
+    ','         shift, and go to state 176
+
+    func_def         go to state 57
+    type_member_set  go to state 211
+    type_member      go to state 59
+    field_def        go to state 60
+    method_def       go to state 61
+    identifier       go to state 62
+
+
+state 198
+
+   10 type_def: TYPE_KW identifier EXTENDS identifier type_member_set END .
+
+    $default  reduce using rule 10 (type_def)
+
+
+state 199
+
+   20 interface_name_list: interface_name_list ',' identifier .
+
+    $default  reduce using rule 20 (interface_name_list)
+
+
+state 200
+
+   11 type_def: TYPE_KW identifier IMPLEMENTS interface_name_list type_member_set END .
+
+    $default  reduce using rule 11 (type_def)
+
+
+state 201
+
+   25 field_def: identifier OF type_ref ';' .
+
+    $default  reduce using rule 25 (field_def)
+
+
+state 202
+
+   45 selection_statement: IF assignment_expr THEN statement ELSE . statement
+
+    IDENTIFIER  shift, and go to state 10
+    IF          shift, and go to state 17
+    BEGIN_T     shift, and go to state 18
+    WHILE       shift, and go to state 20
+    UNTIL       shift, and go to state 21
+    BREAK       shift, and go to state 22
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '{'         shift, and go to state 30
+    '('         shift, and go to state 31
+
+    statement            go to state 212
+    var_decl             go to state 33
+    selection_statement  go to state 35
+    iteration_statement  go to state 36
+    block_statement      go to state 37
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 47
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 50
+
+
+state 203
+
+   74 argument_expr_list: argument_expr_list ',' assignment_expr .
+
+    $default  reduce using rule 74 (argument_expr_list)
+
+
+state 204
+
+   64 slice_range_list: slice_range_list ',' slice_range .
+
+    $default  reduce using rule 64 (slice_range_list)
+
+
+state 205
+
+   62 slice_range: assignment_expr '.' '.' . assignment_expr
+
+    IDENTIFIER  shift, and go to state 10
+    UMINUS      shift, and go to state 23
+    BOOL_VAL    shift, and go to state 24
+    STRING_VAL  shift, and go to state 25
+    CHAR_VAL    shift, and go to state 26
+    HEX_VAL     shift, and go to state 27
+    BITS_VAL    shift, and go to state 28
+    DEC_VAL     shift, and go to state 29
+    '('         shift, and go to state 31
+
+    primary_expr         go to state 38
+    postfix_expr         go to state 39
+    unary_expr           go to state 40
+    multiplicative_expr  go to state 41
+    additive_expr        go to state 42
+    relational_expr      go to state 43
+    equality_expr        go to state 44
+    logical_and_expr     go to state 45
+    logical_or_expr      go to state 46
+    assignment_expr      go to state 213
+    unary_operator       go to state 48
+    literal              go to state 49
+    identifier           go to state 68
+
+
+state 206
+
+   38 var_decl: identifier OF type_ref '=' assignment_expr . ';'
+
+    ';'  shift, and go to state 214
+
+
+state 207
+
+  117 array: builtin ARRAY '[' . DEC_VAL ']'
+
+    DEC_VAL  shift, and go to state 215
+
+
+state 208
+
+  118 array: identifier ARRAY '[' . DEC_VAL ']'
+
+    DEC_VAL  shift, and go to state 216
+
+
+state 209
+
+  108 func_signature: identifier '(' arg_def_list ')' OF type_ref .
+
+    $default  reduce using rule 108 (func_signature)
+
+
+state 210
+
+   16 type_def: TYPE_KW identifier EXTENDS identifier IMPLEMENTS interface_name_list END .
+
+    $default  reduce using rule 16 (type_def)
+
+
+state 211
+
+   12 type_def: TYPE_KW identifier EXTENDS identifier IMPLEMENTS interface_name_list type_member_set . END
+   22 type_member_set: type_member_set . type_member
+
+    IDENTIFIER  shift, and go to state 10
+    END         shift, and go to state 217
+    DEF         shift, and go to state 1
+    OVERRIDE    shift, and go to state 56
+
+    func_def     go to state 57
+    type_member  go to state 117
+    field_def    go to state 60
+    method_def   go to state 61
+    identifier   go to state 62
+
+
+state 212
+
+   45 selection_statement: IF assignment_expr THEN statement ELSE statement .
+   51 iteration_statement: statement . WHILE assignment_expr ';'
+   52                    | statement . UNTIL assignment_expr ';'
+
+    WHILE  shift, and go to state 81
+    UNTIL  shift, and go to state 82
+
+    WHILE     [reduce using rule 45 (selection_statement)]
+    UNTIL     [reduce using rule 45 (selection_statement)]
+    $default  reduce using rule 45 (selection_statement)
+
+
+state 213
+
+   62 slice_range: assignment_expr '.' '.' assignment_expr .
+
+    $default  reduce using rule 62 (slice_range)
+
+
+state 214
+
+   38 var_decl: identifier OF type_ref '=' assignment_expr ';' .
+
+    $default  reduce using rule 38 (var_decl)
+
+
+state 215
+
+  117 array: builtin ARRAY '[' DEC_VAL . ']'
+
+    ']'  shift, and go to state 218
+
+
+state 216
+
+  118 array: identifier ARRAY '[' DEC_VAL . ']'
+
+    ']'  shift, and go to state 219
+
+
+state 217
+
+   12 type_def: TYPE_KW identifier EXTENDS identifier IMPLEMENTS interface_name_list type_member_set END .
+
+    $default  reduce using rule 12 (type_def)
+
+
+state 218
+
+  117 array: builtin ARRAY '[' DEC_VAL ']' .
+
+    $default  reduce using rule 117 (array)
+
+
+state 219
+
+  118 array: identifier ARRAY '[' DEC_VAL ']' .
+
+    $default  reduce using rule 118 (array)
