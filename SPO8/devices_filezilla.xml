@@ -41,10 +41,11 @@
     <Parameter Name="OperationMode" Value="ByteStream" />
   </Device>
 
-  <!-- Пассивный FTP-поток данных. VM подключается к тому же локальному
-       FTP-адаптеру на порту 3020; FileZilla подключается к пассивному
-       FTP-порту 2020, который возвращает команда PASV. Адаптер закрывает
-       сокеты отдельных передач: это не источник Btrfs-данных. -->
+  <!-- Пассивный FTP-поток данных. VM подключается к локальному data-мосту
+       на 127.0.0.1:3020, а FileZilla подключается к PASV-порту 2020.
+       В текущей версии RemoteTasks reset-регистр SimplePipe для tcp-потока
+       зависает на переподключении, поэтому закрытие внешнего PASV-сокета
+       выполняет только транспортный мост после паузы в данных от VM. -->
   <Device DeviceType="SimplePipe" Name="ftp-data" Id="5">
     <IoPortMap PortType="control" Id="0" BankName="data_pipe_control" Mode="RAM">
       <InitialBinding StartAddress="0x0" Length="0x48" />

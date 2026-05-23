@@ -12,23 +12,23 @@ drwxr-xr-x 1 spo spo 276 Jan 01 00:00 SPO8
 250 CWD ok
 257 "/SPO8"
 150 directory stream follows
--rw-r--r-- 1 spo spo 4207 Jan 01 00:00 Validation.md
--rw-r--r-- 1 spo spo 13802 Jan 01 00:00 report.md
+-rw-r--r-- 1 spo spo 4359 Jan 01 00:00 Validation.md
+-rw-r--r-- 1 spo spo 15627 Jan 01 00:00 report.md
 drwxr-xr-x 1 spo spo 576 Jan 01 00:00 tools
 -rw-r--r-- 1 spo spo 3298 Jan 01 00:00 Makefile
 drwxr-xr-x 1 spo spo 18 Jan 01 00:00 demo
 drwxr-xr-x 1 spo spo 32 Jan 01 00:00 vm
 drwxr-xr-x 1 spo spo 16 Jan 01 00:00 analysis
--rw-r--r-- 1 spo spo 4075 Jan 01 00:00 devices_filezilla.xml
+-rw-r--r-- 1 spo spo 4147 Jan 01 00:00 devices_filezilla.xml
 drwxr-xr-x 1 spo spo 210 Jan 01 00:00 tests
 drwxr-xr-x 1 spo spo 184 Jan 01 00:00 ast
 -rw-r--r-- 1 spo spo 8146 Jan 01 00:00 main.c
--rw-r--r-- 1 spo spo 30096 Jan 01 00:00 spo8.target.pdsl
+-rw-r--r-- 1 spo spo 30260 Jan 01 00:00 spo8.target.pdsl
 drwxr-xr-x 1 spo spo 20 Jan 01 00:00 cfg
 drwxr-xr-x 1 spo spo 28 Jan 01 00:00 docs
 -rw-r--r-- 1 spo spo 3608 Jan 01 00:00 devices.xml
 drwxr-xr-x 1 spo spo 52 Jan 01 00:00 codegen
--rw-r--r-- 1 spo spo 2646 Jan 01 00:00 README.md
+-rw-r--r-- 1 spo spo 3005 Jan 01 00:00 README.md
 drwxr-xr-x 1 spo spo 64 Jan 01 00:00 view
 226 transfer complete
 250 CWD ok
@@ -50,17 +50,17 @@ Read through RemoteTasks BlockDevice.
 250 CWD ok
 150 directory stream follows
 -rw-r--r-- 1 spo spo 5264 Jan 01 00:00 vm_inspector.py
--rw-r--r-- 1 spo spo 21724 Jan 01 00:00 vm.py
--rw-r--r-- 1 spo spo 3053 Jan 01 00:00 check_btrfs_ftp_output.py
+-rw-r--r-- 1 spo spo 21804 Jan 01 00:00 vm.py
+-rw-r--r-- 1 spo spo 3058 Jan 01 00:00 check_btrfs_ftp_output.py
 -rw-r--r-- 1 spo spo 15789 Jan 01 00:00 asm.py
 -rw-r--r-- 1 spo spo 3493 Jan 01 00:00 check_remote_ftp_client.sh
 -rw-r--r-- 1 spo spo 5269 Jan 01 00:00 prepare_btrfs_image.sh
--rw-r--r-- 1 spo spo 17316 Jan 01 00:00 ftp_data_adapter.c
+-rw-r--r-- 1 spo spo 13147 Jan 01 00:00 ftp_data_adapter.c
 -rw-r--r-- 1 spo spo 2953 Jan 01 00:00 check_remote_ftp_report.sh
 -rw-r--r-- 1 spo spo 3225 Jan 01 00:00 run_remote.bat
 -rw-r--r-- 1 spo spo 11971 Jan 01 00:00 gen_btrfs_ftp_asm.py
 -rw-r--r-- 1 spo spo 5445 Jan 01 00:00 run_remote_interactive.sh
--rw-r--r-- 1 spo spo 1805 Jan 01 00:00 run_remote_filezilla.sh
+-rw-r--r-- 1 spo spo 1982 Jan 01 00:00 run_remote_filezilla.sh
 -rw-r--r-- 1 spo spo 7161 Jan 01 00:00 run_remote.sh
 -rw-r--r-- 1 spo spo 1129 Jan 01 00:00 check_btrfs_unsupported.py
 -rw-r--r-- 1 spo spo 528 Jan 01 00:00 run_vm.sh

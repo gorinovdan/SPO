@@ -38,6 +38,7 @@ echo "ftp-адаптер=$ADAPTER_PID" >&2
 echo "лог-ftp-адаптера=$ADAPTER_LOG" >&2
 echo "FileZilla: хост 127.0.0.1, порт $FTP_CONTROL_PORT, обычный FTP без TLS, пассивный режим. PASV-порт данных: $FTP_DATA_PORT." >&2
 echo "Адаптер принимает повторные control-подключения FileZilla и последовательно передаёт команды в FTP-сервер VM." >&2
+echo "Пассивный data-поток идёт через второй SimplePipe и транспортный мост; Btrfs-данные читает только VM." >&2
 echo "Для больших файлов поставьте timeout FileZilla не меньше 120 секунд." >&2
 
 RT_DEVICES_FILE="$PROJECT_DIR/devices_filezilla.xml" \

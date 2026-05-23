@@ -137,7 +137,7 @@ architecture vm32 {
 
         // Пассивный канал данных FTP. В режиме FileZilla файл devices_filezilla.xml
         // связывает его с локальным FTP-адаптером; адаптер открывает PASV-порт
-        // и закрывает сокет после каждой передачи для настоящих FTP-клиентов.
+        // и закрывает внешний сокет после завершения порции данных от VM.
         range data_pipe_control [0x00000000 .. 0x00000048] {
             cell = 8;
             endianess = little-endian;
@@ -752,7 +752,9 @@ architecture vm32 {
             if length > 0 then {
                 data_pipe_control:4[24] = 0;
                 data_pipe_control:4[28] = length;
+                data_pipe_control:1[52] = 0;
                 data_pipe_control:1[56] = 0;
+                data_pipe_control:1[68] = 0;
                 data_pipe_control:1[60] = 1;
             }
             ip = ip + 1;
@@ -828,7 +830,9 @@ architecture vm32 {
             if length > 0 then {
                 data_pipe_control:4[24] = 0;
                 data_pipe_control:4[28] = length;
+                data_pipe_control:1[52] = 0;
                 data_pipe_control:1[56] = 0;
+                data_pipe_control:1[68] = 0;
                 data_pipe_control:1[60] = 1;
             }
             ip = ip + 1;

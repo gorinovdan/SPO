@@ -62,6 +62,8 @@ results/btrfs_source_files.txt
 
 Содержимое файлов не вшивается в ASM. При `RETR` и `COPY` VM читает данные из `BlockDevice` по смещению extent: сначала диапазон попадает в `block_buffer` через `BLOCK_READ_BUF`, затем `DATA_COPY_BLOCK` переносит порцию в пассивный FTP-поток. `BLOCK_BUF_BYTE` оставлен для совместимого побайтового чтения буфера.
 
+Пути вида `/SPO8/report.md`, `SPO8/demo/small.txt` и `../tools` разрешаются в ASM-процедуре `fs_resolve_arg_path`. Она идёт по компонентам пути и на каждом шаге ищет соответствующий `DIR_ITEM`; внешний FTP-адаптер в этом не участвует.
+
 ## Проверка суперблока
 
 `btrfs_mount` в ASM читает из `BlockDevice`:

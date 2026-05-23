@@ -1,0 +1,23 @@
+220 SPO8 Btrfs image ready
+331 User name okay, need password
+230 Login successful
+257 "/"
+213 64
+150 inode=292 size=64 extent=btrfs
+SPO8 Btrfs FTP demo file.
+Read through RemoteTasks BlockDevice.
+226 transfer complete
+150 directory stream follows
+-rw-r--r-- 1 spo spo 64 Jan 01 00:00 small.txt
+226 transfer complete
+250 CWD ok
+257 "/SPO8/tools"
+250 CWD ok
+257 "/SPO8/demo"
+150 inode=292 size=64 extent=btrfs
+SPO8 Btrfs FTP demo file.
+Read through RemoteTasks BlockDevice.
+226 transfer complete
+221 bye
+STATS cmd=12 lookup=6 stream=531 gw=76
+OK

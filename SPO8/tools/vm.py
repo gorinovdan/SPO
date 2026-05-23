@@ -614,6 +614,8 @@ def run_vm(binary, spec, spec_by_opcode, max_steps, dump_state_path=None, block_
             if sys_id == 19:
                 flat_data = value == 0
             ip += 1
+        elif mnemonic in {"EI", "DI", "IRQ_ENTER", "IRET"}:
+            ip += 1
         else:
             raise ValueError(f"unsupported instruction {mnemonic}")
 

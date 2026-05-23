@@ -36,7 +36,7 @@
 
 Образ создаёт [tools/prepare_btrfs_image.sh](tools/prepare_btrfs_image.sh). На Linux скрипт использует локальные `btrfs-progs`; на macOS автоматически запускает привилегированный контейнер Alpine с `btrfs-progs`. Контейнер нужен только как среда с `mkfs.btrfs` и `mount`, не как часть FTP-сервера.
 
-Последовательность соответствует схеме преподавателя:
+Последовательность соответствует схеме:
 
 ```text
 dd if=/dev/zero of=spo8_btrfs_block.img bs=1M count=160
@@ -114,19 +114,19 @@ umount /mnt/spo8
 
 [spo8.target.pdsl](spo8.target.pdsl) добавляет банки и инструкции:
 
-| Инструкция | Назначение |
-|---|---|
-| `PIPE_IN` | чтение байта управляющего `SimplePipe` |
-| `PIPE_OUT` | запись байта управляющего `SimplePipe` |
-| `DATA_BUF_BYTE` | запись байта в буфер пассивного потока данных |
-| `DATA_FLUSH` | отправка накопленного data-буфера |
-| `DATA_COPY_BLOCK` | перенос порции `block_buffer` в пассивный FTP-поток |
-| `BLOCK_READ_BYTE` | чтение байта из `BlockDevice` |
-| `BLOCK_READ_BUF` | чтение диапазона из `BlockDevice` в буфер устройства |
-| `BLOCK_BUF_BYTE` | чтение байта из заполненного буфера `BlockDevice` |
-| `BLOCK_WRITE_BYTE` | запись байта в `BlockDevice` |
+| Инструкция         | Назначение                                           |
+| ------------------ | ---------------------------------------------------- |
+| `PIPE_IN`          | чтение байта управляющего `SimplePipe`               |
+| `PIPE_OUT`         | запись байта управляющего `SimplePipe`               |
+| `DATA_BUF_BYTE`    | запись байта в буфер пассивного потока данных        |
+| `DATA_FLUSH`       | отправка накопленного data-буфера                    |
+| `DATA_COPY_BLOCK`  | перенос порции `block_buffer` в пассивный FTP-поток  |
+| `BLOCK_READ_BYTE`  | чтение байта из `BlockDevice`                        |
+| `BLOCK_READ_BUF`   | чтение диапазона из `BlockDevice` в буфер устройства |
+| `BLOCK_BUF_BYTE`   | чтение байта из заполненного буфера `BlockDevice`    |
+| `BLOCK_WRITE_BYTE` | запись байта в `BlockDevice`                         |
 
-`tools/ftp_data_adapter.c` — не внешний FTP-сервер и не источник файловых данных. Это сетевой мост для FileZilla: управляющие соединения FileZilla на `127.0.0.1:2121` последовательно прокидываются в один управляющий `SimplePipe` VM на `127.0.0.1:3121`; пассивный data-порт `127.0.0.1:2020` прокидывается в data-`SimplePipe` VM на `127.0.0.1:3020` и закрывается после каждой передачи. Все FTP-команды, обход Btrfs и чтение файлов выполняются в VM.
+`tools/ftp_data_adapter.c` — не внешний FTP-сервер и не источник файловых данных. Это сетевой мост для FileZilla: управляющие соединения FileZilla на `127.0.0.1:2121` последовательно прокидываются в один управляющий `SimplePipe` VM на `127.0.0.1:3121`; пассивный data-порт `127.0.0.1:2020` прокидывается в data-`SimplePipe` VM на `127.0.0.1:3020` и закрывается после каждой передачи. Адаптер не хранит текущий каталог, не разбирает пути и не отправляет скрытые FTP-команды в VM. Все FTP-команды, обход Btrfs и чтение файлов выполняются в VM.
 
 ## 6. Логика VM-программы
 
@@ -138,9 +138,10 @@ umount /mnt/spo8
 - `btrfs_mount` — читает магическое значение Btrfs, `nodesize` и objectid корня из `BlockDevice`;
 - `ftp_loop` — читает строки FTP-команд через `PIPE_IN`;
 - `dispatch_command` — разбирает команду и вызывает обработчик;
-- `cmd_list`, `cmd_nlst` — сканируют `DIR_ITEM` текущей директории;
+- `fs_resolve_arg_path` — разрешает абсолютные и относительные пути с `/`, `.`, `..` по таблицам `DIR_ITEM`;
+- `cmd_list`, `cmd_nlst` — сканируют `DIR_ITEM` текущей или явно указанной директории;
 - `cmd_cwd`, `cmd_cdup`, `emit_pwd` — ведут текущий каталог и путь;
-- `cmd_retr` — находит файл по `DIR_ITEM`, получает размер из `INODE_ITEM`, extent из `EXTENT_DATA` и отдаёт байты;
+- `cmd_retr` — находит файл по пути, получает размер из `INODE_ITEM`, extent из `EXTENT_DATA` и отдаёт байты;
 - `cmd_copy` — для файла работает как `RETR`, для директории рекурсивно обходит очередь каталогов;
 - `stream_write_byte` — единая точка вывода, переключает управляющий поток и поток данных по `v_sink`;
 - `emit_block_data` — читает содержимое файла из `BlockDevice` порциями до 512 байт и отдаёт их в пассивный FTP-поток.
@@ -224,13 +225,13 @@ make -C SPO8 remote-ftp-smoke
 
 Последние успешные проверки 16 мая 2026:
 
-| Команда | Результат |
-|---|---|
-| `make -C SPO8 local-demo` | `Btrfs FTP output OK` |
-| `make -C SPO8 remote-demo` | `assemble=<uuid>`, `run=interactive-pipe`, `Btrfs FTP output OK` |
-| `make -C SPO8 remote-unsupported` | `assemble=<uuid>`, `Btrfs unsupported-FS output OK` |
-| `make -C SPO8 remote-ftp-smoke` | `assemble=<uuid>`, `Быстрая FTP-проверка через RemoteTasks пройдена`, `LIST /` содержит `SPO8`, `RETR /SPO8/demo/small.txt` успешен |
-| `make -C SPO8 remote-ftp-report-smoke` | `Проверка RETR /SPO8/report.md через RemoteTasks пройдена` |
+| Команда                                | Результат                                                                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `make -C SPO8 local-demo`              | `Btrfs FTP output OK`                                                                                                               |
+| `make -C SPO8 remote-demo`             | `assemble=<uuid>`, `run=interactive-pipe`, `Btrfs FTP output OK`                                                                    |
+| `make -C SPO8 remote-unsupported`      | `assemble=<uuid>`, `Btrfs unsupported-FS output OK`                                                                                 |
+| `make -C SPO8 remote-ftp-smoke`        | `assemble=<uuid>`, `Быстрая FTP-проверка через RemoteTasks пройдена`, `LIST /` содержит `SPO8`, `RETR /SPO8/demo/small.txt` успешен |
+| `make -C SPO8 remote-ftp-report-smoke` | `Проверка RETR /SPO8/report.md через RemoteTasks пройдена`                                                                          |
 
 Окончание положительного RemoteTasks-сценария:
 

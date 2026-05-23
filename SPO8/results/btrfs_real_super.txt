@@ -2,12 +2,12 @@ superblock: bytenr=65536, device=spo8_btrfs_block.img
 ---------------------------------------------------------
 csum_type		0 (crc32c)
 csum_size		4
-csum			0xcdb7f1da [match]
+csum			0x48ea0fd7 [match]
 bytenr			65536
 flags			0x1
 			( WRITTEN )
 magic			_BHRfS_M [match]
-fsid			67d66816-c166-4f4a-837d-988f1ad1cd42
+fsid			49691dca-60df-4d93-bfbd-6032e86c7a50
 metadata_uuid		00000000-0000-0000-0000-000000000000
 label			SPO8_REAL
 generation		7
@@ -21,7 +21,7 @@ log_root		0
 log_root_transid (deprecated)	0
 log_root_level		0
 total_bytes		167772160
-bytes_used		974848
+bytes_used		987136
 sectorsize		4096
 nodesize		16384
 leafsize (deprecated)	16384
@@ -40,8 +40,8 @@ incompat_flags		0x361
 			  NO_HOLES )
 cache_generation	0
 uuid_tree_generation	7
-dev_item.uuid		35fd4f2e-889f-4cb4-aa0e-5de619e68ead
-dev_item.fsid		67d66816-c166-4f4a-837d-988f1ad1cd42 [match]
+dev_item.uuid		8ad138cc-7c05-4ee4-91dd-c19bf007527f
+dev_item.fsid		49691dca-60df-4d93-bfbd-6032e86c7a50 [match]
 dev_item.type		0
 dev_item.total_bytes	167772160
 dev_item.bytes_used	109051904
@@ -59,9 +59,9 @@ sys_chunk_array[2048]:
 		io_align 65536 io_width 65536 sector_size 4096
 		num_stripes 2 sub_stripes 1
 			stripe 0 devid 1 offset 22020096
-			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+			dev_uuid 8ad138cc-7c05-4ee4-91dd-c19bf007527f
 			stripe 1 devid 1 offset 30408704
-			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+			dev_uuid 8ad138cc-7c05-4ee4-91dd-c19bf007527f
 backup_roots[4]:
 	backup 0:
 		backup_tree_root:	30441472	gen: 5	level: 0
@@ -93,7 +93,7 @@ backup_roots[4]:
 		backup_dev_root:	30785536	gen: 7	level: 0
 		csum_root:	30638080	gen: 7	level: 0
 		backup_total_bytes:	167772160
-		backup_bytes_used:	974848
+		backup_bytes_used:	987136
 		backup_num_devices:	1
 
 	backup 3:

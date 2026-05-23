@@ -140,6 +140,9 @@ v_name_len:      DD 0
 v_find_parent:   DD 0
 v_arg_cmp_off:   DD 0
 v_arg_absolute:  DD 0
+v_path_next:     DD 0
+v_path_has_more: DD 0
+v_path_inode:    DD 0
 
 ; Состояние COPY: очередь каталогов для рекурсивного обхода DIR_ITEM.
 v_copy_target: DD 0
@@ -318,13 +321,13 @@ img_inode_size_9: DD 576
 img_inode_size_10: DD 64
 img_inode_size_11: DD 32
 img_inode_size_12: DD 3298
-img_inode_size_13: DD 2981
-img_inode_size_14: DD 4277
+img_inode_size_13: DD 3005
+img_inode_size_14: DD 4359
 img_inode_size_15: DD 3608
-img_inode_size_16: DD 4075
+img_inode_size_16: DD 4147
 img_inode_size_17: DD 8146
-img_inode_size_18: DD 14353
-img_inode_size_19: DD 30087
+img_inode_size_18: DD 15627
+img_inode_size_19: DD 30260
 img_inode_size_20: DD 16152
 img_inode_size_21: DD 1338
 img_inode_size_22: DD 12344
@@ -342,10 +345,10 @@ img_inode_size_33: DD 2785
 img_inode_size_34: DD 40556
 img_inode_size_35: DD 980
 img_inode_size_36: DD 64
-img_inode_size_37: DD 3835
+img_inode_size_37: DD 4187
 img_inode_size_38: DD 200
 img_inode_size_39: DD 659
-img_inode_size_40: DD 67216
+img_inode_size_40: DD 76235
 img_inode_size_41: DD 5214
 img_inode_size_42: DD 1064
 img_inode_size_43: DD 15789
@@ -353,22 +356,22 @@ img_inode_size_44: DD 3058
 img_inode_size_45: DD 1129
 img_inode_size_46: DD 3493
 img_inode_size_47: DD 2953
-img_inode_size_48: DD 18325
+img_inode_size_48: DD 13282
 img_inode_size_49: DD 11971
 img_inode_size_50: DD 5269
 img_inode_size_51: DD 3225
 img_inode_size_52: DD 7161
-img_inode_size_53: DD 1805
+img_inode_size_53: DD 1982
 img_inode_size_54: DD 5445
 img_inode_size_55: DD 528
 img_inode_size_56: DD 424
-img_inode_size_57: DD 21724
+img_inode_size_57: DD 21804
 img_inode_size_58: DD 5264
 img_inode_size_59: DD 9683
 img_inode_size_60: DD 324
 img_inode_size_61: DD 3531
 img_inode_size_62: DD 1993
-img_inode_size_63: DD 5137
+img_inode_size_63: DD 5517
 img_inode_size_64: DD 2302
 
 img_dirent_count: DD 64
@@ -688,59 +691,59 @@ img_extent_block_off_1: DD 13635584
 img_extent_block_off_2: DD 13639680
 img_extent_block_off_3: DD 13647872
 img_extent_block_off_4: DD 13651968
-img_extent_block_off_5: DD 13656064
-img_extent_block_off_6: DD 13664256
-img_extent_block_off_7: DD 13680640
-img_extent_block_off_8: DD 13713408
+img_extent_block_off_5: DD 13660160
+img_extent_block_off_6: DD 13668352
+img_extent_block_off_7: DD 13684736
+img_extent_block_off_8: DD 13717504
 img_extent_block_off_9: DD 39121212
-img_extent_block_off_10: DD 13729792
-img_extent_block_off_11: DD 13746176
+img_extent_block_off_10: DD 13733888
+img_extent_block_off_11: DD 13750272
 img_extent_block_off_12: DD 39119550
 img_extent_block_off_13: DD 39119051
-img_extent_block_off_14: DD 13750272
-img_extent_block_off_15: DD 13811712
-img_extent_block_off_16: DD 13819904
+img_extent_block_off_14: DD 13754368
+img_extent_block_off_15: DD 13815808
+img_extent_block_off_16: DD 13824000
 img_extent_block_off_17: DD 105906176
-img_extent_block_off_18: DD 13914112
-img_extent_block_off_19: DD 13918208
-img_extent_block_off_20: DD 13934592
-img_extent_block_off_21: DD 13991936
-img_extent_block_off_22: DD 13996032
+img_extent_block_off_18: DD 13918208
+img_extent_block_off_19: DD 13922304
+img_extent_block_off_20: DD 13938688
+img_extent_block_off_21: DD 13996032
+img_extent_block_off_22: DD 14000128
 img_extent_block_off_23: DD 39115777
 img_extent_block_off_24: DD 39115513
-img_extent_block_off_25: DD 14036992
+img_extent_block_off_25: DD 14041088
 img_extent_block_off_26: DD 39114856
 img_extent_block_off_27: DD 39113984
-img_extent_block_off_28: DD 14041088
-img_extent_block_off_29: DD 14110720
+img_extent_block_off_28: DD 14049280
+img_extent_block_off_29: DD 14127104
 img_extent_block_off_30: DD 39156458
-img_extent_block_off_31: DD 14118912
-img_extent_block_off_32: DD 14135296
+img_extent_block_off_31: DD 14135296
+img_extent_block_off_32: DD 14151680
 img_extent_block_off_33: DD 39154635
-img_extent_block_off_34: DD 14139392
-img_extent_block_off_35: DD 14143488
-img_extent_block_off_36: DD 14147584
-img_extent_block_off_37: DD 14168064
-img_extent_block_off_38: DD 14180352
-img_extent_block_off_39: DD 14188544
-img_extent_block_off_40: DD 14192640
-img_extent_block_off_41: DD 39150916
-img_extent_block_off_42: DD 14200832
-img_extent_block_off_43: DD 39149940
-img_extent_block_off_44: DD 39149310
-img_extent_block_off_45: DD 14209024
-img_extent_block_off_46: DD 14233600
-img_extent_block_off_47: DD 14241792
-img_extent_block_off_48: DD 39148086
-img_extent_block_off_49: DD 14254080
-img_extent_block_off_50: DD 39145667
-img_extent_block_off_51: DD 14258176
-img_extent_block_off_52: DD 14266368
+img_extent_block_off_34: DD 14155776
+img_extent_block_off_35: DD 14159872
+img_extent_block_off_36: DD 14163968
+img_extent_block_off_37: DD 14180352
+img_extent_block_off_38: DD 14192640
+img_extent_block_off_39: DD 14200832
+img_extent_block_off_40: DD 14204928
+img_extent_block_off_41: DD 39150739
+img_extent_block_off_42: DD 14213120
+img_extent_block_off_43: DD 39149763
+img_extent_block_off_44: DD 39149133
+img_extent_block_off_45: DD 14221312
+img_extent_block_off_46: DD 14245888
+img_extent_block_off_47: DD 14254080
+img_extent_block_off_48: DD 39147909
+img_extent_block_off_49: DD 14266368
+img_extent_block_off_50: DD 39145490
+img_extent_block_off_51: DD 14270464
+img_extent_block_off_52: DD 14278656
 img_extent_size: DD 4096
 img_extent_size_1: DD 4096
 img_extent_size_2: DD 8192
 img_extent_size_3: DD 4096
-img_extent_size_4: DD 4096
+img_extent_size_4: DD 8192
 img_extent_size_5: DD 8192
 img_extent_size_6: DD 16384
 img_extent_size_7: DD 32768
@@ -761,10 +764,10 @@ img_extent_size_21: DD 4096
 img_extent_size_22: DD 40960
 img_extent_size_23: DD 980
 img_extent_size_24: DD 64
-img_extent_size_25: DD 4096
+img_extent_size_25: DD 8192
 img_extent_size_26: DD 200
 img_extent_size_27: DD 659
-img_extent_size_28: DD 69632
+img_extent_size_28: DD 77824
 img_extent_size_29: DD 8192
 img_extent_size_30: DD 1064
 img_extent_size_31: DD 16384
@@ -772,12 +775,12 @@ img_extent_size_32: DD 4096
 img_extent_size_33: DD 1129
 img_extent_size_34: DD 4096
 img_extent_size_35: DD 4096
-img_extent_size_36: DD 20480
+img_extent_size_36: DD 16384
 img_extent_size_37: DD 12288
 img_extent_size_38: DD 8192
 img_extent_size_39: DD 4096
 img_extent_size_40: DD 8192
-img_extent_size_41: DD 1805
+img_extent_size_41: DD 1982
 img_extent_size_42: DD 8192
 img_extent_size_43: DD 528
 img_extent_size_44: DD 424
@@ -1530,6 +1533,13 @@ dispatch_command:
   PUSH_CONST k4
   CALL cmd_starts_with, 2
   JZ dispatch_check_pass
+  ; Новое управляющее FTP-соединение начинается из корня.
+  ; Это держит семантику FTP внутри VM, а внешний адаптер остаётся
+  ; только мостом TCP <-> SimplePipe.
+  LOAD img_root_inode
+  STORE v_current_dir
+  CALL pwd_set_root, 0
+  POP
   PUSH_ADDR s_331
   CALL emit_ztext, 1
   POP
@@ -2211,10 +2221,123 @@ pwd_pop_check_slash:
   LEAVE
   RETF
 
+; pwd_rebuild_for_inode(inode) — восстанавливает текстовый PWD по inode
+; каталога. Идём от каталога к корню через DIR_ITEM, складываем name_id
+; в стек v_copy_queue, затем печатаем имена в обратном порядке.
+pwd_rebuild_for_inode:
+  STORE v_path_inode
+  ENTER 0
+  LOAD v_path_inode
+  LOAD img_root_inode
+  EQ
+  JZ pwd_rebuild_collect
+  CALL pwd_set_root, 0
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+pwd_rebuild_collect:
+  PUSH_CONST k0
+  STORE v_copy_tail
+
+pwd_rebuild_collect_loop:
+  LOAD v_path_inode
+  LOAD img_root_inode
+  EQ
+  JZ pwd_rebuild_find_parent
+  JMP pwd_rebuild_emit
+
+pwd_rebuild_find_parent:
+  PUSH_CONST k0
+  STORE v_scan_i
+pwd_rebuild_scan_loop:
+  LOAD v_scan_i
+  LOAD img_dirent_count
+  LT
+  JZ pwd_rebuild_fallback_root
+
+  PUSH_ADDR img_dirent_inode
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  LOAD v_path_inode
+  EQ
+  JZ pwd_rebuild_scan_next
+
+  PUSH_ADDR img_dirent_type
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  PUSH_CONST k_btrfs_ft_dir
+  EQ
+  JZ pwd_rebuild_scan_next
+
+  PUSH_ADDR img_dirent_name_id
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  STORE v_name_id
+  PUSH_ADDR v_copy_queue
+  LOAD v_copy_tail
+  INDEX
+  LOAD v_name_id
+  STORE_IND
+  LOAD v_copy_tail
+  PUSH_CONST k1
+  ADD
+  STORE v_copy_tail
+
+  PUSH_ADDR img_dirent_parent
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  STORE v_path_inode
+  JMP pwd_rebuild_collect_loop
+
+pwd_rebuild_scan_next:
+  LOAD v_scan_i
+  PUSH_CONST k1
+  ADD
+  STORE v_scan_i
+  JMP pwd_rebuild_scan_loop
+
+pwd_rebuild_fallback_root:
+  CALL pwd_set_root, 0
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+pwd_rebuild_emit:
+  CALL pwd_set_root, 0
+  POP
+pwd_rebuild_emit_loop:
+  LOAD v_copy_tail
+  PUSH_CONST k0
+  GT
+  JZ pwd_rebuild_done
+  LOAD v_copy_tail
+  PUSH_CONST k1
+  SUB
+  STORE v_copy_tail
+  PUSH_ADDR v_copy_queue
+  LOAD v_copy_tail
+  INDEX
+  LOAD_IND
+  CALL pwd_append_name, 1
+  POP
+  JMP pwd_rebuild_emit_loop
+
+pwd_rebuild_done:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
 ; =====================================================================
 ; cmd_cwd — изменяет текущий каталог.
-; Аргументы: "/", ".", ".." или имя DIR_ITEM в текущем каталоге.
-; Поиск выполняется сканированием записей Btrfs DIR_ITEM.
+; Аргумент может быть относительным или абсолютным путём с несколькими
+; компонентами. Поиск выполняется сканированием записей Btrfs DIR_ITEM.
 ; =====================================================================
 cmd_cwd:
   ENTER 0
@@ -2223,35 +2346,7 @@ cmd_cwd:
   ADD
   STORE v_lookup_count
 
-  ; arg == "/" означает переход в корень.
-  PUSH_ADDR p_root
-  CALL arg_eq, 1
-  JZ cmd_cwd_check_dot
-  LOAD img_root_inode
-  STORE v_current_dir
-  CALL pwd_set_root, 0
-  POP
-  JMP cmd_cwd_ok
-
-cmd_cwd_check_dot:
-  PUSH_ADDR p_dot
-  CALL arg_eq, 1
-  JZ cmd_cwd_check_dotdot
-  ; "." — остаёмся в текущем каталоге.
-  JMP cmd_cwd_ok
-
-cmd_cwd_check_dotdot:
-  PUSH_ADDR p_dotdot
-  CALL arg_eq, 1
-  JZ cmd_cwd_lookup_dir
-  CALL fs_parent_of_current, 0
-  STORE v_current_dir
-  CALL pwd_pop, 0
-  POP
-  JMP cmd_cwd_ok
-
-cmd_cwd_lookup_dir:
-  CALL fs_find_dirent_by_arg, 0
+  CALL fs_resolve_arg_path, 0
   JZ cmd_cwd_missing
   LOAD v_found_type
   PUSH_CONST k_btrfs_ft_dir
@@ -2259,15 +2354,8 @@ cmd_cwd_lookup_dir:
   JZ cmd_cwd_missing
   LOAD v_found_inode
   STORE v_current_dir
-  LOAD v_arg_absolute
-  PUSH_CONST k1
-  EQ
-  JZ cmd_cwd_append
-  CALL pwd_set_root, 0
-  POP
-cmd_cwd_append:
-  LOAD v_name_id
-  CALL pwd_append_name, 1
+  LOAD v_current_dir
+  CALL pwd_rebuild_for_inode, 1
   POP
   JMP cmd_cwd_ok
 
@@ -2318,13 +2406,32 @@ cmd_list:
   PUSH_CONST k1
   ADD
   STORE v_lookup_count
+  LOAD v_current_dir
+  STORE v_find_parent
+  LOAD v_arg_off
+  PUSH_CONST k0
+  EQ
+  JZ cmd_list_resolve_arg
+  JMP cmd_list_start_output
+
+cmd_list_resolve_arg:
+  CALL fs_resolve_arg_path, 0
+  JZ cmd_list_missing
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_dir
+  EQ
+  JZ cmd_list_missing
+  LOAD v_found_inode
+  STORE v_find_parent
+
+cmd_list_start_output:
   PUSH_ADDR s_150_list
   CALL emit_ztext, 1
   POP
   PUSH_CONST k1
   STORE v_sink
 
-  ; Сканируем DIR_ITEM дерева FS: parent == v_current_dir.
+  ; Сканируем DIR_ITEM дерева FS: parent == v_find_parent.
   PUSH_CONST k0
   STORE v_scan_i
 
@@ -2338,7 +2445,7 @@ cmd_list_loop:
   LOAD v_scan_i
   INDEX
   LOAD_IND
-  LOAD v_current_dir
+  LOAD v_find_parent
   EQ
   JZ cmd_list_next
 
@@ -2390,11 +2497,19 @@ cmd_list_next:
   JMP cmd_list_loop
 
 cmd_list_done:
-  CALL data_stream_flush, 0
+  CALL data_stream_close, 0
   POP
   PUSH_CONST k0
   STORE v_sink
   PUSH_ADDR s_226
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+cmd_list_missing:
+  PUSH_ADDR s_550
   CALL emit_ztext, 1
   POP
   PUSH_CONST k0
@@ -2410,6 +2525,25 @@ cmd_nlst:
   PUSH_CONST k1
   ADD
   STORE v_lookup_count
+  LOAD v_current_dir
+  STORE v_find_parent
+  LOAD v_arg_off
+  PUSH_CONST k0
+  EQ
+  JZ cmd_nlst_resolve_arg
+  JMP cmd_nlst_start_output
+
+cmd_nlst_resolve_arg:
+  CALL fs_resolve_arg_path, 0
+  JZ cmd_nlst_missing
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_dir
+  EQ
+  JZ cmd_nlst_missing
+  LOAD v_found_inode
+  STORE v_find_parent
+
+cmd_nlst_start_output:
   PUSH_ADDR s_150_list
   CALL emit_ztext, 1
   POP
@@ -2428,7 +2562,7 @@ cmd_nlst_loop:
   LOAD v_scan_i
   INDEX
   LOAD_IND
-  LOAD v_current_dir
+  LOAD v_find_parent
   EQ
   JZ cmd_nlst_next
   PUSH_ADDR img_dirent_name_id
@@ -2448,11 +2582,19 @@ cmd_nlst_next:
   JMP cmd_nlst_loop
 
 cmd_nlst_done:
-  CALL data_stream_flush, 0
+  CALL data_stream_close, 0
   POP
   PUSH_CONST k0
   STORE v_sink
   PUSH_ADDR s_226
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+cmd_nlst_missing:
+  PUSH_ADDR s_550
   CALL emit_ztext, 1
   POP
   PUSH_CONST k0
@@ -2511,7 +2653,7 @@ cmd_retr:
   ADD
   STORE v_lookup_count
 
-  CALL fs_find_dirent_by_arg, 0
+  CALL fs_resolve_arg_path, 0
   JZ cmd_retr_missing
   LOAD v_found_type
   PUSH_CONST k_btrfs_ft_reg
@@ -2551,7 +2693,7 @@ cmd_size:
   PUSH_CONST k1
   ADD
   STORE v_lookup_count
-  CALL fs_find_dirent_by_arg, 0
+  CALL fs_resolve_arg_path, 0
   JZ cmd_size_missing
   LOAD v_found_type
   PUSH_CONST k_btrfs_ft_reg
@@ -2590,7 +2732,7 @@ cmd_mdtm:
   PUSH_CONST k1
   ADD
   STORE v_lookup_count
-  CALL fs_find_dirent_by_arg, 0
+  CALL fs_resolve_arg_path, 0
   JZ cmd_mdtm_missing
   PUSH_ADDR s_mdtm
   CALL emit_ztext, 1
@@ -2637,7 +2779,7 @@ emit_file:
   LOAD v_file_size
   CALL emit_block_data, 2
   POP
-  CALL data_stream_flush, 0
+  CALL data_stream_close, 0
   POP
   PUSH_CONST k0
   STORE v_sink
@@ -2661,45 +2803,7 @@ cmd_copy:
   ADD
   STORE v_lookup_count
 
-  ; COPY без аргумента не имеет смысла.
-  LOAD v_arg_off
-  PUSH_CONST k0
-  EQ
-  JZ cmd_copy_check_root
-  JMP cmd_copy_missing
-
-cmd_copy_check_root:
-  PUSH_ADDR p_root
-  CALL arg_eq, 1
-  JZ cmd_copy_check_dot
-  LOAD img_root_inode
-  STORE v_copy_target
-  PUSH_CONST k_btrfs_ft_dir
-  STORE v_found_type
-  JMP cmd_copy_dispatch
-
-cmd_copy_check_dot:
-  PUSH_ADDR p_dot
-  CALL arg_eq, 1
-  JZ cmd_copy_check_dotdot
-  LOAD v_current_dir
-  STORE v_copy_target
-  PUSH_CONST k_btrfs_ft_dir
-  STORE v_found_type
-  JMP cmd_copy_dispatch
-
-cmd_copy_check_dotdot:
-  PUSH_ADDR p_dotdot
-  CALL arg_eq, 1
-  JZ cmd_copy_lookup
-  CALL fs_parent_of_current, 0
-  STORE v_copy_target
-  PUSH_CONST k_btrfs_ft_dir
-  STORE v_found_type
-  JMP cmd_copy_dispatch
-
-cmd_copy_lookup:
-  CALL fs_find_dirent_by_arg, 0
+  CALL fs_resolve_arg_path, 0
   JZ cmd_copy_missing
   LOAD v_found_inode
   STORE v_copy_target
@@ -2895,52 +2999,181 @@ copy_emit_inode_file_missing:
   RETF
 
 ; =====================================================================
-; fs_find_dirent_by_arg — ищет DIR_ITEM в текущем каталоге по аргументу
-; команды. При успехе заполняет v_found_dirent/v_found_inode/
-; v_found_type и возвращает 1.
+; path_at_term — возвращает 1, если v_arg_cmp_off указывает на конец
+; FTP-аргумента: NUL, пробел, CR или LF.
 ; =====================================================================
-fs_find_dirent_by_arg:
+path_at_term:
   ENTER 0
-  LOAD v_arg_off
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_cmp_off
+  INDEXB
+  LOADB_IND
+  STORE v_eq_ca
+  LOAD v_eq_ca
   PUSH_CONST k0
   EQ
-  JZ fs_find_dirent_prepare
+  JZ path_at_term_space
+  PUSH_CONST k1
+  LEAVE
+  RETF
+path_at_term_space:
+  LOAD v_eq_ca
+  PUSH_CONST k32
+  EQ
+  JZ path_at_term_cr
+  PUSH_CONST k1
+  LEAVE
+  RETF
+path_at_term_cr:
+  LOAD v_eq_ca
+  PUSH_CONST k13
+  EQ
+  JZ path_at_term_lf
+  PUSH_CONST k1
+  LEAVE
+  RETF
+path_at_term_lf:
+  LOAD v_eq_ca
+  PUSH_CONST k10
+  EQ
+  JZ path_at_term_false
+  PUSH_CONST k1
+  LEAVE
+  RETF
+path_at_term_false:
   PUSH_CONST k0
   LEAVE
   RETF
 
-fs_find_dirent_prepare:
-  PUSH_CONST k0
-  STORE v_arg_absolute
-  LOAD v_current_dir
-  STORE v_find_parent
-  LOAD v_arg_off
-  STORE v_arg_cmp_off
+; path_skip_slashes — пропускает один или несколько '/' в v_arg_cmp_off.
+path_skip_slashes:
+  ENTER 0
+path_skip_slashes_loop:
   PUSH_ADDR v_cmd_buf
-  LOAD v_arg_off
+  LOAD v_arg_cmp_off
   INDEXB
   LOADB_IND
   PUSH_CONST c_slash
   EQ
-  JZ fs_find_dirent_scan_start
-  PUSH_CONST k1
-  STORE v_arg_absolute
-  LOAD img_root_inode
-  STORE v_find_parent
-  LOAD v_arg_off
+  JZ path_skip_slashes_done
+  LOAD v_arg_cmp_off
   PUSH_CONST k1
   ADD
   STORE v_arg_cmp_off
+  JMP path_skip_slashes_loop
+path_skip_slashes_done:
+  PUSH_CONST k0
+  LEAVE
+  RETF
 
-fs_find_dirent_scan_start:
+; path_prepare_next — переносит v_arg_cmp_off на следующий компонент пути.
+; Вход: v_path_next указывает на байт после текущего компонента.
+; Выход: v_path_has_more = 1, если дальше есть ещё компонент.
+path_prepare_next:
+  ENTER 0
+  LOAD v_path_next
+  STORE v_arg_cmp_off
+  CALL path_skip_slashes, 0
+  POP
+  CALL path_at_term, 0
+  JZ path_prepare_more
+  PUSH_CONST k0
+  STORE v_path_has_more
+  PUSH_CONST k0
+  LEAVE
+  RETF
+path_prepare_more:
+  PUSH_CONST k1
+  STORE v_path_has_more
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; arg_component_eq(target_addr) — сравнивает текущий компонент пути
+; в v_cmd_buf[v_arg_cmp_off] с NUL-терминированной строкой target.
+; Компонент завершается '/', NUL, пробелом, CR или LF.
+; =====================================================================
+arg_component_eq:
+  STORE v_eq_b
+  ENTER 0
+  PUSH_CONST k0
+  STORE v_eq_i
+
+arg_component_eq_loop:
+  LOAD v_eq_b
+  LOAD v_eq_i
+  INDEXB
+  LOADB_IND
+  STORE v_eq_cb
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_cmp_off
+  LOAD v_eq_i
+  ADD
+  INDEXB
+  LOADB_IND
+  STORE v_eq_ca
+  LOAD v_eq_cb
+  PUSH_CONST k0
+  EQ
+  JZ arg_component_eq_compare
+
+  LOAD v_eq_ca
+  PUSH_CONST c_slash
+  EQ
+  JZ arg_component_eq_check_term
+  PUSH_CONST k1
+  LEAVE
+  RETF
+arg_component_eq_check_term:
+  LOAD v_arg_cmp_off
+  LOAD v_eq_i
+  ADD
+  STORE v_path_next
+  LOAD v_path_next
+  STORE v_arg_cmp_off
+  CALL path_at_term, 0
+  STORE v_path_has_more
+  LOAD v_path_next
+  LOAD v_eq_i
+  SUB
+  STORE v_arg_cmp_off
+  LOAD v_path_has_more
+  JZ arg_component_eq_false
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+arg_component_eq_compare:
+  LOAD v_eq_ca
+  LOAD v_eq_cb
+  EQ
+  JZ arg_component_eq_false
+  LOAD v_eq_i
+  PUSH_CONST k1
+  ADD
+  STORE v_eq_i
+  JMP arg_component_eq_loop
+
+arg_component_eq_false:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; fs_find_dirent_in_parent_by_component — ищет DIR_ITEM в каталоге
+; v_find_parent по текущему компоненту пути v_arg_cmp_off.
+; =====================================================================
+fs_find_dirent_in_parent_by_component:
+  ENTER 0
   PUSH_CONST k0
   STORE v_scan_i
 
-fs_find_dirent_loop:
+fs_find_dirent_component_loop:
   LOAD v_scan_i
   LOAD img_dirent_count
   LT
-  JZ fs_find_dirent_missing
+  JZ fs_find_dirent_component_missing
 
   PUSH_ADDR img_dirent_parent
   LOAD v_scan_i
@@ -2956,7 +3189,7 @@ fs_find_dirent_loop:
   LOAD_IND
   STORE v_name_id
   LOAD v_name_id
-  CALL fs_arg_eq_name, 1
+  CALL fs_arg_component_eq_name, 1
   JZ fs_find_dirent_next
 
   LOAD v_scan_i
@@ -2980,20 +3213,147 @@ fs_find_dirent_next:
   PUSH_CONST k1
   ADD
   STORE v_scan_i
-  JMP fs_find_dirent_loop
+  JMP fs_find_dirent_component_loop
 
-fs_find_dirent_missing:
+fs_find_dirent_component_missing:
   PUSH_CONST k0
   LEAVE
   RETF
 
 ; =====================================================================
-; fs_parent_of_current — находит родительский каталог текущего inode
-; по DIR_ITEM с типом BTRFS_FT_DIR. Для корня возвращает корень.
+; fs_resolve_arg_path — разрешает аргумент FTP-команды как путь.
+; Поддерживает абсолютные и относительные пути, '.', '..' и несколько
+; компонентов. При успехе заполняет v_found_inode/v_found_type/v_name_id.
+; =====================================================================
+fs_resolve_arg_path:
+  ENTER 0
+  LOAD v_arg_off
+  PUSH_CONST k0
+  EQ
+  JZ fs_resolve_prepare
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+fs_resolve_prepare:
+  PUSH_CONST k0
+  STORE v_arg_absolute
+  LOAD v_current_dir
+  STORE v_find_parent
+  LOAD v_arg_off
+  STORE v_arg_cmp_off
+
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_cmp_off
+  INDEXB
+  LOADB_IND
+  PUSH_CONST c_slash
+  EQ
+  JZ fs_resolve_after_root
+  PUSH_CONST k1
+  STORE v_arg_absolute
+  LOAD img_root_inode
+  STORE v_find_parent
+  CALL path_skip_slashes, 0
+  POP
+
+fs_resolve_after_root:
+  CALL path_at_term, 0
+  JZ fs_resolve_loop
+  LOAD v_find_parent
+  STORE v_found_inode
+  PUSH_CONST k_btrfs_ft_dir
+  STORE v_found_type
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+fs_resolve_loop:
+  PUSH_ADDR p_dot
+  CALL arg_component_eq, 1
+  JZ fs_resolve_check_dotdot
+  LOAD v_arg_cmp_off
+  PUSH_CONST k1
+  ADD
+  STORE v_path_next
+  CALL path_prepare_next, 0
+  POP
+  LOAD v_path_has_more
+  JZ fs_resolve_return_parent
+  JMP fs_resolve_loop
+
+fs_resolve_check_dotdot:
+  PUSH_ADDR p_dotdot
+  CALL arg_component_eq, 1
+  JZ fs_resolve_lookup_component
+  LOAD v_find_parent
+  CALL fs_parent_of_inode, 1
+  STORE v_find_parent
+  LOAD v_arg_cmp_off
+  PUSH_CONST k2
+  ADD
+  STORE v_path_next
+  CALL path_prepare_next, 0
+  POP
+  LOAD v_path_has_more
+  JZ fs_resolve_return_parent
+  JMP fs_resolve_loop
+
+fs_resolve_lookup_component:
+  CALL fs_find_dirent_in_parent_by_component, 0
+  JZ fs_resolve_missing
+  LOAD v_arg_cmp_off
+  LOAD v_name_len
+  ADD
+  STORE v_path_next
+  CALL path_prepare_next, 0
+  POP
+  LOAD v_path_has_more
+  JZ fs_resolve_done
+
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_dir
+  EQ
+  JZ fs_resolve_missing
+  LOAD v_found_inode
+  STORE v_find_parent
+  JMP fs_resolve_loop
+
+fs_resolve_return_parent:
+  LOAD v_find_parent
+  STORE v_found_inode
+  PUSH_CONST k_btrfs_ft_dir
+  STORE v_found_type
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+fs_resolve_done:
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+fs_resolve_missing:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; fs_parent_of_current — совместимая обёртка над fs_parent_of_inode.
 ; =====================================================================
 fs_parent_of_current:
   ENTER 0
   LOAD v_current_dir
+  CALL fs_parent_of_inode, 1
+  LEAVE
+  RETF
+
+; fs_parent_of_inode(inode) — находит родительский каталог inode
+; по DIR_ITEM с типом BTRFS_FT_DIR. Для корня возвращает корень.
+fs_parent_of_inode:
+  STORE v_path_inode
+  ENTER 0
+  LOAD v_path_inode
   LOAD img_root_inode
   EQ
   JZ fs_parent_scan
@@ -3015,7 +3375,7 @@ fs_parent_loop:
   LOAD v_scan_i
   INDEX
   LOAD_IND
-  LOAD v_current_dir
+  LOAD v_path_inode
   EQ
   JZ fs_parent_next
 
@@ -3239,6 +3599,88 @@ fs_arg_name_check_lf:
   LEAVE
   RETF
 fs_arg_name_false:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; fs_arg_component_eq_name(name_id) — сравнивает текущий компонент пути
+; v_arg_cmp_off с именем DIR_ITEM. После имени допускается '/', NUL,
+; пробел, CR или LF.
+; =====================================================================
+fs_arg_component_eq_name:
+  STORE v_name_id
+  ENTER 0
+  LOAD v_name_id
+  CALL name_load_info, 1
+  POP
+  PUSH_CONST k0
+  STORE v_eq_i
+
+fs_arg_component_name_loop:
+  LOAD v_eq_i
+  LOAD v_name_len
+  LT
+  JZ fs_arg_component_name_check_end
+  PUSH_ADDR img_name_pool
+  LOAD v_name_off
+  LOAD v_eq_i
+  ADD
+  INDEXB
+  LOADB_IND
+  STORE v_eq_cb
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_cmp_off
+  LOAD v_eq_i
+  ADD
+  INDEXB
+  LOADB_IND
+  STORE v_eq_ca
+  LOAD v_eq_ca
+  LOAD v_eq_cb
+  EQ
+  JZ fs_arg_component_name_false
+  LOAD v_eq_i
+  PUSH_CONST k1
+  ADD
+  STORE v_eq_i
+  JMP fs_arg_component_name_loop
+
+fs_arg_component_name_check_end:
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_cmp_off
+  LOAD v_name_len
+  ADD
+  INDEXB
+  LOADB_IND
+  STORE v_eq_ca
+  LOAD v_eq_ca
+  PUSH_CONST c_slash
+  EQ
+  JZ fs_arg_component_name_check_term
+  PUSH_CONST k1
+  LEAVE
+  RETF
+fs_arg_component_name_check_term:
+  LOAD v_arg_cmp_off
+  LOAD v_name_len
+  ADD
+  STORE v_path_next
+  LOAD v_path_next
+  STORE v_arg_cmp_off
+  CALL path_at_term, 0
+  STORE v_path_has_more
+  LOAD v_path_next
+  LOAD v_name_len
+  SUB
+  STORE v_arg_cmp_off
+  LOAD v_path_has_more
+  JZ fs_arg_component_name_false
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+fs_arg_component_name_false:
   PUSH_CONST k0
   LEAVE
   RETF
@@ -3644,7 +4086,7 @@ stream_write_control:
   RETF
 
 ; =====================================================================
-; data_stream_write_byte(byte) / data_stream_flush()
+; data_stream_write_byte(byte) / data_stream_flush() / data_stream_close()
 ; Отдельный пассивный канал данных. Для RemoteTasks SimplePipe это
 ; быстрее и ближе к реальному FTP, чем отправлять каждый байт через
 ; control[0] SyncSend: байты копятся в outbox, затем отправляются
@@ -3677,6 +4119,14 @@ data_stream_flush:
   DATA_FLUSH
   PUSH_CONST k0
   STORE v_data_len
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+data_stream_close:
+  ENTER 0
+  CALL data_stream_flush, 0
+  POP
   PUSH_CONST k0
   LEAVE
   RETF

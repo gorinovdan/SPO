@@ -8,7 +8,7 @@
 
 - `prepare_btrfs_image.sh` создаёт настоящий Btrfs-образ из каталога `SPO8`;
 - `BlockDevice` открывает `spo8_btrfs_block.img`;
-- управляющий FTP-поток идёт через `SimplePipe` VM и C-адаптер, который принимает повторные control-подключения FileZilla;
+- управляющий FTP-поток идёт через `SimplePipe` VM и C-адаптер, который принимает повторные control-подключения FileZilla, но не разбирает пути и не синхронизирует `CWD`;
 - пассивный FTP-поток идёт через второй `SimplePipe` и тот же C-адаптер;
 - FTP-сервер выполняется внутри VM-программы [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm).
 

@@ -12,20 +12,22 @@
 #include <unistd.h>
 
 /*
- * Адаптер нужен только для сетевой стыковки FileZilla и RemoteTasks.
+ * Сетевой адаптер RemoteTasks <-> FileZilla.
  *
- * FTP-сервер, команды FTP, обход Btrfs и чтение BlockDevice остаются внутри VM.
- * Здесь решаются две практические проблемы SimplePipe:
- *   1) FileZilla может открывать несколько управляющих TCP-соединений.
- *      VM получает один последовательный control-поток, поэтому адаптер
- *      последовательно прокидывает команды всех клиентов в этот поток.
- *   2) Для пассивного data-канала SimplePipe не умеет закрывать отдельный
- *      TCP-сокет после LIST/RETR. Адаптер закрывает внешний data-сокет, когда
- *      VM закончила выдавать данные.
+ * Внутри VM остаются FTP-сервер, разбор команд, текущий каталог,
+ * разрешение путей, обход Btrfs и чтение BlockDevice. Адаптер делает только
+ * транспортную работу:
+ *   1) принимает несколько внешних control-соединений FileZilla и
+ *      последовательно передаёт строки команд в один control-SimplePipe VM;
+ *   2) прокидывает PASV data-сокет FileZilla к data-SimplePipe VM.
+ *
+ * Адаптер не читает Btrfs-образ, не знает файловых путей и не отправляет
+ * служебные FTP-команды в VM. В текущей версии RemoteTasks reset-регистр
+ * SimplePipe для tcp-потока зависает на переподключении, поэтому внешний
+ * PASV-сокет закрывается здесь после короткой паузы в data-потоке VM.
  */
 
 #define LINE_CAP 2048
-#define PATH_CAP 512
 #define RESPONSE_TIMEOUT_MS 300000
 #define DATA_FIRST_TIMEOUT_MS 15000
 #define DATA_NEXT_TIMEOUT_MS 5000
@@ -271,153 +273,6 @@ static int is_quit_command(const char *line) {
            (line[4] == '\r' || line[4] == '\n' || line[4] == ' ' || line[4] == '\0');
 }
 
-static void parse_command(const char *line, char *cmd, size_t cmd_cap,
-                          char *arg, size_t arg_cap) {
-    size_t i = 0;
-    size_t pos = 0;
-
-    while (line[pos] == ' ' || line[pos] == '\t') {
-        pos++;
-    }
-    while (line[pos] != '\0' && line[pos] != ' ' && line[pos] != '\t' &&
-           line[pos] != '\r' && line[pos] != '\n') {
-        if (i + 1 < cmd_cap) {
-            cmd[i++] = (char)toupper((unsigned char)line[pos]);
-        }
-        pos++;
-    }
-    cmd[i] = '\0';
-
-    while (line[pos] == ' ' || line[pos] == '\t') {
-        pos++;
-    }
-
-    i = 0;
-    while (line[pos] != '\0' && line[pos] != '\r' && line[pos] != '\n') {
-        if (i + 1 < arg_cap) {
-            arg[i++] = line[pos];
-        }
-        pos++;
-    }
-    while (i > 0 && (arg[i - 1] == ' ' || arg[i - 1] == '\t')) {
-        i--;
-    }
-    arg[i] = '\0';
-}
-
-static int command_uses_cwd(const char *cmd) {
-    return strcmp(cmd, "PWD") == 0 ||
-           strcmp(cmd, "CWD") == 0 ||
-           strcmp(cmd, "CDUP") == 0 ||
-           strcmp(cmd, "LIST") == 0 ||
-           strcmp(cmd, "NLST") == 0 ||
-           strcmp(cmd, "RETR") == 0 ||
-           strcmp(cmd, "SIZE") == 0 ||
-           strcmp(cmd, "MDTM") == 0 ||
-           strcmp(cmd, "COPY") == 0;
-}
-
-static void canonicalize_path(const char *path, char *out, size_t out_cap) {
-    char work[PATH_CAP * 2];
-    char *parts[128];
-    int count = 0;
-    char *saveptr = NULL;
-
-    if (path == NULL || path[0] == '\0') {
-        snprintf(out, out_cap, "/");
-        return;
-    }
-
-    snprintf(work, sizeof(work), "%s", path);
-    for (char *part = strtok_r(work, "/", &saveptr);
-         part != NULL;
-         part = strtok_r(NULL, "/", &saveptr)) {
-        if (strcmp(part, ".") == 0 || part[0] == '\0') {
-            continue;
-        }
-        if (strcmp(part, "..") == 0) {
-            if (count > 0) {
-                count--;
-            }
-            continue;
-        }
-        if (count < (int)(sizeof(parts) / sizeof(parts[0]))) {
-            parts[count++] = part;
-        }
-    }
-
-    size_t off = 0;
-    if (out_cap == 0) {
-        return;
-    }
-    out[off++] = '/';
-    out[off] = '\0';
-    for (int i = 0; i < count; i++) {
-        size_t part_len = strlen(parts[i]);
-        if (off > 1) {
-            if (off + 1 >= out_cap) {
-                break;
-            }
-            out[off++] = '/';
-        }
-        if (off + part_len >= out_cap) {
-            part_len = out_cap - off - 1;
-        }
-        memcpy(out + off, parts[i], part_len);
-        off += part_len;
-        out[off] = '\0';
-    }
-}
-
-static void update_cwd_from_arg(char *cwd, size_t cwd_cap, const char *arg) {
-    char combined[PATH_CAP * 2];
-
-    if (arg == NULL || arg[0] == '\0') {
-        return;
-    }
-    if (arg[0] == '/') {
-        canonicalize_path(arg, cwd, cwd_cap);
-        return;
-    }
-
-    if (strcmp(cwd, "/") == 0) {
-        snprintf(combined, sizeof(combined), "/%s", arg);
-    } else {
-        snprintf(combined, sizeof(combined), "%s/%s", cwd, arg);
-    }
-    canonicalize_path(combined, cwd, cwd_cap);
-}
-
-static int sync_vm_cwd(struct control_state *state, const char *cwd) {
-    char command[PATH_CAP + 16];
-    char work[PATH_CAP];
-    char *saveptr = NULL;
-
-    snprintf(command, sizeof(command), "CWD /\r\n");
-    if (write_all(state->vm_fd, (const unsigned char *)command, strlen(command)) < 0) {
-        return -1;
-    }
-    int code = read_full_response(state->vm_fd, -1);
-    if (code < 200 || code >= 300 || strcmp(cwd, "/") == 0) {
-        return code;
-    }
-
-    snprintf(work, sizeof(work), "%s", cwd);
-    for (char *part = strtok_r(work, "/", &saveptr);
-         part != NULL;
-         part = strtok_r(NULL, "/", &saveptr)) {
-        snprintf(command, sizeof(command), "CWD %s\r\n", part);
-        if (write_all(state->vm_fd, (const unsigned char *)command, strlen(command)) < 0) {
-            return -1;
-        }
-        code = read_full_response(state->vm_fd, -1);
-        if (code < 200 || code >= 300) {
-            return code;
-        }
-    }
-    return code;
-}
-
 static void *control_client_thread(void *opaque) {
     struct control_client_args *args = (struct control_client_args *)opaque;
     int client_fd = args->client_fd;
@@ -431,9 +286,6 @@ static void *control_client_thread(void *opaque) {
         }
     }
 
-    char cwd[PATH_CAP];
-    snprintf(cwd, sizeof(cwd), "/");
-
     for (;;) {
         char line[LINE_CAP];
         ssize_t len = read_line_plain(client_fd, line, sizeof(line) - 3);
@@ -443,49 +295,20 @@ static void *control_client_thread(void *opaque) {
         normalize_client_line(line, &len);
 
         if (is_quit_command(line)) {
-            static const char reply[] = "221 До свидания.\r\n";
+            static const char reply[] = "221 bye\r\n";
             (void)write_all(client_fd, (const unsigned char *)reply, sizeof(reply) - 1);
             break;
         }
 
-        char cmd[16];
-        char arg[LINE_CAP];
-        parse_command(line, cmd, sizeof(cmd), arg, sizeof(arg));
-
         pthread_mutex_lock(&state->lock);
-        int ok = 0;
-        if (command_uses_cwd(cmd)) {
-            int sync_code = sync_vm_cwd(state, cwd);
-            fprintf(stderr, "SPO8 FTP control: синхронизация cwd=%s -> %d\n", cwd, sync_code);
-            fflush(stderr);
-            if (sync_code < 200 || sync_code >= 300) {
-                ok = -1;
-            }
-        }
+        int ok = write_all(state->vm_fd, (const unsigned char *)line, (size_t)len);
         if (ok == 0) {
-            fprintf(stderr, "SPO8 FTP control: команда %s %s\n", cmd, arg);
-            fflush(stderr);
-            ok = write_all(state->vm_fd, (const unsigned char *)line, (size_t)len);
-        }
-        int code = -1;
-        if (ok == 0) {
-            code = read_full_response(state->vm_fd, client_fd);
-            fprintf(stderr, "SPO8 FTP control: ответ %s -> %d\n", cmd, code);
-            fflush(stderr);
-            ok = code < 0 ? -1 : 0;
+            ok = read_full_response(state->vm_fd, client_fd) < 0 ? -1 : 0;
         }
         pthread_mutex_unlock(&state->lock);
 
         if (ok < 0) {
             break;
-        }
-
-        if (code >= 200 && code < 300) {
-            if (strcmp(cmd, "CWD") == 0) {
-                update_cwd_from_arg(cwd, sizeof(cwd), arg);
-            } else if (strcmp(cmd, "CDUP") == 0) {
-                update_cwd_from_arg(cwd, sizeof(cwd), "..");
-            }
         }
     }
 
@@ -584,14 +407,6 @@ int main(int argc, char **argv) {
     fprintf(stderr, "SPO8 адаптер FTP: управляющий поток VM подключён\n");
     fflush(stderr);
 
-    int vm_data_fd = accept_retry(vm_data_listen);
-    if (vm_data_fd < 0) {
-        close(vm_control_fd);
-        return 1;
-    }
-    fprintf(stderr, "SPO8 адаптер FTP: поток данных VM подключён\n");
-    fflush(stderr);
-
     struct control_state state;
     memset(&state, 0, sizeof(state));
     state.vm_fd = vm_control_fd;
@@ -603,14 +418,23 @@ int main(int argc, char **argv) {
     if (greeting_len <= 0) {
         fprintf(stderr, "SPO8 адаптер FTP: VM не прислала FTP-приветствие\n");
         close(vm_control_fd);
-        close(vm_data_fd);
         return 1;
     }
     state.greeting_len = (size_t)greeting_len;
 
+    int vm_data_fd = accept_retry(vm_data_listen);
+    if (vm_data_fd < 0) {
+        close(vm_control_fd);
+        return 1;
+    }
+    fprintf(stderr, "SPO8 адаптер FTP: поток данных VM подключён\n");
+    fflush(stderr);
+
     struct data_args *dargs = (struct data_args *)calloc(1, sizeof(*dargs));
     if (dargs == NULL) {
         perror("calloc");
+        close(vm_control_fd);
+        close(vm_data_fd);
         return 2;
     }
     dargs->vm_fd = vm_data_fd;
