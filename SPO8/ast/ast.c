@@ -157,7 +157,7 @@ void free_ast(AST_Node* node) {
 	switch (node->type) {
 	case AST_CHAR:
 	case AST_TYPE_ARRAY_DIMENTION:
-		// static allocated memory
+		// Статически заданное значение, освобождать нечего.
 		break;
 	case AST_HEX:
 	case AST_BIT:
@@ -225,7 +225,7 @@ static char* specify_op(AST_Node* node, char* op) {
 	return result;
 }
 
-// returns null-terminated string
+// Возвращает NUL-терминированную строку.
 char* expr_to_string(AST_Node* node) {
 	char* result;
 	int res_len;

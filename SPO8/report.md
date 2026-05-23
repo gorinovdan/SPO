@@ -1,292 +1,198 @@
-# SPO8 — Btrfs reader через PASSIVE FTP
+# SPO8: Btrfs через RemoteTasks и пассивный FTP
 
-Практическое задание № 3, вариант 4: Btrfs. Работа выполнена в рамках комплекса SPO1–SPO7: используется стековая VM, ассемблерный runtime, byte-stream ввод/вывод, stream-модель SPO7 и RemoteTasks-запуск.
+Практическое задание № 3, вариант 4 — `Btrfs`. Реализация запускается как VM-программа через `Portable.RemoteTasks.Manager.exe`, `ExecuteBinaryWithIo` и устройства из `VmDevices`. Внешний FTP-сервер не используется: FTP-диалог, проверка Btrfs, обход каталогов и чтение файлов выполняет ASM-программа [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm).
 
-Главная цель реализации — показать не готовые строки ответов, а реальный обход подготовленного образа структуры данных: проверка superblock, поиск записей каталогов, чтение inode metadata и извлечение inline extent payload.
+## 1. Постановка задачи
 
-## 0. Соответствие пунктам задания
+По заданию нужно было взять программный комплекс первого семестра СПО и добавить операции извлечения данных для структуры варианта. Для варианта 4 структура — файловая система Btrfs.
 
-| #   | Пункт задания                                                              | Где выполнено                                                                                                                                      |
-| --- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Изучить внутреннюю организацию Btrfs и инструменты инспектирования         | раздел 2, [docs/btrfs_image.md](docs/btrfs_image.md)                                                                                               |
-| 2   | Реализовать функции инспектирования и извлечения через stream-объекты SPO7 | разделы 4–5, [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm)                                                                                  |
-| 3   | Подготовить тестовый образ                                                 | раздел 3, секция `data_mem`                                                                                                                        |
-| 4   | Реализовать тестовую FTP-программу                                         | раздел 6, [tests/btrfs_ftp_commands.txt](tests/btrfs_ftp_commands.txt), [tests/btrfs_ftp_commands.remote.txt](tests/btrfs_ftp_commands.remote.txt) |
-| 5   | Показать корректность                                                      | раздел 7, [Validation.md](Validation.md), `tools/check_btrfs_*.py`                                                                                 |
-| 6   | Подготовить отчёт                                                          | этот файл                                                                                                                                          |
+Общий алгоритм выполнен так:
 
-## 1. Связь с комплексом SPO1–SPO7
+1. VM читает суперблок из блочного устройства и проверяет магическое значение `_BHRfS_M`.
+2. Если образ поддерживается, VM переходит в диалоговый FTP-цикл.
+3. FTP-цикл поддерживает команды, нужные обычным клиентам: `USER`, `PASS`, `FEAT`, `PASV`, `EPSV`, `PWD`, `CWD`, `CDUP`, `LIST`, `NLST`, `SIZE`, `MDTM`, `RETR`, `COPY`, `TYPE`, `SYST`, `NOOP`, `HELP`, `QUIT`.
+4. `LIST` показывает имена и атрибуты директорий, `RETR` копирует файл, `COPY` явно демонстрирует копирование файла или директории, `PWD/CWD/CDUP` управляют текущей директорией.
+5. Образ строится как настоящий Btrfs-файл через `mkfs.btrfs`, `mount`, копирование дерева `SPO8` и `umount`.
 
-SPO8 не является отдельной программой вне предыдущих лабораторных. Она использует тот же стек:
+## 2. Источники по Btrfs
 
-- SPO1–SPO3: frontend, IR/CFG, стековая VM, Python-ассемблер и локальный VM-интерпретатор;
-- SPO6: RemoteTasks-инфраструктура, `devices.xml`, таймер/PIC-окружение;
-- SPO7: последовательные byte streams и модель `synchronous non-blocking + GROUP-WAIT`.
+В реализации использованы основные элементы on-disk формата Btrfs:
 
-Для Btrfs потребовалась побайтовая адресация, поэтому в VM-таргет добавлены инструкции:
+- суперблок по смещению `0x10000`;
+- магическое значение `_BHRfS_M` по смещению `0x40` внутри суперблока;
+- chunk tree для перевода логических адресов Btrfs в физические смещения файла-образа;
+- FS tree с ключами вида `(objectid type offset)`;
+- элементы `INODE_ITEM`, `DIR_ITEM`, `DIR_INDEX`, `EXTENT_DATA`;
+- типы файлов `BTRFS_FT_REG_FILE` и `BTRFS_FT_DIR`;
+- обычные и inline extents.
 
-| Инструкция   | Назначение                                         |
-| ------------ | -------------------------------------------------- |
-| `INDEX`      | адресация word-таблиц: `base + index * 4`          |
-| `INDEXB`     | адресация байтовых строк и payload: `base + index` |
-| `LOAD_IND`   | чтение 4-байтового слова по адресу                 |
-| `LOADB_IND`  | чтение одного байта по адресу                      |
-| `STOREB_IND` | запись одного байта по адресу                      |
+Ссылки из задания:
 
-В `main` используется `POP_SYS 19` со значением `0`: это выставляет общий data frame для вызовов процедур. Поэтому `v_current_dir`, счётчики stream, буферы команд и образ Btrfs живут в одной общей `data_mem` и сохраняют состояние между `CALL`.
+- `https://btrfs.wiki.kernel.org/index.php/Btrfs_design`;
+- `https://btrfs.wiki.kernel.org/index.php/On-disk_Format`;
+- `https://btrfs.wiki.kernel.org/index.php/Data_Structures`.
 
-## 2. Внутренняя организация Btrfs
+## 3. Подготовка образа
 
-Использованные источники:
+Образ создаёт [tools/prepare_btrfs_image.sh](tools/prepare_btrfs_image.sh). На Linux скрипт использует локальные `btrfs-progs`; на macOS автоматически запускает привилегированный контейнер Alpine с `btrfs-progs`. Контейнер нужен только как среда с `mkfs.btrfs` и `mount`, не как часть FTP-сервера.
 
-- <https://btrfs.wiki.kernel.org/index.php/Btrfs_design>
-- <https://btrfs.wiki.kernel.org/index.php/On-disk_Format>
-- <https://btrfs.wiki.kernel.org/index.php/Data_Structures>
+Последовательность соответствует схеме преподавателя:
 
-Btrfs хранит метаданные в copy-on-write B+-деревьях. Для чтения файла важны следующие уровни:
+```text
+dd if=/dev/zero of=spo8_btrfs_block.img bs=1M count=160
+mkfs.btrfs -f -L SPO8_REAL spo8_btrfs_block.img
+mount -o loop spo8_btrfs_block.img /mnt/spo8
+rsync ./SPO8/ /mnt/spo8/SPO8/
+umount /mnt/spo8
+```
 
-1. **Superblock**: содержит magic `_BHRfS_M`, `nodesize`, `root_dir_objectid`, ссылки на root tree и chunk tree. В реальном Btrfs основной superblock расположен по смещению `0x10000`, а magic — по offset `0x40` внутри superblock.
-2. **Root tree**: позволяет найти FS tree конкретного subvolume/root object.
-3. **FS tree**: содержит записи с ключами `objectid/type/offset`. В этой работе используются аналоги `DIR_ITEM`, `INODE_ITEM` и `EXTENT_DATA`.
-4. **Inline extent**: для малых файлов данные могут храниться прямо в leaf FS tree, без отдельного extent на диске.
-
-Реальные инструменты инспектирования Btrfs — `btrfs inspect-internal`, `btrfs-debug-tree`, `btrfs check`. SPO8 повторяет их общий ход на компактном in-memory образе: mount-проверка, обход метаданных, извлечение payload.
-
-## 3. Принятые ограничения реализации
-
-Реализация не является универсальным драйвером полного Btrfs-раздела. Это осознанное ограничение лабораторной работы: требуется поддержать набор операций извлечения для подготовленного образа структуры данных.
-
-Реализовано:
-
-- проверка Btrfs superblock по magic и базовым полям;
-- compact FS-tree leaf в памяти VM;
-- обход `DIR_ITEM` для каталогов;
-- чтение размера и типа из `INODE_ITEM`;
-- чтение inline `EXTENT_DATA`;
-- FTP-подобный интерфейс для `LIST`, `CWD`, `PWD`, `RETR`, `COPY`.
-
-Не реализовано, потому что не требуется для подготовленного inline-образа:
-
-- checksum tree и проверка контрольных сумм;
-- chunk mapping и физическая трансляция logical address;
-- extent allocation tree;
-- RAID-профили, compression, snapshots;
-- non-inline extents;
-- реальный TCP FTP-сервер.
-
-## 4. Тестовый образ
-
-Образ находится в [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm), секция `data_mem`. Подробное описание — [docs/btrfs_image.md](docs/btrfs_image.md).
-
-Содержимое:
+В образ попадает дерево проекта `SPO8`:
 
 ```text
 /
-  docs/
-    info.txt      inode 259, size 19, inline
-    help.txt      inode 261, size 12, inline
-  pictures/
-    notes.txt     inode 262, size 17, inline
-  readme.txt      inode 257, size 19, inline
+  SPO8/
+    Makefile
+    README.md
+    Validation.md
+    analysis/
+    ast/
+    cfg/
+    codegen/
+    demo/small.txt
+    docs/
+    tests/
+    tools/
+    view/
+    vm/
+    ...
 ```
 
-Superblock-поля:
+Из копирования исключены только генерируемые и рекурсивные артефакты: `results`, `spo8_btrfs_block.img`, `app`, `app.exe`, `app.dSYM`, `.git`, `.DS_Store`. Без этого образ включал бы сам себя и предыдущие результаты запуска.
 
-| Поле в ASM                 |   Значение | Смысл                                   |
-| -------------------------- | ---------: | --------------------------------------- |
-| `img_super_magic`          | `_BHRfS_M` | Btrfs magic                             |
-| `img_root_dir_objectid`    |          6 | root directory objectid из Btrfs        |
-| `img_nodesize`             |       4096 | размер node/leaf                        |
-| `img_root_tree_logical`    |    4194304 | демонстрационная ссылка на root tree    |
-| `img_chunk_tree_logical`   |    5242880 | демонстрационная ссылка на chunk tree   |
-| `img_fs_tree_objectid`     |          5 | objectid FS tree                        |
-| `img_fs_tree_leaf_logical` |    6291456 | демонстрационная ссылка на FS tree leaf |
+После `umount` скрипт сохраняет служебные дампы:
 
-Метаданные представлены как параллельные таблицы:
+- `results/btrfs_real_super.txt`;
+- `results/btrfs_real_chunk.txt`;
+- `results/btrfs_real_tree.txt`;
+- `results/btrfs_source_files.txt`.
 
-| Таблица        | Аналог Btrfs  | Что хранит                               |
-| -------------- | ------------- | ---------------------------------------- |
-| `img_inode_*`  | `INODE_ITEM`  | inode objectid, тип, размер              |
-| `img_dirent_*` | `DIR_ITEM`    | parent inode, target inode, тип, name id |
-| `img_extent_*` | `EXTENT_DATA` | inode, extent type, data id              |
+Текущий образ: `167772160` байт, метка `SPO8_REAL`, `nodesize=16384`, магическое значение `_BHRfS_M`.
 
-Такой формат выбран из-за ограничений стековой VM: он сохраняет смысл Btrfs key/value leaf, но позволяет сканировать записи простыми инструкциями `INDEX` и `LOAD_IND`.
+## 4. Индекс Btrfs-дерева
 
-Отдельный отрицательный образ [tests/btrfs_unsupported.asm](tests/btrfs_unsupported.asm) содержит magic `EXT4FS!_`; он проверяет ветку «файловая система не поддерживается».
+[tools/gen_btrfs_ftp_asm.py](tools/gen_btrfs_ftp_asm.py) читает дампы `btrfs inspect-internal dump-tree` и генерирует таблицы в [results/btrfs_ftp_demo.asm](results/btrfs_ftp_demo.asm) между маркерами:
 
-## 5. Алгоритм работы VM-программы
+```asm
+; BEGIN GENERATED BTRFS TABLES
+; END GENERATED BTRFS TABLES
+```
 
-Общая цепочка исполнения:
+Генерируются:
+
+- `img_inode_*` — objectid, тип и размер из `INODE_ITEM`;
+- `img_dirent_*` — parent inode, target inode, тип и имя из `DIR_ITEM`;
+- `img_extent_*` — inode, физическое смещение данных и размер из `EXTENT_DATA`;
+- `img_name_pool` — пул имён для `LIST`, `CWD`, `RETR`, `COPY`.
+
+Важно: байты файлов не вшиваются в ASM. Для `RETR` и `COPY` VM берёт физическое смещение extent из таблицы и читает реальные байты из `spo8_btrfs_block.img` через `BlockDevice`.
+
+## 5. Устройства RemoteTasks
+
+Сценарный запуск использует [devices.xml](devices.xml):
+
+- `SimplePipe` `stdio` — управляющий поток FTP-команд и ответов;
+- `BlockDevice` `btrfs-image` — файл `spo8_btrfs_block.img`;
+- `SimplePic` и `SimpleClock` — окружение VM из предыдущих лабораторных.
+
+Режим FileZilla использует [devices_filezilla.xml](devices_filezilla.xml):
+
+- `ftp-control`: `tcp://127.0.0.1:3121`, внутренний управляющий порт C-адаптера;
+- внешний FTP control-порт для FileZilla: `127.0.0.1:2121`;
+- `ftp-data`: `tcp://127.0.0.1:3020`, внутренний data-порт C-адаптера;
+- внешний пассивный FTP data-порт для FileZilla: `127.0.0.1:2020`;
+- `BlockDevice`: тот же `spo8_btrfs_block.img`.
+
+[spo8.target.pdsl](spo8.target.pdsl) добавляет банки и инструкции:
+
+| Инструкция | Назначение |
+|---|---|
+| `PIPE_IN` | чтение байта управляющего `SimplePipe` |
+| `PIPE_OUT` | запись байта управляющего `SimplePipe` |
+| `DATA_BUF_BYTE` | запись байта в буфер пассивного потока данных |
+| `DATA_FLUSH` | отправка накопленного data-буфера |
+| `DATA_COPY_BLOCK` | перенос порции `block_buffer` в пассивный FTP-поток |
+| `BLOCK_READ_BYTE` | чтение байта из `BlockDevice` |
+| `BLOCK_READ_BUF` | чтение диапазона из `BlockDevice` в буфер устройства |
+| `BLOCK_BUF_BYTE` | чтение байта из заполненного буфера `BlockDevice` |
+| `BLOCK_WRITE_BYTE` | запись байта в `BlockDevice` |
+
+`tools/ftp_data_adapter.c` — не внешний FTP-сервер и не источник файловых данных. Это сетевой мост для FileZilla: управляющие соединения FileZilla на `127.0.0.1:2121` последовательно прокидываются в один управляющий `SimplePipe` VM на `127.0.0.1:3121`; пассивный data-порт `127.0.0.1:2020` прокидывается в data-`SimplePipe` VM на `127.0.0.1:3020` и закрывается после каждой передачи. Все FTP-команды, обход Btrfs и чтение файлов выполняются в VM.
+
+## 6. Логика VM-программы
+
+Основная реализация находится в [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm).
+
+Ключевые процедуры:
+
+- `main` — настраивает общий `data_mem`, сбрасывает FTP-состояние, вызывает `btrfs_mount`, затем `ftp_loop`;
+- `btrfs_mount` — читает магическое значение Btrfs, `nodesize` и objectid корня из `BlockDevice`;
+- `ftp_loop` — читает строки FTP-команд через `PIPE_IN`;
+- `dispatch_command` — разбирает команду и вызывает обработчик;
+- `cmd_list`, `cmd_nlst` — сканируют `DIR_ITEM` текущей директории;
+- `cmd_cwd`, `cmd_cdup`, `emit_pwd` — ведут текущий каталог и путь;
+- `cmd_retr` — находит файл по `DIR_ITEM`, получает размер из `INODE_ITEM`, extent из `EXTENT_DATA` и отдаёт байты;
+- `cmd_copy` — для файла работает как `RETR`, для директории рекурсивно обходит очередь каталогов;
+- `stream_write_byte` — единая точка вывода, переключает управляющий поток и поток данных по `v_sink`;
+- `emit_block_data` — читает содержимое файла из `BlockDevice` порциями до 512 байт и отдаёт их в пассивный FTP-поток.
+
+## 7. FTP и FileZilla
+
+Сервер работает как обычный FTP без TLS и использует пассивный режим передачи данных.
+
+Параметры FileZilla:
 
 ```text
-main
-  -> btrfs_mount
-  -> ftp_loop
-       -> read_line
-       -> dispatch_command
-            -> cmd_list / cmd_cwd / cmd_retr / cmd_copy / emit_pwd
-                 -> fs_find_dirent_by_arg
-                 -> fs_load_inode_size
-                 -> fs_find_extent_data
-                 -> emit_* -> stream_write_byte
+Хост: 127.0.0.1
+Порт: 2121
+Протокол: FTP
+Шифрование: только обычный FTP без TLS
+Тип входа: анонимный
+Режим передачи: пассивный
+Timeout: 120 секунд или больше
 ```
 
-### 5.1. Mount-проверка
-
-`btrfs_mount` проверяет:
-
-1. `img_super_magic == "_BHRfS_M"`;
-2. `img_nodesize == 4096`;
-3. `img_root_dir_objectid > 0`.
-
-Если проверка провалена, `main` печатает `500 unsupported filesystem` и не переходит в FTP-цикл. Это прямо закрывает первый пункт общего алгоритма задания: «проверить, поддерживается ли файловая система».
-
-### 5.2. Чтение и разбор команд
-
-`read_line` читает поток port `0` посимвольно в `v_cmd_buf`. Конец команды — `LF` (`10`), `CR` игнорируется. Команда заканчивается NUL-байтом, чтобы дальше её можно было сравнивать как строку.
-
-`dispatch_command` вызывает `compute_arg_offset`, затем проверяет командные токены через `cmd_starts_with`. Сравнение идёт по полному имени команды и границе токена, поэтому случайные префиксы не распознаются как валидные команды.
-
-`arg_eq` сравнивает аргумент после команды с именем каталога или файла. Это используется в `CWD`, `RETR` и `COPY`.
-
-### 5.3. LIST
-
-`cmd_list` сканирует все `DIR_ITEM`:
+`PASV` возвращает:
 
 ```text
-for i in 0..img_dirent_count-1:
-    if img_dirent_parent[i] == v_current_dir:
-        inode = img_dirent_inode[i]
-        size = fs_load_inode_size(inode)
-        type = img_dirent_type[i]
-        name = img_dirent_name_id[i]
-        emit_list_entry(type, inode, size, name)
+227 Entering Passive Mode (127,0,0,1,7,228)
 ```
 
-То есть список каталога получается не из заранее записанной строки, а из записей каталога в образе.
+Порт данных: `7 * 256 + 228 = 2020`.
 
-### 5.4. CWD и PWD
-
-`v_current_dir` хранит inode текущего каталога:
-
-- `256` — `/`;
-- `258` — `/docs`;
-- `260` — `/pictures`.
-
-`cmd_cwd` поддерживает:
-
-- `CWD /` — переход в root inode;
-- `CWD .` — остаться в текущем каталоге;
-- `CWD ..` — поиск родителя через `fs_parent_of_current`;
-- `CWD <dir>` — поиск `DIR_ITEM` по имени и проверка, что тип записи — каталог.
-
-`emit_pwd` печатает путь текущего каталога. Для подготовленного образа достаточно трёх путей: `/`, `/docs`, `/pictures`.
-
-### 5.5. RETR
-
-`cmd_retr` выполняет основную операцию извлечения файла:
+Проверенный путь для FileZilla/curl:
 
 ```text
-имя файла
-  -> fs_find_dirent_by_arg
-  -> target inode
-  -> fs_load_inode_size
-  -> fs_find_extent_data
-  -> emit_file
-  -> emit_data_by_id
-  -> stream_write_byte
+/
+  SPO8/
+    demo/
+      small.txt
 ```
 
-`fs_find_extent_data` дополнительно проверяет `extent_type == 0`. В этой работе `0` означает inline extent: данные лежат прямо в leaf FS tree. Например, `RETR info.txt` находит inode `259`, получает размер `19`, находит data id для строки `BTRFS TREE WALK OK\n` и отдаёт эти байты через stream sink.
+Также через FileZilla можно просматривать `tools`, `tests`, `docs`, `vm` и другие директории, потому что они находятся в настоящем Btrfs-образе.
 
-### 5.6. COPY
+Содержимое файлов читается из настоящего `BlockDevice`, но не побайтно:
+`emit_block_data` выполняет `BLOCK_READ_BUF` порциями по 512 байт, затем
+`DATA_COPY_BLOCK` переносит эту порцию в пассивный FTP-поток. `/SPO8/report.md`
+проверен отдельным smoke-тестом; для быстрой демонстрации всё равно удобнее
+использовать `/SPO8/demo/small.txt`.
 
-`cmd_copy` добавлен как явная команда копирования файла или каталога. Для обычного файла команда выполняет тот же путь извлечения, что и `RETR`: `DIR_ITEM -> INODE_ITEM -> EXTENT_DATA -> stream`.
-
-Для каталога `COPY` запускает обход дерева каталогов через очередь inode:
-
-```text
-queue = [target_dir_inode]
-while queue is not empty:
-    dir = pop(queue)
-    for each DIR_ITEM where parent == dir:
-        if type == file:
-            copy file by inode
-        if type == directory:
-            push child directory inode
-```
-
-Например, `COPY docs` копирует оба inline-файла каталога `docs`: `info.txt` и `help.txt`. `COPY readme.txt` показывает путь копирования одного файла отдельной командой, а не только стандартным FTP `RETR`.
-
-## 6. Stream-модель SPO7
-
-Внутри FTP/Btrfs-логики нет прямой записи результата мимо sink. Все строки, числа, листинги и payload проходят через `stream_write_byte`.
-
-`stream_write_byte` делает четыре действия:
-
-1. увеличивает `v_stream_bytes`;
-2. уменьшает `v_stream_window`;
-3. когда окно доходит до нуля, увеличивает `v_group_waits` и сбрасывает окно на 7;
-4. пишет байт в port `1`.
-
-Это модель `synchronous non-blocking + GROUP-WAIT` из SPO7 в упрощённом виде: sink не занят активным ожиданием, а фиксирует событие passive wait после заданного окна передач.
-
-Итоговая статистика:
-
-```text
-STATS cmd=24 lookup=15 stream=1518 gw=218
-```
-
-Смысл:
-
-- `cmd=24` — обработано 24 FTP-команды;
-- `lookup=15` — выполнено 15 операций обращения к FS tree (`LIST`, `CWD`, `RETR`, `COPY`);
-- `stream=1518` — 1518 байт прошли через `stream_write_byte`;
-- `gw=218` — 218 passive `GROUP-WAIT` событий.
-
-## 7. PASSIVE FTP-интерфейс
-
-`main` выполняет общий алгоритм задания:
-
-1. `btrfs_mount` проверяет, поддерживается ли файловая система.
-2. При отказе печатает `500 unsupported filesystem`.
-3. При успехе печатает `220 SPO8 Btrfs image ready`.
-4. `ftp_loop` читает команды до `QUIT`.
-
-Поддержаны команды:
-
-| Команда  | Результат                           |
-| -------- | ----------------------------------- |
-| `SYST`   | служебный ответ `215 UNIX Type: L8` |
-| `NOOP`   | служебный ответ `200 NOOP ok`       |
-| `HELP`   | список поддержанных команд          |
-| `TYPE I` | подтверждение binary mode           |
-| `PASV`   | ответ passive mode                  |
-| `PWD`    | текущий каталог                     |
-| `LIST`   | список имён и атрибутов             |
-| `CWD`    | смена каталога                      |
-| `RETR`   | извлечение файла                    |
-| `COPY`   | копирование файла или каталога      |
-| `QUIT`   | завершение и статистика             |
-
-Копирование директории в FTP обычно строится из `LIST`, `CWD` и последовательных `RETR` файлов. Чтобы закрыть формулировку задания буквально, дополнительно реализована команда `COPY`: для файла она работает как явный вариант `RETR`, для каталога рекурсивно обходит `DIR_ITEM` и копирует найденные обычные файлы.
-
-Основной сценарий покрывает корень, подкаталоги `docs` и `pictures`, успешные `RETR`, `COPY docs`, `COPY readme.txt`, ошибочные `RETR missing.txt` и `CWD ghost`. Для локальной VM он хранится в [tests/btrfs_ftp_commands.txt](tests/btrfs_ftp_commands.txt) как ASCII-коды по одному числу на строку, для RemoteTasks — в [tests/btrfs_ftp_commands.remote.txt](tests/btrfs_ftp_commands.remote.txt) обычным текстом.
-
-## 8. Проверка корректности
+## 8. Запуск
 
 Локальная VM:
 
 ```bash
 make -C SPO8 local-demo
 make -C SPO8 local-unsupported
-```
-
-Ожидаемые результаты:
-
-```text
-Btrfs FTP output OK
-Btrfs unsupported-FS output OK
 ```
 
 RemoteTasks:
@@ -296,20 +202,67 @@ make -C SPO8 remote-demo
 make -C SPO8 remote-unsupported
 ```
 
-## 9. Вывод
+Интерактивная задача RemoteTasks:
 
-Реализация закрывает общий алгоритм задания: сначала проверяется поддержка Btrfs, затем запускается FTP-диалог с `LIST`, `RETR`, `COPY`, `PWD`, `CWD`. Извлечение данных выполняется через сканирование компактных Btrfs-подобных `DIR_ITEM`, `INODE_ITEM` и `EXTENT_DATA` структур в памяти VM. Вывод построен на stream-модели SPO7 и проверяется локально и через RemoteTasks без подмены ожидаемым stdout.
-
-## 10. Пример
 ```bash
-PWD
-LIST
-RETR readme.txt
-COPY docs
-CWD pictures
-LIST
-RETR notes.txt
-CWD /
-COPY /
-QUIT
+make -C SPO8 remote-interactive
 ```
+
+FileZilla:
+
+```bash
+make -C SPO8 remote-filezilla
+```
+
+Автоматическая проверка FileZilla-контура через FTP-клиент `curl`:
+
+```bash
+make -C SPO8 remote-ftp-smoke
+```
+
+## 9. Проверка
+
+Последние успешные проверки 16 мая 2026:
+
+| Команда | Результат |
+|---|---|
+| `make -C SPO8 local-demo` | `Btrfs FTP output OK` |
+| `make -C SPO8 remote-demo` | `assemble=<uuid>`, `run=interactive-pipe`, `Btrfs FTP output OK` |
+| `make -C SPO8 remote-unsupported` | `assemble=<uuid>`, `Btrfs unsupported-FS output OK` |
+| `make -C SPO8 remote-ftp-smoke` | `assemble=<uuid>`, `Быстрая FTP-проверка через RemoteTasks пройдена`, `LIST /` содержит `SPO8`, `RETR /SPO8/demo/small.txt` успешен |
+| `make -C SPO8 remote-ftp-report-smoke` | `Проверка RETR /SPO8/report.md через RemoteTasks пройдена` |
+
+Окончание положительного RemoteTasks-сценария:
+
+```text
+150 recursive directory copy follows
+COPY file small.txt
+150 inode=292 size=64 extent=btrfs
+226 transfer complete
+226 copy complete
+...
+550 not found
+550 not found
+221 bye
+STATS cmd=24 lookup=16 stream=3281 gw=469
+OK
+```
+
+Негативный сценарий:
+
+```text
+SPO8 BTRFS FTP
+500 unsupported filesystem
+OK_NEG
+```
+
+## 10. Что показывать на защите
+
+1. [tools/prepare_btrfs_image.sh](tools/prepare_btrfs_image.sh): показать `dd`, `mkfs.btrfs`, `mount`, копирование `SPO8`, `umount`.
+2. [devices_filezilla.xml](devices_filezilla.xml): показать `tcp://127.0.0.1:3121`, второй `SimplePipe` для канала данных и `BlockDevice`.
+3. [spo8.target.pdsl](spo8.target.pdsl): показать инструкции `PIPE_IN`, `PIPE_OUT`, `DATA_BUF_BYTE`, `DATA_FLUSH`, `DATA_COPY_BLOCK`, `BLOCK_READ_BYTE`, `BLOCK_READ_BUF`, `BLOCK_BUF_BYTE`.
+4. [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm): показать `btrfs_mount`, `cmd_list`, `cmd_cwd`, `cmd_retr`, `cmd_copy`.
+5. Запустить `make -C SPO8 remote-ftp-smoke`: это доказывает, что обычный FTP-клиент подключается к серверу, поднятому через RemoteTasks.
+6. Запустить `make -C SPO8 remote-filezilla`, открыть FileZilla и вручную зайти в `/SPO8/demo`, скачать `small.txt`, затем показать листинг `/SPO8/tools`.
+
+Главный тезис: Btrfs-образ настоящий и создан штатными инструментами Btrfs; FTP-сервер работает внутри VM через RemoteTasks; FileZilla подключается к этому VM-серверу, а не к внешнему Python-серверу и не к host-директории напрямую.

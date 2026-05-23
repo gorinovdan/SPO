@@ -1,14 +1,20 @@
-# Validation SPO8
+# Проверка SPO8
 
 Все команды выполняются из корня репозитория `SPO`.
 
-## Задание
+## Контур
 
-Практическое задание №3, вариант 4: поддержка операций извлечения данных из Btrfs-образа с интерфейсом в стиле PASSIVE FTP.
+Проверяется именно RemoteTasks-контур:
 
-Реализация — в `SPO8/tests/btrfs_ftp_demo.asm` (положительный сценарий) и `SPO8/tests/btrfs_unsupported.asm` (негативный сценарий: FS не поддерживается).
+- `prepare_btrfs_image.sh` создаёт настоящий Btrfs-образ из каталога `SPO8`;
+- `BlockDevice` открывает `spo8_btrfs_block.img`;
+- управляющий FTP-поток идёт через `SimplePipe` VM и C-адаптер, который принимает повторные control-подключения FileZilla;
+- пассивный FTP-поток идёт через второй `SimplePipe` и тот же C-адаптер;
+- FTP-сервер выполняется внутри VM-программы [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm).
 
-Основной сценарий команд:
+## Основной сценарий
+
+Файл сценария: [tests/btrfs_ftp_commands.remote.txt](tests/btrfs_ftp_commands.remote.txt).
 
 ```text
 SYST
@@ -18,167 +24,162 @@ PASV
 TYPE I
 PWD
 LIST
-CWD docs
+CWD SPO8
 PWD
 LIST
-RETR info.txt
-RETR help.txt
+CWD demo
+LIST
+RETR small.txt
 CWD ..
-PWD
-CWD pictures
+COPY demo
+CWD tools
 LIST
-RETR notes.txt
+SIZE run_vm_tests.sh
+RETR run_vm_tests.sh
 CWD /
-RETR readme.txt
-RETR missing.txt
+LIST
 CWD ghost
+RETR missing.txt
 QUIT
 ```
 
-Для локальной VM он хранится в `SPO8/tests/btrfs_ftp_commands.txt` как ASCII-коды по одному числу на строку. Для RemoteTasks `ExecuteBinaryWithInput` используется тот же сценарий обычным текстом: `SPO8/tests/btrfs_ftp_commands.remote.txt`.
+Сценарий проверяет:
+
+- определение Btrfs по суперблоку;
+- вывод `/` и `/SPO8`;
+- переходы `CWD`;
+- листинг директорий;
+- чтение файла из Btrfs extent через `RETR`;
+- явное копирование директории через `COPY demo`;
+- `SIZE`;
+- отрицательные ответы `550 not found`.
 
 ## Локальная VM
 
-Положительный сценарий:
-
 ```bash
 make -C SPO8 local-demo
-```
-
-Под капотом:
-
-```bash
-python3 SPO8/tools/asm.py -s SPO8/vm/spec.json \
-  -i SPO8/tests/btrfs_ftp_demo.asm \
-  -o SPO8/results/btrfs_ftp_demo.local.ptptb
-
-python3 SPO8/tools/vm.py -s SPO8/vm/spec.json \
-  -i SPO8/results/btrfs_ftp_demo.local.ptptb \
-  --max-steps 200000 \
-  < SPO8/tests/btrfs_ftp_commands.txt \
-  > SPO8/results/btrfs_ftp_demo.local.stdout.txt
-
-python3 SPO8/tools/check_btrfs_ftp_output.py \
-  SPO8/results/btrfs_ftp_demo.local.stdout.txt
-```
-
-Ожидаемый результат: `Btrfs FTP output OK`. `results/btrfs_ftp_demo.local.stdout.txt` совпадает с эталоном `results/btrfs_ftp_demo.stdout.txt`.
-
-Негативный сценарий (FS не поддерживается):
-
-```bash
 make -C SPO8 local-unsupported
 ```
 
-Ожидаемый результат: `Btrfs unsupported-FS output OK`. Эталон — `results/btrfs_unsupported.stdout.txt`.
+Ожидаемые результаты:
 
-## Удалённая VM
+```text
+Btrfs FTP output OK
+Btrfs unsupported-FS output OK
+```
+
+## RemoteTasks
 
 ```bash
 make -C SPO8 remote-demo
 make -C SPO8 remote-unsupported
 ```
 
-`tools/run_remote.sh` использует RemoteTasks-task `ExecuteBinaryWithInput`, скачивает реальный `stdout.txt` и затем запускает те же валидаторы. Из-за проблем системного DNS с `remote-tasks.portable-project.ru` в macOS-окружении используется прямой transport `-sh 5.19.208.160 -sp 10001 -okssl`; его можно переопределить переменной `RT_REMOTE_FLAGS`. Если RemoteTasks недоступен или не вернул stdout, цель `make` завершается ошибкой; ожидаемый вывод не подставляется локально. Таймаут удалённых вызовов задаётся переменной `RT_TIMEOUT` (по умолчанию 120 секунд).
-
 Последний успешный прогон:
 
-- `remote-demo`: `assemble=d482be37-39e6-40fe-8694-b2dc3f0e057c`, `run=2622de26-f264-41d1-92bc-a24bda3413a8`;
-- `remote-unsupported`: `assemble=dba3f942-f167-46e4-8faf-2489ec1a21d7`, `run=e7d3a76d-93fc-4f31-a66f-740bd0a8fc6c`.
+```text
+assemble=<uuid>
+run=interactive-pipe
+Btrfs FTP output OK
+```
 
-## Проверенные выводы
-
-Положительный сценарий — `results/btrfs_ftp_demo.stdout.txt`:
+Негативная проверка:
 
 ```text
-SPO8 BTRFS FTP
-FS OK magic=_BHRfS_M root_dir=6 nodesize=4096
-220 SPO8 Btrfs image ready
-> SYST
-215 UNIX Type: L8
-> NOOP
-200 NOOP ok
-> HELP
-214-Supported commands:
-214 PASV PWD LIST CWD RETR COPY SYST NOOP HELP TYPE QUIT
-> PASV
-227 Entering Passive Mode (0,0,0,0,0,1)
-> TYPE I
-200 Type set
-> PWD
-257 "/"
-> LIST
-150 directory stream follows
-d 258 0 docs
-d 260 0 pictures
-f 257 19 readme.txt
-226 transfer complete
-> CWD docs
-250 CWD ok
-> PWD
-257 "/docs"
-> LIST
-150 directory stream follows
-f 259 19 info.txt
-f 261 12 help.txt
-226 transfer complete
-> RETR info.txt
-150 inode=259 size=19 extent=inline
-BTRFS TREE WALK OK
-226 transfer complete
-> RETR help.txt
-150 inode=261 size=12 extent=inline
-RETR works.
-226 transfer complete
-> CWD ..
-250 CWD ok
-> PWD
-257 "/"
-> COPY docs
+assemble=<uuid>
+run=interactive-pipe
+Btrfs unsupported-FS output OK
+```
+
+## FileZilla
+
+Ручной запуск:
+
+```bash
+make -C SPO8 remote-filezilla
+```
+
+Параметры клиента:
+
+```text
+Хост: 127.0.0.1
+Порт: 2121
+Протокол: FTP
+Шифрование: только обычный FTP без TLS
+Тип входа: анонимный
+Режим передачи: пассивный
+Timeout: 120 секунд или больше
+```
+
+Проверить вручную:
+
+```text
+/
+LIST
+CWD SPO8
+LIST
+CWD demo
+RETR small.txt
+CWD ../tools
+LIST
+```
+
+Для быстрой демонстрации копирования использовать `/SPO8/demo/small.txt`.
+Для проверки более крупного файла есть отдельный сценарий:
+
+```bash
+make -C SPO8 remote-ftp-report-smoke
+```
+
+Автоматический smoke-тест тем же контуром:
+
+```bash
+make -C SPO8 remote-ftp-smoke
+```
+
+Проверка скачивания `/SPO8/report.md`:
+
+```bash
+make -C SPO8 remote-ftp-report-smoke
+```
+
+Ожидаемый результат:
+
+```text
+Проверка RETR /SPO8/report.md через RemoteTasks пройдена
+```
+
+Последний успешный результат:
+
+```text
+Быстрая FTP-проверка через RemoteTasks пройдена
+assemble=<uuid>
+control=127.0.0.1:2121 data=127.0.0.1:2020
+listing=.../SPO8/results/remote_filezilla_listing.txt
+retr=.../SPO8/results/remote_filezilla_small.txt
+```
+
+`remote_filezilla_listing.txt` содержит каталог `SPO8`, а `remote_filezilla_small.txt` содержит:
+
+```text
+SPO8 Btrfs FTP demo file.
+Read through RemoteTasks BlockDevice.
+```
+
+## Ожидаемый финал положительного сценария
+
+```text
 150 recursive directory copy follows
-COPY file info.txt
-150 inode=259 size=19 extent=inline
-BTRFS TREE WALK OK
-226 transfer complete
-COPY file help.txt
-150 inode=261 size=12 extent=inline
-RETR works.
+COPY file small.txt
+150 inode=292 size=64 extent=btrfs
 226 transfer complete
 226 copy complete
-> CWD pictures
-250 CWD ok
-> LIST
-150 directory stream follows
-f 262 17 notes.txt
-226 transfer complete
-> RETR notes.txt
-150 inode=262 size=17 extent=inline
-subtree readable
-226 transfer complete
-> CWD /
-250 CWD ok
-> RETR readme.txt
-150 inode=257 size=19 extent=inline
-Hello from SPO8 FS
-226 transfer complete
-> COPY readme.txt
-150 inode=257 size=19 extent=inline
-Hello from SPO8 FS
-226 transfer complete
-> RETR missing.txt
+...
 550 not found
-> CWD ghost
 550 not found
-> QUIT
 221 bye
-STATS cmd=24 lookup=15 stream=1518 gw=218
+STATS cmd=24 lookup=16 stream=3281 gw=469
 OK
 ```
 
-Негативный сценарий — `results/btrfs_unsupported.stdout.txt`:
-
-```text
-SPO8 BTRFS FTP
-500 unsupported filesystem
-OK_NEG
-```
+Числа inode и счётчики могут немного измениться после изменения состава файлов `SPO8`, потому что образ каждый раз создаётся заново.

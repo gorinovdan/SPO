@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validator for the SPO8 negative-path demo (unsupported filesystem)."""
+"""Проверка негативного сценария SPO8: файловая система не поддерживается."""
 from pathlib import Path
 import sys
 
@@ -17,17 +17,17 @@ def normalize(text: str) -> str:
 def main() -> int:
     if len(sys.argv) != 2:
         print(
-            f"usage: {Path(sys.argv[0]).name} <stdout.txt>",
+            f"использование: {Path(sys.argv[0]).name} <stdout.txt>",
             file=sys.stderr,
         )
         return 2
 
     actual = normalize(Path(sys.argv[1]).read_text(encoding="ascii"))
     if actual != EXPECTED:
-        print("Btrfs unsupported-FS output mismatch", file=sys.stderr)
-        print("--- expected ---", file=sys.stderr)
+        print("Вывод проверки неподдерживаемой ФС не совпал с ожидаемым", file=sys.stderr)
+        print("--- ожидается ---", file=sys.stderr)
         print(EXPECTED, file=sys.stderr)
-        print("--- actual ---", file=sys.stderr)
+        print("--- получено ---", file=sys.stderr)
         print(actual, file=sys.stderr)
         return 1
 

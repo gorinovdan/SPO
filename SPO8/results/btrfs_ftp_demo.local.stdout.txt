@@ -1,82 +1,91 @@
-SPO8 BTRFS FTP
-FS OK magic=_BHRfS_M root_dir=6 nodesize=4096
 220 SPO8 Btrfs image ready
-> SYST
 215 UNIX Type: L8
-> NOOP
 200 NOOP ok
-> HELP
 214-Supported commands:
-214 PASV PWD LIST CWD RETR COPY SYST NOOP HELP TYPE QUIT
-> PASV
-227 Entering Passive Mode (0,0,0,0,0,1)
-> TYPE I
+214 USER PASS FEAT OPTS PASV EPSV PWD LIST NLST CWD CDUP RETR SIZE MDTM COPY SYST NOOP HELP TYPE QUIT
+227 Entering Passive Mode (127,0,0,1,7,228)
 200 Type set
-> PWD
 257 "/"
-> LIST
 150 directory stream follows
-d 258 0 docs
-d 260 0 pictures
-f 257 19 readme.txt
+drwxr-xr-x 1 spo spo 276 Jan 01 00:00 SPO8
 226 transfer complete
-> CWD docs
 250 CWD ok
-> PWD
-257 "/docs"
-> LIST
+257 "/SPO8"
 150 directory stream follows
-f 259 19 info.txt
-f 261 12 help.txt
+-rw-r--r-- 1 spo spo 4207 Jan 01 00:00 Validation.md
+-rw-r--r-- 1 spo spo 13802 Jan 01 00:00 report.md
+drwxr-xr-x 1 spo spo 576 Jan 01 00:00 tools
+-rw-r--r-- 1 spo spo 3298 Jan 01 00:00 Makefile
+drwxr-xr-x 1 spo spo 18 Jan 01 00:00 demo
+drwxr-xr-x 1 spo spo 32 Jan 01 00:00 vm
+drwxr-xr-x 1 spo spo 16 Jan 01 00:00 analysis
+-rw-r--r-- 1 spo spo 4075 Jan 01 00:00 devices_filezilla.xml
+drwxr-xr-x 1 spo spo 210 Jan 01 00:00 tests
+drwxr-xr-x 1 spo spo 184 Jan 01 00:00 ast
+-rw-r--r-- 1 spo spo 8146 Jan 01 00:00 main.c
+-rw-r--r-- 1 spo spo 30096 Jan 01 00:00 spo8.target.pdsl
+drwxr-xr-x 1 spo spo 20 Jan 01 00:00 cfg
+drwxr-xr-x 1 spo spo 28 Jan 01 00:00 docs
+-rw-r--r-- 1 spo spo 3608 Jan 01 00:00 devices.xml
+drwxr-xr-x 1 spo spo 52 Jan 01 00:00 codegen
+-rw-r--r-- 1 spo spo 2646 Jan 01 00:00 README.md
+drwxr-xr-x 1 spo spo 64 Jan 01 00:00 view
 226 transfer complete
-> RETR info.txt
-150 inode=259 size=19 extent=inline
-BTRFS TREE WALK OK
-226 transfer complete
-> RETR help.txt
-150 inode=261 size=12 extent=inline
-RETR works.
-226 transfer complete
-> CWD ..
 250 CWD ok
-> PWD
-257 "/"
-> COPY docs
+150 directory stream follows
+-rw-r--r-- 1 spo spo 64 Jan 01 00:00 small.txt
+226 transfer complete
+150 inode=292 size=64 extent=btrfs
+SPO8 Btrfs FTP demo file.
+Read through RemoteTasks BlockDevice.
+226 transfer complete
+250 CWD ok
 150 recursive directory copy follows
-COPY file info.txt
-150 inode=259 size=19 extent=inline
-BTRFS TREE WALK OK
-226 transfer complete
-COPY file help.txt
-150 inode=261 size=12 extent=inline
-RETR works.
+COPY file small.txt
+150 inode=292 size=64 extent=btrfs
+SPO8 Btrfs FTP demo file.
+Read through RemoteTasks BlockDevice.
 226 transfer complete
 226 copy complete
-> CWD pictures
 250 CWD ok
-> LIST
 150 directory stream follows
-f 262 17 notes.txt
+-rw-r--r-- 1 spo spo 5264 Jan 01 00:00 vm_inspector.py
+-rw-r--r-- 1 spo spo 21724 Jan 01 00:00 vm.py
+-rw-r--r-- 1 spo spo 3053 Jan 01 00:00 check_btrfs_ftp_output.py
+-rw-r--r-- 1 spo spo 15789 Jan 01 00:00 asm.py
+-rw-r--r-- 1 spo spo 3493 Jan 01 00:00 check_remote_ftp_client.sh
+-rw-r--r-- 1 spo spo 5269 Jan 01 00:00 prepare_btrfs_image.sh
+-rw-r--r-- 1 spo spo 17316 Jan 01 00:00 ftp_data_adapter.c
+-rw-r--r-- 1 spo spo 2953 Jan 01 00:00 check_remote_ftp_report.sh
+-rw-r--r-- 1 spo spo 3225 Jan 01 00:00 run_remote.bat
+-rw-r--r-- 1 spo spo 11971 Jan 01 00:00 gen_btrfs_ftp_asm.py
+-rw-r--r-- 1 spo spo 5445 Jan 01 00:00 run_remote_interactive.sh
+-rw-r--r-- 1 spo spo 1805 Jan 01 00:00 run_remote_filezilla.sh
+-rw-r--r-- 1 spo spo 7161 Jan 01 00:00 run_remote.sh
+-rw-r--r-- 1 spo spo 1129 Jan 01 00:00 check_btrfs_unsupported.py
+-rw-r--r-- 1 spo spo 528 Jan 01 00:00 run_vm.sh
+-rw-r--r-- 1 spo spo 424 Jan 01 00:00 run_vm_tests.sh
 226 transfer complete
-> RETR notes.txt
-150 inode=262 size=17 extent=inline
-subtree readable
+213 424
+150 inode=312 size=424 extent=btrfs
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ASM_FILE="${ROOT_DIR}/tests/vm_instructions.asm"
+BIN_FILE="${ROOT_DIR}/results/vm_instructions.bin"
+SPEC_FILE="${ROOT_DIR}/vm/spec.json"
+
+mkdir -p "${ROOT_DIR}/results"
+python3 "${ROOT_DIR}/tools/asm.py" -s "${SPEC_FILE}" -i "${ASM_FILE}" -o "${BIN_FILE}"
+python3 "${ROOT_DIR}/tools/vm.py" -s "${SPEC_FILE}" -i "${BIN_FILE}"
 226 transfer complete
-> CWD /
 250 CWD ok
-> RETR readme.txt
-150 inode=257 size=19 extent=inline
-Hello from SPO8 FS
+150 directory stream follows
+drwxr-xr-x 1 spo spo 276 Jan 01 00:00 SPO8
 226 transfer complete
-> COPY readme.txt
-150 inode=257 size=19 extent=inline
-Hello from SPO8 FS
-226 transfer complete
-> RETR missing.txt
 550 not found
-> CWD ghost
 550 not found
-> QUIT
 221 bye
-STATS cmd=24 lookup=15 stream=1518 gw=218
+STATS cmd=24 lookup=16 stream=3349 gw=478
 OK

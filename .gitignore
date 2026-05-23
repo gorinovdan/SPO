@@ -8,3 +8,8 @@
 *__MACOSX
 *app.dSYM
 *CLAUDE.md
+/SPO8/spo8_btrfs_block.img
+/SPO8/results/ftp_data_adapter
+/SPO8/results/ftp_data_adapter.log
+/SPO8/results/remote_filezilla_*
+/SPO8/results/btrfs_unsupported.ptptb

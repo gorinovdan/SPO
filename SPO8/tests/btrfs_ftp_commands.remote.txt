@@ -5,20 +5,20 @@ PASV
 TYPE I
 PWD
 LIST
-CWD docs
+CWD SPO8
 PWD
 LIST
-RETR info.txt
-RETR help.txt
+CWD demo
+LIST
+RETR small.txt
 CWD ..
-PWD
-COPY docs
-CWD pictures
+COPY demo
+CWD tools
 LIST
-RETR notes.txt
+SIZE run_vm_tests.sh
+RETR run_vm_tests.sh
 CWD /
-RETR readme.txt
-COPY readme.txt
-RETR missing.txt
+LIST
 CWD ghost
+RETR missing.txt
 QUIT

@@ -42,6 +42,16 @@
     {"mnemonic": "POP_SYS", "opcode": 35, "operands": ["imm"], "description": "Store system register"},
     {"mnemonic": "INDEXB", "opcode": 43, "operands": [], "description": "Compute byte-indexed address"},
     {"mnemonic": "LOADB_IND", "opcode": 44, "operands": [], "description": "Load byte from address on stack"},
-    {"mnemonic": "STOREB_IND", "opcode": 45, "operands": [], "description": "Store byte to address on stack"}
+    {"mnemonic": "STOREB_IND", "opcode": 45, "operands": [], "description": "Store byte to address on stack"},
+    {"mnemonic": "PIPE_IN", "opcode": 46, "operands": [], "description": "Read one byte from the SPO8 stream device"},
+    {"mnemonic": "PIPE_OUT", "opcode": 47, "operands": [], "description": "Write one byte to the SPO8 stream device"},
+    {"mnemonic": "BLOCK_READ_BYTE", "opcode": 48, "operands": [], "description": "Read one byte from the SPO8 block device"},
+    {"mnemonic": "BLOCK_WRITE_BYTE", "opcode": 49, "operands": [], "description": "Write one byte to the SPO8 block device"},
+    {"mnemonic": "DATA_OUT", "opcode": 50, "operands": [], "description": "Write one byte to the passive FTP data stream"},
+    {"mnemonic": "DATA_BUF_BYTE", "opcode": 51, "operands": [], "description": "Write one byte to the passive FTP data buffer"},
+    {"mnemonic": "DATA_FLUSH", "opcode": 52, "operands": [], "description": "Flush the passive FTP data buffer"},
+    {"mnemonic": "BLOCK_READ_BUF", "opcode": 53, "operands": [], "description": "Read a byte range from the SPO8 block device into its buffer"},
+    {"mnemonic": "BLOCK_BUF_BYTE", "opcode": 54, "operands": [], "description": "Read one byte from the SPO8 block device buffer"},
+    {"mnemonic": "DATA_COPY_BLOCK", "opcode": 55, "operands": [], "description": "Copy the block buffer to the passive FTP data stream"}
   ]
 }

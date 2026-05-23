@@ -1,0 +1,1864 @@
+btrfs-progs v6.8.1
+root tree
+leaf 30769152 items 11 free space 12709 generation 7 owner ROOT_TREE
+leaf 30769152 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
+		generation 7 root_dirid 0 bytenr 30670848 byte_limit 0 bytes_used 16384
+		last_snapshot 0 flags 0x0(none) refs 1
+		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+		level 0 generation_v2 7
+		uuid 00000000-0000-0000-0000-000000000000
+		parent_uuid 00000000-0000-0000-0000-000000000000
+		received_uuid 00000000-0000-0000-0000-000000000000
+		ctransid 0 otransid 0 stransid 0 rtransid 0
+		ctime 0.0 (1970-01-01 00:00:00)
+		otime 0.0 (1970-01-01 00:00:00)
+		stime 0.0 (1970-01-01 00:00:00)
+		rtime 0.0 (1970-01-01 00:00:00)
+	item 1 key (DEV_TREE ROOT_ITEM 0) itemoff 15405 itemsize 439
+		generation 7 root_dirid 0 bytenr 30785536 byte_limit 0 bytes_used 16384
+		last_snapshot 0 flags 0x0(none) refs 1
+		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+		level 0 generation_v2 7
+		uuid 00000000-0000-0000-0000-000000000000
+		parent_uuid 00000000-0000-0000-0000-000000000000
+		received_uuid 00000000-0000-0000-0000-000000000000
+		ctransid 0 otransid 0 stransid 0 rtransid 0
+		ctime 0.0 (1970-01-01 00:00:00)
+		otime 0.0 (1970-01-01 00:00:00)
+		stime 0.0 (1970-01-01 00:00:00)
+		rtime 0.0 (1970-01-01 00:00:00)
+	item 2 key (FS_TREE INODE_REF 6) itemoff 15388 itemsize 17
+		index 0 namelen 7 name: default
+	item 3 key (FS_TREE ROOT_ITEM 0) itemoff 14949 itemsize 439
+		generation 7 root_dirid 256 bytenr 30703616 byte_limit 0 bytes_used 65536
+		last_snapshot 0 flags 0x0(none) refs 1
+		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+		level 1 generation_v2 7
+		uuid 13899c87-7e26-409e-9ff3-77e9b3be37be
+		parent_uuid 00000000-0000-0000-0000-000000000000
+		received_uuid 00000000-0000-0000-0000-000000000000
+		ctransid 7 otransid 0 stransid 0 rtransid 0
+		ctime 1779491630.739659721 (2026-05-22 23:13:50)
+		otime 1779491630.0 (2026-05-22 23:13:50)
+		stime 0.0 (1970-01-01 00:00:00)
+		rtime 0.0 (1970-01-01 00:00:00)
+	item 4 key (ROOT_TREE_DIR INODE_ITEM 0) itemoff 14789 itemsize 160
+		generation 3 transid 0 size 0 nbytes 16384
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 0 flags 0x0(none)
+		atime 1779491630.0 (2026-05-22 23:13:50)
+		ctime 1779491630.0 (2026-05-22 23:13:50)
+		mtime 1779491630.0 (2026-05-22 23:13:50)
+		otime 1779491630.0 (2026-05-22 23:13:50)
+	item 5 key (ROOT_TREE_DIR INODE_REF 6) itemoff 14777 itemsize 12
+		index 0 namelen 2 name: ..
+	item 6 key (ROOT_TREE_DIR DIR_ITEM 2378154706) itemoff 14740 itemsize 37
+		location key (FS_TREE ROOT_ITEM 18446744073709551615) type DIR
+		transid 0 data_len 0 name_len 7
+		name: default
+	item 7 key (CSUM_TREE ROOT_ITEM 0) itemoff 14301 itemsize 439
+		generation 7 root_dirid 0 bytenr 30638080 byte_limit 0 bytes_used 16384
+		last_snapshot 0 flags 0x0(none) refs 1
+		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+		level 0 generation_v2 7
+		uuid 00000000-0000-0000-0000-000000000000
+		parent_uuid 00000000-0000-0000-0000-000000000000
+		received_uuid 00000000-0000-0000-0000-000000000000
+		ctransid 0 otransid 0 stransid 0 rtransid 0
+		ctime 0.0 (1970-01-01 00:00:00)
+		otime 0.0 (1970-01-01 00:00:00)
+		stime 0.0 (1970-01-01 00:00:00)
+		rtime 0.0 (1970-01-01 00:00:00)
+	item 8 key (UUID_TREE ROOT_ITEM 0) itemoff 13862 itemsize 439
+		generation 5 root_dirid 0 bytenr 30539776 byte_limit 0 bytes_used 16384
+		last_snapshot 0 flags 0x0(none) refs 1
+		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+		level 0 generation_v2 5
+		uuid 00000000-0000-0000-0000-000000000000
+		parent_uuid 00000000-0000-0000-0000-000000000000
+		received_uuid 00000000-0000-0000-0000-000000000000
+		ctransid 0 otransid 0 stransid 0 rtransid 0
+		ctime 0.0 (1970-01-01 00:00:00)
+		otime 0.0 (1970-01-01 00:00:00)
+		stime 0.0 (1970-01-01 00:00:00)
+		rtime 0.0 (1970-01-01 00:00:00)
+	item 9 key (FREE_SPACE_TREE ROOT_ITEM 0) itemoff 13423 itemsize 439
+		generation 7 root_dirid 0 bytenr 30687232 byte_limit 0 bytes_used 16384
+		last_snapshot 0 flags 0x0(none) refs 1
+		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+		level 0 generation_v2 7
+		uuid 00000000-0000-0000-0000-000000000000
+		parent_uuid 00000000-0000-0000-0000-000000000000
+		received_uuid 00000000-0000-0000-0000-000000000000
+		ctransid 0 otransid 0 stransid 0 rtransid 0
+		ctime 0.0 (1970-01-01 00:00:00)
+		otime 0.0 (1970-01-01 00:00:00)
+		stime 0.0 (1970-01-01 00:00:00)
+		rtime 0.0 (1970-01-01 00:00:00)
+	item 10 key (DATA_RELOC_TREE ROOT_ITEM 0) itemoff 12984 itemsize 439
+		generation 5 root_dirid 256 bytenr 30523392 byte_limit 0 bytes_used 16384
+		last_snapshot 0 flags 0x0(none) refs 1
+		drop_progress key (0 UNKNOWN.0 0) drop_level 0
+		level 0 generation_v2 5
+		uuid 00000000-0000-0000-0000-000000000000
+		parent_uuid 00000000-0000-0000-0000-000000000000
+		received_uuid 00000000-0000-0000-0000-000000000000
+		ctransid 0 otransid 0 stransid 0 rtransid 0
+		ctime 0.0 (1970-01-01 00:00:00)
+		otime 0.0 (1970-01-01 00:00:00)
+		stime 0.0 (1970-01-01 00:00:00)
+		rtime 0.0 (1970-01-01 00:00:00)
+chunk tree
+leaf 22052864 items 5 free space 15676 generation 7 owner CHUNK_TREE
+leaf 22052864 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
+		devid 1 total_bytes 167772160 bytes_used 109051904
+		io_align 4096 io_width 4096 sector_size 4096 type 0
+		generation 0 start_offset 0 dev_group 0
+		seek_speed 0 bandwidth 0
+		uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+		fsid 67d66816-c166-4f4a-837d-988f1ad1cd42
+	item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 13631488) itemoff 16105 itemsize 80
+		length 8388608 owner 2 stripe_len 65536 type DATA|single
+		io_align 65536 io_width 65536 sector_size 4096
+		num_stripes 1 sub_stripes 1
+			stripe 0 devid 1 offset 13631488
+			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+	item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096) itemoff 15993 itemsize 112
+		length 8388608 owner 2 stripe_len 65536 type SYSTEM|DUP
+		io_align 65536 io_width 65536 sector_size 4096
+		num_stripes 2 sub_stripes 1
+			stripe 0 devid 1 offset 22020096
+			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+			stripe 1 devid 1 offset 30408704
+			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+	item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 30408704) itemoff 15881 itemsize 112
+		length 33554432 owner 2 stripe_len 65536 type METADATA|DUP
+		io_align 65536 io_width 65536 sector_size 4096
+		num_stripes 2 sub_stripes 1
+			stripe 0 devid 1 offset 38797312
+			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+			stripe 1 devid 1 offset 72351744
+			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+	item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 63963136) itemoff 15801 itemsize 80
+		length 16777216 owner 2 stripe_len 65536 type DATA|single
+		io_align 65536 io_width 65536 sector_size 4096
+		num_stripes 1 sub_stripes 1
+			stripe 0 devid 1 offset 105906176
+			dev_uuid 35fd4f2e-889f-4cb4-aa0e-5de619e68ead
+extent tree key (EXTENT_TREE ROOT_ITEM 0) 
+leaf 30670848 items 55 free space 12349 generation 7 owner EXTENT_TREE
+leaf 30670848 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (13631488 EXTENT_ITEM 4096) itemoff 16230 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f15e01bd8) extent data backref root FS_TREE objectid 268 offset 0 count 1
+	item 1 key (13631488 BLOCK_GROUP_ITEM 8388608) itemoff 16206 itemsize 24
+		block group used 638976 chunk_objectid 256 flags DATA|single
+	item 2 key (13635584 EXTENT_ITEM 4096) itemoff 16153 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fe7ec1626) extent data backref root FS_TREE objectid 269 offset 0 count 1
+	item 3 key (13639680 EXTENT_ITEM 8192) itemoff 16100 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591ff41476d5) extent data backref root FS_TREE objectid 270 offset 0 count 1
+	item 4 key (13647872 EXTENT_ITEM 4096) itemoff 16047 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f06187b2b) extent data backref root FS_TREE objectid 271 offset 0 count 1
+	item 5 key (13651968 EXTENT_ITEM 4096) itemoff 15994 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f4c27b0ab) extent data backref root FS_TREE objectid 272 offset 0 count 1
+	item 6 key (13656064 EXTENT_ITEM 8192) itemoff 15941 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fbe2bbd55) extent data backref root FS_TREE objectid 273 offset 0 count 1
+	item 7 key (13664256 EXTENT_ITEM 16384) itemoff 15888 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fadd3dda6) extent data backref root FS_TREE objectid 274 offset 0 count 1
+	item 8 key (13680640 EXTENT_ITEM 32768) itemoff 15835 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f5fdfd058) extent data backref root FS_TREE objectid 275 offset 0 count 1
+	item 9 key (13713408 EXTENT_ITEM 16384) itemoff 15782 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f8a231c40) extent data backref root FS_TREE objectid 276 offset 0 count 1
+	item 10 key (13729792 EXTENT_ITEM 16384) itemoff 15729 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f6bd7714d) extent data backref root FS_TREE objectid 278 offset 0 count 1
+	item 11 key (13746176 EXTENT_ITEM 4096) itemoff 15676 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f99db7cb3) extent data backref root FS_TREE objectid 279 offset 0 count 1
+	item 12 key (13750272 EXTENT_ITEM 61440) itemoff 15623 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f2436f281) extent data backref root FS_TREE objectid 282 offset 0 count 1
+	item 13 key (13811712 EXTENT_ITEM 8192) itemoff 15570 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fd63aff7f) extent data backref root FS_TREE objectid 283 offset 0 count 1
+	item 14 key (13819904 EXTENT_ITEM 94208) itemoff 15517 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f03c63367) extent data backref root FS_TREE objectid 284 offset 0 count 1
+	item 15 key (13914112 EXTENT_ITEM 4096) itemoff 15464 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fe2325e6a) extent data backref root FS_TREE objectid 286 offset 0 count 1
+	item 16 key (13918208 EXTENT_ITEM 16384) itemoff 15411 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f103e5394) extent data backref root FS_TREE objectid 287 offset 0 count 1
+	item 17 key (13934592 EXTENT_ITEM 57344) itemoff 15358 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f764dc96a) extent data backref root FS_TREE objectid 288 offset 0 count 1
+	item 18 key (13991936 EXTENT_ITEM 4096) itemoff 15305 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f8441c494) extent data backref root FS_TREE objectid 289 offset 0 count 1
+	item 19 key (13996032 EXTENT_ITEM 40960) itemoff 15252 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f97b9a467) extent data backref root FS_TREE objectid 290 offset 0 count 1
+	item 20 key (14036992 EXTENT_ITEM 4096) itemoff 15199 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f4245687f) extent data backref root FS_TREE objectid 293 offset 0 count 1
+	item 21 key (14041088 EXTENT_ITEM 69632) itemoff 15146 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fffa8e64d) extent data backref root FS_TREE objectid 296 offset 0 count 1
+	item 22 key (14110720 EXTENT_ITEM 8192) itemoff 15093 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f0da4ebb3) extent data backref root FS_TREE objectid 297 offset 0 count 1
+	item 23 key (14118912 EXTENT_ITEM 16384) itemoff 15040 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fec5086be) extent data backref root FS_TREE objectid 299 offset 0 count 1
+	item 24 key (14135296 EXTENT_ITEM 4096) itemoff 14987 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f39ac4aa6) extent data backref root FS_TREE objectid 300 offset 0 count 1
+	item 25 key (14139392 EXTENT_ITEM 4096) itemoff 14934 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fd85827ab) extent data backref root FS_TREE objectid 302 offset 0 count 1
+	item 26 key (14143488 EXTENT_ITEM 4096) itemoff 14881 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f2a542a55) extent data backref root FS_TREE objectid 303 offset 0 count 1
+	item 27 key (14147584 EXTENT_ITEM 20480) itemoff 14828 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f606be1d5) extent data backref root FS_TREE objectid 304 offset 0 count 1
+	item 28 key (14168064 EXTENT_ITEM 12288) itemoff 14775 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f9267ec2b) extent data backref root FS_TREE objectid 305 offset 0 count 1
+	item 29 key (14180352 EXTENT_ITEM 8192) itemoff 14722 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f819f8cd8) extent data backref root FS_TREE objectid 306 offset 0 count 1
+	item 30 key (14188544 EXTENT_ITEM 4096) itemoff 14669 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f73938126) extent data backref root FS_TREE objectid 307 offset 0 count 1
+	item 31 key (14192640 EXTENT_ITEM 8192) itemoff 14616 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fa66f4d3e) extent data backref root FS_TREE objectid 308 offset 0 count 1
+	item 32 key (14200832 EXTENT_ITEM 8192) itemoff 14563 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f479b2033) extent data backref root FS_TREE objectid 310 offset 0 count 1
+	item 33 key (14209024 EXTENT_ITEM 24576) itemoff 14510 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f1b82c30c) extent data backref root FS_TREE objectid 313 offset 0 count 1
+	item 34 key (14233600 EXTENT_ITEM 8192) itemoff 14457 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f087aa3ff) extent data backref root FS_TREE objectid 314 offset 0 count 1
+	item 35 key (14241792 EXTENT_ITEM 12288) itemoff 14404 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591ffa76ae01) extent data backref root FS_TREE objectid 315 offset 0 count 1
+	item 36 key (14254080 EXTENT_ITEM 4096) itemoff 14351 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591fdd866fe7) extent data backref root FS_TREE objectid 317 offset 0 count 1
+	item 37 key (14258176 EXTENT_ITEM 8192) itemoff 14298 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f3c7202ea) extent data backref root FS_TREE objectid 319 offset 0 count 1
+	item 38 key (14266368 EXTENT_ITEM 4096) itemoff 14245 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591f02993ae8) extent data backref root FS_TREE objectid 320 offset 0 count 1
+	item 39 key (22020096 BLOCK_GROUP_ITEM 8388608) itemoff 14221 itemsize 24
+		block group used 16384 chunk_objectid 256 flags SYSTEM|DUP
+	item 40 key (22052864 METADATA_ITEM 0) itemoff 14188 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x3) tree block backref root CHUNK_TREE
+	item 41 key (30408704 BLOCK_GROUP_ITEM 33554432) itemoff 14164 itemsize 24
+		block group used 180224 chunk_objectid 256 flags METADATA|DUP
+	item 42 key (30523392 METADATA_ITEM 0) itemoff 14131 itemsize 33
+		refs 1 gen 5 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0xfffffffffffffff7) tree block backref root DATA_RELOC_TREE
+	item 43 key (30539776 METADATA_ITEM 0) itemoff 14098 itemsize 33
+		refs 1 gen 5 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x9) tree block backref root UUID_TREE
+	item 44 key (30638080 METADATA_ITEM 0) itemoff 14065 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x7) tree block backref root CSUM_TREE
+	item 45 key (30670848 METADATA_ITEM 0) itemoff 14032 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x2) tree block backref root EXTENT_TREE
+	item 46 key (30687232 METADATA_ITEM 0) itemoff 13999 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0xa) tree block backref root FREE_SPACE_TREE
+	item 47 key (30703616 METADATA_ITEM 1) itemoff 13966 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 1
+		(176 0x5) tree block backref root FS_TREE
+	item 48 key (30720000 METADATA_ITEM 0) itemoff 13933 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x5) tree block backref root FS_TREE
+	item 49 key (30736384 METADATA_ITEM 0) itemoff 13900 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x5) tree block backref root FS_TREE
+	item 50 key (30752768 METADATA_ITEM 0) itemoff 13867 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x5) tree block backref root FS_TREE
+	item 51 key (30769152 METADATA_ITEM 0) itemoff 13834 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x1) tree block backref root ROOT_TREE
+	item 52 key (30785536 METADATA_ITEM 0) itemoff 13801 itemsize 33
+		refs 1 gen 7 flags TREE_BLOCK
+		tree block skinny level 0
+		(176 0x4) tree block backref root DEV_TREE
+	item 53 key (63963136 EXTENT_ITEM 139264) itemoff 13748 itemsize 53
+		refs 1 gen 7 flags DATA
+		(178 0xdfb591ff1ca3e99) extent data backref root FS_TREE objectid 285 offset 0 count 1
+	item 54 key (63963136 BLOCK_GROUP_ITEM 16777216) itemoff 13724 itemsize 24
+		block group used 139264 chunk_objectid 256 flags DATA|single
+device tree key (DEV_TREE ROOT_ITEM 0) 
+leaf 30785536 items 7 free space 15780 generation 7 owner DEV_TREE
+leaf 30785536 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (DEV_STATS PERSISTENT_ITEM 1) itemoff 16243 itemsize 40
+		persistent item objectid DEV_STATS offset 1
+		device stats
+		write_errs 0 read_errs 0 flush_errs 0 corruption_errs 0 generation 0
+	item 1 key (1 DEV_EXTENT 13631488) itemoff 16195 itemsize 48
+		dev extent chunk_tree 3
+		chunk_objectid 256 chunk_offset 13631488 length 8388608
+		chunk_tree_uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 2 key (1 DEV_EXTENT 22020096) itemoff 16147 itemsize 48
+		dev extent chunk_tree 3
+		chunk_objectid 256 chunk_offset 22020096 length 8388608
+		chunk_tree_uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 3 key (1 DEV_EXTENT 30408704) itemoff 16099 itemsize 48
+		dev extent chunk_tree 3
+		chunk_objectid 256 chunk_offset 22020096 length 8388608
+		chunk_tree_uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 4 key (1 DEV_EXTENT 38797312) itemoff 16051 itemsize 48
+		dev extent chunk_tree 3
+		chunk_objectid 256 chunk_offset 30408704 length 33554432
+		chunk_tree_uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 5 key (1 DEV_EXTENT 72351744) itemoff 16003 itemsize 48
+		dev extent chunk_tree 3
+		chunk_objectid 256 chunk_offset 30408704 length 33554432
+		chunk_tree_uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 6 key (1 DEV_EXTENT 105906176) itemoff 15955 itemsize 48
+		dev extent chunk_tree 3
+		chunk_objectid 256 chunk_offset 63963136 length 16777216
+		chunk_tree_uuid 5a706beb-e078-4d07-a085-7ae92a694594
+fs tree key (FS_TREE ROOT_ITEM 0) 
+node 30703616 level 1 items 3 free space 490 generation 7 owner FS_TREE
+node 30703616 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	key (256 INODE_ITEM 0) block 30736384 gen 7
+	key (267 INODE_REF 257) block 30720000 gen 7
+	key (297 EXTENT_DATA 0) block 30752768 gen 7
+leaf 30736384 items 147 free space 5357 generation 7 owner FS_TREE
+leaf 30736384 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+		generation 3 transid 7 size 8 nbytes 16384
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 1 flags 0x0(none)
+		atime 1779491630.0 (2026-05-22 23:13:50)
+		ctime 1779491630.695732012 (2026-05-22 23:13:50)
+		mtime 1779491630.695732012 (2026-05-22 23:13:50)
+		otime 1779491630.0 (2026-05-22 23:13:50)
+	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+		index 0 namelen 2 name: ..
+	item 2 key (256 DIR_ITEM 1605261751) itemoff 16077 itemsize 34
+		location key (257 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: SPO8
+	item 3 key (256 DIR_INDEX 2) itemoff 16043 itemsize 34
+		location key (257 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: SPO8
+	item 4 key (257 INODE_ITEM 0) itemoff 15883 itemsize 160
+		generation 7 transid 7 size 276 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 56 flags 0x0(none)
+		atime 1779491630.698732012 (2026-05-22 23:13:50)
+		ctime 1779491630.704732012 (2026-05-22 23:13:50)
+		mtime 1779491630.704732012 (2026-05-22 23:13:50)
+		otime 1779491630.695732012 (2026-05-22 23:13:50)
+	item 5 key (257 INODE_REF 256) itemoff 15869 itemsize 14
+		index 2 namelen 4 name: SPO8
+	item 6 key (257 DIR_ITEM 91982926) itemoff 15826 itemsize 43
+		location key (270 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: Validation.md
+	item 7 key (257 DIR_ITEM 153490099) itemoff 15787 itemsize 39
+		location key (274 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: report.md
+	item 8 key (257 DIR_ITEM 160397126) itemoff 15752 itemsize 35
+		location key (265 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 5
+		name: tools
+	item 9 key (257 DIR_ITEM 171685581) itemoff 15714 itemsize 38
+		location key (268 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 8
+		name: Makefile
+	item 10 key (257 DIR_ITEM 263690725) itemoff 15680 itemsize 34
+		location key (262 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: demo
+	item 11 key (257 DIR_ITEM 356797022) itemoff 15648 itemsize 32
+		location key (267 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 2
+		name: vm
+	item 12 key (257 DIR_ITEM 457336487) itemoff 15610 itemsize 38
+		location key (258 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 8
+		name: analysis
+	item 13 key (257 DIR_ITEM 606293965) itemoff 15559 itemsize 51
+		location key (272 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 21
+		name: devices_filezilla.xml
+	item 14 key (257 DIR_ITEM 877716045) itemoff 15524 itemsize 35
+		location key (264 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 5
+		name: tests
+	item 15 key (257 DIR_ITEM 2215024708) itemoff 15491 itemsize 33
+		location key (259 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 3
+		name: ast
+	item 16 key (257 DIR_ITEM 2226876701) itemoff 15455 itemsize 36
+		location key (273 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: main.c
+	item 17 key (257 DIR_ITEM 2699395938) itemoff 15409 itemsize 46
+		location key (275 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 16
+		name: spo8.target.pdsl
+	item 18 key (257 DIR_ITEM 2861233912) itemoff 15376 itemsize 33
+		location key (260 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 3
+		name: cfg
+	item 19 key (257 DIR_ITEM 3511643928) itemoff 15342 itemsize 34
+		location key (263 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: docs
+	item 20 key (257 DIR_ITEM 3541870149) itemoff 15301 itemsize 41
+		location key (271 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 11
+		name: devices.xml
+	item 21 key (257 DIR_ITEM 3927424819) itemoff 15264 itemsize 37
+		location key (261 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 7
+		name: codegen
+	item 22 key (257 DIR_ITEM 3974307408) itemoff 15225 itemsize 39
+		location key (269 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: README.md
+	item 23 key (257 DIR_ITEM 4171812254) itemoff 15191 itemsize 34
+		location key (266 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: view
+	item 24 key (257 DIR_INDEX 2) itemoff 15153 itemsize 38
+		location key (258 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 8
+		name: analysis
+	item 25 key (257 DIR_INDEX 3) itemoff 15120 itemsize 33
+		location key (259 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 3
+		name: ast
+	item 26 key (257 DIR_INDEX 4) itemoff 15087 itemsize 33
+		location key (260 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 3
+		name: cfg
+	item 27 key (257 DIR_INDEX 5) itemoff 15050 itemsize 37
+		location key (261 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 7
+		name: codegen
+	item 28 key (257 DIR_INDEX 6) itemoff 15016 itemsize 34
+		location key (262 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: demo
+	item 29 key (257 DIR_INDEX 7) itemoff 14982 itemsize 34
+		location key (263 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: docs
+	item 30 key (257 DIR_INDEX 8) itemoff 14947 itemsize 35
+		location key (264 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 5
+		name: tests
+	item 31 key (257 DIR_INDEX 9) itemoff 14912 itemsize 35
+		location key (265 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 5
+		name: tools
+	item 32 key (257 DIR_INDEX 10) itemoff 14878 itemsize 34
+		location key (266 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 4
+		name: view
+	item 33 key (257 DIR_INDEX 11) itemoff 14846 itemsize 32
+		location key (267 INODE_ITEM 0) type DIR
+		transid 7 data_len 0 name_len 2
+		name: vm
+	item 34 key (257 DIR_INDEX 13) itemoff 14808 itemsize 38
+		location key (268 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 8
+		name: Makefile
+	item 35 key (257 DIR_INDEX 15) itemoff 14769 itemsize 39
+		location key (269 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: README.md
+	item 36 key (257 DIR_INDEX 17) itemoff 14726 itemsize 43
+		location key (270 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: Validation.md
+	item 37 key (257 DIR_INDEX 19) itemoff 14685 itemsize 41
+		location key (271 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 11
+		name: devices.xml
+	item 38 key (257 DIR_INDEX 21) itemoff 14634 itemsize 51
+		location key (272 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 21
+		name: devices_filezilla.xml
+	item 39 key (257 DIR_INDEX 23) itemoff 14598 itemsize 36
+		location key (273 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: main.c
+	item 40 key (257 DIR_INDEX 25) itemoff 14559 itemsize 39
+		location key (274 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: report.md
+	item 41 key (257 DIR_INDEX 27) itemoff 14513 itemsize 46
+		location key (275 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 16
+		name: spo8.target.pdsl
+	item 42 key (258 INODE_ITEM 0) itemoff 14353 itemsize 160
+		generation 7 transid 7 size 16 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 19 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1777127187.816670479 (2026-04-25 14:26:27)
+		otime 1779491630.698732012 (2026-05-22 23:13:50)
+	item 43 key (258 INODE_REF 257) itemoff 14335 itemsize 18
+		index 2 namelen 8 name: analysis
+	item 44 key (258 DIR_ITEM 1157395165) itemoff 14301 itemsize 34
+		location key (277 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 4
+		name: ir.h
+	item 45 key (258 DIR_ITEM 3715488230) itemoff 14267 itemsize 34
+		location key (276 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 4
+		name: ir.c
+	item 46 key (258 DIR_INDEX 3) itemoff 14233 itemsize 34
+		location key (276 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 4
+		name: ir.c
+	item 47 key (258 DIR_INDEX 5) itemoff 14199 itemsize 34
+		location key (277 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 4
+		name: ir.h
+	item 48 key (259 INODE_ITEM 0) itemoff 14039 itemsize 160
+		generation 7 transid 7 size 184 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 59 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.706732012 (2026-05-22 23:13:50)
+		mtime 1777127187.832942103 (2026-04-25 14:26:27)
+		otime 1779491630.698732012 (2026-05-22 23:13:50)
+	item 49 key (259 INODE_REF 257) itemoff 14026 itemsize 13
+		index 3 namelen 3 name: ast
+	item 50 key (259 DIR_ITEM 352982834) itemoff 13984 itemsize 42
+		location key (285 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 12
+		name: parser.tab.c
+	item 51 key (259 DIR_ITEM 757286676) itemoff 13946 itemsize 38
+		location key (282 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 8
+		name: lex.yy.c
+	item 52 key (259 DIR_ITEM 1344968216) itemoff 13911 itemsize 35
+		location key (278 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: ast.c
+	item 53 key (259 DIR_ITEM 1421281531) itemoff 13874 itemsize 37
+		location key (283 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 7
+		name: lexer.l
+	item 54 key (259 DIR_ITEM 2139591544) itemoff 13833 itemsize 41
+		location key (281 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 11
+		name: ast_maker.h
+	item 55 key (259 DIR_ITEM 2357443593) itemoff 13791 itemsize 42
+		location key (286 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 12
+		name: parser.tab.h
+	item 56 key (259 DIR_ITEM 3105028774) itemoff 13748 itemsize 43
+		location key (284 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: parser.output
+	item 57 key (259 DIR_ITEM 3164116515) itemoff 13710 itemsize 38
+		location key (287 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 8
+		name: parser.y
+	item 58 key (259 DIR_ITEM 3382918435) itemoff 13675 itemsize 35
+		location key (279 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: ast.h
+	item 59 key (259 DIR_ITEM 3859691587) itemoff 13634 itemsize 41
+		location key (280 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 11
+		name: ast_maker.c
+	item 60 key (259 DIR_INDEX 3) itemoff 13599 itemsize 35
+		location key (278 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: ast.c
+	item 61 key (259 DIR_INDEX 5) itemoff 13564 itemsize 35
+		location key (279 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: ast.h
+	item 62 key (259 DIR_INDEX 7) itemoff 13523 itemsize 41
+		location key (280 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 11
+		name: ast_maker.c
+	item 63 key (259 DIR_INDEX 9) itemoff 13482 itemsize 41
+		location key (281 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 11
+		name: ast_maker.h
+	item 64 key (259 DIR_INDEX 11) itemoff 13444 itemsize 38
+		location key (282 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 8
+		name: lex.yy.c
+	item 65 key (259 DIR_INDEX 13) itemoff 13407 itemsize 37
+		location key (283 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 7
+		name: lexer.l
+	item 66 key (259 DIR_INDEX 15) itemoff 13364 itemsize 43
+		location key (284 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: parser.output
+	item 67 key (259 DIR_INDEX 17) itemoff 13322 itemsize 42
+		location key (285 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 12
+		name: parser.tab.c
+	item 68 key (259 DIR_INDEX 19) itemoff 13280 itemsize 42
+		location key (286 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 12
+		name: parser.tab.h
+	item 69 key (259 DIR_INDEX 21) itemoff 13242 itemsize 38
+		location key (287 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 8
+		name: parser.y
+	item 70 key (260 INODE_ITEM 0) itemoff 13082 itemsize 160
+		generation 7 transid 7 size 20 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 19 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.707732012 (2026-05-22 23:13:50)
+		mtime 1777127187.822612351 (2026-04-25 14:26:27)
+		otime 1779491630.698732012 (2026-05-22 23:13:50)
+	item 71 key (260 INODE_REF 257) itemoff 13069 itemsize 13
+		index 4 namelen 3 name: cfg
+	item 72 key (260 DIR_ITEM 1812887028) itemoff 13034 itemsize 35
+		location key (289 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: cfg.h
+	item 73 key (260 DIR_ITEM 4119322319) itemoff 12999 itemsize 35
+		location key (288 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: cfg.c
+	item 74 key (260 DIR_INDEX 3) itemoff 12964 itemsize 35
+		location key (288 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: cfg.c
+	item 75 key (260 DIR_INDEX 5) itemoff 12929 itemsize 35
+		location key (289 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: cfg.h
+	item 76 key (261 INODE_ITEM 0) itemoff 12769 itemsize 160
+		generation 7 transid 7 size 52 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 19 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1777127187.820482224 (2026-04-25 14:26:27)
+		otime 1779491630.698732012 (2026-05-22 23:13:50)
+	item 77 key (261 INODE_REF 257) itemoff 12752 itemsize 17
+		index 5 namelen 7 name: codegen
+	item 78 key (261 DIR_ITEM 1685627809) itemoff 12709 itemsize 43
+		location key (290 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: linear_code.c
+	item 79 key (261 DIR_ITEM 4260432026) itemoff 12666 itemsize 43
+		location key (291 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: linear_code.h
+	item 80 key (261 DIR_INDEX 3) itemoff 12623 itemsize 43
+		location key (290 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: linear_code.c
+	item 81 key (261 DIR_INDEX 5) itemoff 12580 itemsize 43
+		location key (291 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: linear_code.h
+	item 82 key (262 INODE_ITEM 0) itemoff 12420 itemsize 160
+		generation 7 transid 7 size 18 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 14 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1778944866.795158512 (2026-05-16 15:21:06)
+		otime 1779491630.698732012 (2026-05-22 23:13:50)
+	item 83 key (262 INODE_REF 257) itemoff 12406 itemsize 14
+		index 6 namelen 4 name: demo
+	item 84 key (262 DIR_ITEM 474883676) itemoff 12367 itemsize 39
+		location key (292 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: small.txt
+	item 85 key (262 DIR_INDEX 3) itemoff 12328 itemsize 39
+		location key (292 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: small.txt
+	item 86 key (263 INODE_ITEM 0) itemoff 12168 itemsize 160
+		generation 7 transid 7 size 28 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 14 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1778945196.675320091 (2026-05-16 15:26:36)
+		otime 1779491630.699732012 (2026-05-22 23:13:50)
+	item 87 key (263 INODE_REF 257) itemoff 12154 itemsize 14
+		index 7 namelen 4 name: docs
+	item 88 key (263 DIR_ITEM 4012411531) itemoff 12110 itemsize 44
+		location key (293 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 14
+		name: btrfs_image.md
+	item 89 key (263 DIR_INDEX 3) itemoff 12066 itemsize 44
+		location key (293 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 14
+		name: btrfs_image.md
+	item 90 key (264 INODE_ITEM 0) itemoff 11906 itemsize 160
+		generation 7 transid 7 size 210 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 34 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.710732012 (2026-05-22 23:13:50)
+		mtime 1778944890.594364479 (2026-05-16 15:21:30)
+		otime 1779491630.699732012 (2026-05-22 23:13:50)
+	item 91 key (264 INODE_REF 257) itemoff 11891 itemsize 15
+		index 8 namelen 5 name: tests
+	item 92 key (264 DIR_ITEM 31773973) itemoff 11843 itemsize 48
+		location key (296 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 18
+		name: btrfs_ftp_demo.asm
+	item 93 key (264 DIR_ITEM 1539480492) itemoff 11798 itemsize 45
+		location key (298 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 15
+		name: timer_probe.asm
+	item 94 key (264 DIR_ITEM 2815226380) itemoff 11746 itemsize 52
+		location key (295 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 22
+		name: btrfs_ftp_commands.txt
+	item 95 key (264 DIR_ITEM 3304443986) itemoff 11695 itemsize 51
+		location key (297 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 21
+		name: btrfs_unsupported.asm
+	item 96 key (264 DIR_ITEM 4286730908) itemoff 11636 itemsize 59
+		location key (294 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 29
+		name: btrfs_ftp_commands.remote.txt
+	item 97 key (264 DIR_INDEX 3) itemoff 11577 itemsize 59
+		location key (294 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 29
+		name: btrfs_ftp_commands.remote.txt
+	item 98 key (264 DIR_INDEX 5) itemoff 11525 itemsize 52
+		location key (295 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 22
+		name: btrfs_ftp_commands.txt
+	item 99 key (264 DIR_INDEX 7) itemoff 11477 itemsize 48
+		location key (296 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 18
+		name: btrfs_ftp_demo.asm
+	item 100 key (264 DIR_INDEX 9) itemoff 11426 itemsize 51
+		location key (297 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 21
+		name: btrfs_unsupported.asm
+	item 101 key (264 DIR_INDEX 11) itemoff 11381 itemsize 45
+		location key (298 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 15
+		name: timer_probe.asm
+	item 102 key (265 INODE_ITEM 0) itemoff 11221 itemsize 160
+		generation 7 transid 7 size 576 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 89 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1779490576.741749157 (2026-05-22 22:56:16)
+		otime 1779491630.699732012 (2026-05-22 23:13:50)
+	item 103 key (265 INODE_REF 257) itemoff 11206 itemsize 15
+		index 9 namelen 5 name: tools
+	item 104 key (265 DIR_ITEM 470214104) itemoff 11161 itemsize 45
+		location key (314 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 15
+		name: vm_inspector.py
+	item 105 key (265 DIR_ITEM 592962277) itemoff 11126 itemsize 35
+		location key (313 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: vm.py
+	item 106 key (265 DIR_ITEM 1168743347) itemoff 11071 itemsize 55
+		location key (300 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 25
+		name: check_btrfs_ftp_output.py
+	item 107 key (265 DIR_ITEM 1522146188) itemoff 11035 itemsize 36
+		location key (299 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: asm.py
+	item 108 key (265 DIR_ITEM 1527580622) itemoff 10979 itemsize 56
+		location key (302 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 26
+		name: check_remote_ftp_client.sh
+	item 109 key (265 DIR_ITEM 1695221100) itemoff 10927 itemsize 52
+		location key (306 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 22
+		name: prepare_btrfs_image.sh
+	item 110 key (265 DIR_ITEM 2032798559) itemoff 10879 itemsize 48
+		location key (304 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 18
+		name: ftp_data_adapter.c
+	item 111 key (265 DIR_ITEM 2059435191) itemoff 10823 itemsize 56
+		location key (303 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 26
+		name: check_remote_ftp_report.sh
+	item 112 key (265 DIR_ITEM 2182218845) itemoff 10779 itemsize 44
+		location key (307 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 14
+		name: run_remote.bat
+	item 113 key (265 DIR_ITEM 2229378903) itemoff 10729 itemsize 50
+		location key (305 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 20
+		name: gen_btrfs_ftp_asm.py
+	item 114 key (265 DIR_ITEM 2303047913) itemoff 10674 itemsize 55
+		location key (310 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 25
+		name: run_remote_interactive.sh
+	item 115 key (265 DIR_ITEM 2909172650) itemoff 10621 itemsize 53
+		location key (309 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 23
+		name: run_remote_filezilla.sh
+	item 116 key (265 DIR_ITEM 2968164302) itemoff 10578 itemsize 43
+		location key (308 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: run_remote.sh
+	item 117 key (265 DIR_ITEM 3048923738) itemoff 10522 itemsize 56
+		location key (301 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 26
+		name: check_btrfs_unsupported.py
+	item 118 key (265 DIR_ITEM 3410349064) itemoff 10483 itemsize 39
+		location key (311 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: run_vm.sh
+	item 119 key (265 DIR_ITEM 4014134435) itemoff 10438 itemsize 45
+		location key (312 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 15
+		name: run_vm_tests.sh
+	item 120 key (265 DIR_INDEX 3) itemoff 10402 itemsize 36
+		location key (299 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: asm.py
+	item 121 key (265 DIR_INDEX 5) itemoff 10347 itemsize 55
+		location key (300 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 25
+		name: check_btrfs_ftp_output.py
+	item 122 key (265 DIR_INDEX 7) itemoff 10291 itemsize 56
+		location key (301 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 26
+		name: check_btrfs_unsupported.py
+	item 123 key (265 DIR_INDEX 9) itemoff 10235 itemsize 56
+		location key (302 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 26
+		name: check_remote_ftp_client.sh
+	item 124 key (265 DIR_INDEX 11) itemoff 10179 itemsize 56
+		location key (303 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 26
+		name: check_remote_ftp_report.sh
+	item 125 key (265 DIR_INDEX 13) itemoff 10131 itemsize 48
+		location key (304 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 18
+		name: ftp_data_adapter.c
+	item 126 key (265 DIR_INDEX 15) itemoff 10081 itemsize 50
+		location key (305 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 20
+		name: gen_btrfs_ftp_asm.py
+	item 127 key (265 DIR_INDEX 17) itemoff 10029 itemsize 52
+		location key (306 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 22
+		name: prepare_btrfs_image.sh
+	item 128 key (265 DIR_INDEX 19) itemoff 9985 itemsize 44
+		location key (307 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 14
+		name: run_remote.bat
+	item 129 key (265 DIR_INDEX 21) itemoff 9942 itemsize 43
+		location key (308 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 13
+		name: run_remote.sh
+	item 130 key (265 DIR_INDEX 23) itemoff 9889 itemsize 53
+		location key (309 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 23
+		name: run_remote_filezilla.sh
+	item 131 key (265 DIR_INDEX 25) itemoff 9834 itemsize 55
+		location key (310 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 25
+		name: run_remote_interactive.sh
+	item 132 key (265 DIR_INDEX 27) itemoff 9795 itemsize 39
+		location key (311 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: run_vm.sh
+	item 133 key (265 DIR_INDEX 29) itemoff 9750 itemsize 45
+		location key (312 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 15
+		name: run_vm_tests.sh
+	item 134 key (265 DIR_INDEX 31) itemoff 9715 itemsize 35
+		location key (313 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 5
+		name: vm.py
+	item 135 key (265 DIR_INDEX 33) itemoff 9670 itemsize 45
+		location key (314 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 15
+		name: vm_inspector.py
+	item 136 key (266 INODE_ITEM 0) itemoff 9510 itemsize 160
+		generation 7 transid 7 size 64 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 29 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127187.829046774 (2026-04-25 14:26:27)
+		otime 1779491630.699732012 (2026-05-22 23:13:50)
+	item 137 key (266 INODE_REF 257) itemoff 9496 itemsize 14
+		index 10 namelen 4 name: view
+	item 138 key (266 DIR_ITEM 341710045) itemoff 9456 itemsize 40
+		location key (315 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 10
+		name: cfg_dgml.c
+	item 139 key (266 DIR_ITEM 909028150) itemoff 9420 itemsize 36
+		location key (318 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: dgml.h
+	item 140 key (266 DIR_ITEM 2379726822) itemoff 9380 itemsize 40
+		location key (316 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 10
+		name: cfg_dgml.h
+	item 141 key (266 DIR_ITEM 2946957325) itemoff 9344 itemsize 36
+		location key (317 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: dgml.c
+	item 142 key (266 DIR_INDEX 3) itemoff 9304 itemsize 40
+		location key (315 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 10
+		name: cfg_dgml.c
+	item 143 key (266 DIR_INDEX 5) itemoff 9264 itemsize 40
+		location key (316 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 10
+		name: cfg_dgml.h
+	item 144 key (266 DIR_INDEX 7) itemoff 9228 itemsize 36
+		location key (317 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: dgml.c
+	item 145 key (266 DIR_INDEX 9) itemoff 9192 itemsize 36
+		location key (318 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 6
+		name: dgml.h
+	item 146 key (267 INODE_ITEM 0) itemoff 9032 itemsize 160
+		generation 7 transid 7 size 32 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 19 flags 0x0(none)
+		atime 1779491630.702732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127187.827618870 (2026-04-25 14:26:27)
+		otime 1779491630.699732012 (2026-05-22 23:13:50)
+leaf 30720000 items 94 free space 2472 generation 7 owner FS_TREE
+leaf 30720000 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (267 INODE_REF 257) itemoff 16271 itemsize 12
+		index 11 namelen 2 name: vm
+	item 1 key (267 DIR_ITEM 14166821) itemoff 16234 itemsize 37
+		location key (320 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 7
+		name: spec.md
+	item 2 key (267 DIR_ITEM 748592387) itemoff 16195 itemsize 39
+		location key (319 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: spec.json
+	item 3 key (267 DIR_INDEX 3) itemoff 16156 itemsize 39
+		location key (319 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 9
+		name: spec.json
+	item 4 key (267 DIR_INDEX 5) itemoff 16119 itemsize 37
+		location key (320 INODE_ITEM 0) type FILE
+		transid 7 data_len 0 name_len 7
+		name: spec.md
+	item 5 key (268 INODE_ITEM 0) itemoff 15959 itemsize 160
+		generation 7 transid 7 size 3298 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.703732012 (2026-05-22 23:13:50)
+		mtime 1779489624.373775677 (2026-05-22 22:40:24)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 6 key (268 INODE_REF 257) itemoff 15941 itemsize 18
+		index 13 namelen 8 name: Makefile
+	item 7 key (268 EXTENT_DATA 0) itemoff 15888 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13631488 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 8 key (269 INODE_ITEM 0) itemoff 15728 itemsize 160
+		generation 7 transid 7 size 2981 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.703732012 (2026-05-22 23:13:50)
+		mtime 1779491497.19826012 (2026-05-22 23:11:37)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 9 key (269 INODE_REF 257) itemoff 15709 itemsize 19
+		index 15 namelen 9 name: README.md
+	item 10 key (269 EXTENT_DATA 0) itemoff 15656 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13635584 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 11 key (270 INODE_ITEM 0) itemoff 15496 itemsize 160
+		generation 7 transid 7 size 4277 nbytes 8192
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.703732012 (2026-05-22 23:13:50)
+		mtime 1779491608.982974864 (2026-05-22 23:13:28)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 12 key (270 INODE_REF 257) itemoff 15473 itemsize 23
+		index 17 namelen 13 name: Validation.md
+	item 13 key (270 EXTENT_DATA 0) itemoff 15420 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13639680 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 14 key (271 INODE_ITEM 0) itemoff 15260 itemsize 160
+		generation 7 transid 7 size 3608 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.703732012 (2026-05-22 23:13:50)
+		mtime 1778944352.93838356 (2026-05-16 15:12:32)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 15 key (271 INODE_REF 257) itemoff 15239 itemsize 21
+		index 19 namelen 11 name: devices.xml
+	item 16 key (271 EXTENT_DATA 0) itemoff 15186 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13647872 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 17 key (272 INODE_ITEM 0) itemoff 15026 itemsize 160
+		generation 7 transid 7 size 4075 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.703732012 (2026-05-22 23:13:50)
+		mtime 1779490599.446069665 (2026-05-22 22:56:39)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 18 key (272 INODE_REF 257) itemoff 14995 itemsize 31
+		index 21 namelen 21 name: devices_filezilla.xml
+	item 19 key (272 EXTENT_DATA 0) itemoff 14942 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13651968 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 20 key (273 INODE_ITEM 0) itemoff 14782 itemsize 160
+		generation 7 transid 7 size 8146 nbytes 8192
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.703732012 (2026-05-22 23:13:50)
+		mtime 1778946055.512262975 (2026-05-16 15:40:55)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 21 key (273 INODE_REF 257) itemoff 14766 itemsize 16
+		index 23 namelen 6 name: main.c
+	item 22 key (273 EXTENT_DATA 0) itemoff 14713 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13656064 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 23 key (274 INODE_ITEM 0) itemoff 14553 itemsize 160
+		generation 7 transid 7 size 14353 nbytes 16384
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.703732012 (2026-05-22 23:13:50)
+		mtime 1779491605.760177564 (2026-05-22 23:13:25)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 24 key (274 INODE_REF 257) itemoff 14534 itemsize 19
+		index 25 namelen 9 name: report.md
+	item 25 key (274 EXTENT_DATA 0) itemoff 14481 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13664256 nr 16384
+		extent data offset 0 nr 16384 ram 16384
+		extent compression 0 (none)
+	item 26 key (275 INODE_ITEM 0) itemoff 14321 itemsize 160
+		generation 7 transid 7 size 30087 nbytes 32768
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.703732012 (2026-05-22 23:13:50)
+		ctime 1779491630.704732012 (2026-05-22 23:13:50)
+		mtime 1779491616.7759033 (2026-05-22 23:13:36)
+		otime 1779491630.703732012 (2026-05-22 23:13:50)
+	item 27 key (275 INODE_REF 257) itemoff 14295 itemsize 26
+		index 27 namelen 16 name: spo8.target.pdsl
+	item 28 key (275 EXTENT_DATA 0) itemoff 14242 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13680640 nr 32768
+		extent data offset 0 nr 32768 ram 32768
+		extent compression 0 (none)
+	item 29 key (276 INODE_ITEM 0) itemoff 14082 itemsize 160
+		generation 7 transid 7 size 16152 nbytes 16384
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.704732012 (2026-05-22 23:13:50)
+		ctime 1779491630.704732012 (2026-05-22 23:13:50)
+		mtime 1777127187.817175948 (2026-04-25 14:26:27)
+		otime 1779491630.704732012 (2026-05-22 23:13:50)
+	item 30 key (276 INODE_REF 258) itemoff 14068 itemsize 14
+		index 3 namelen 4 name: ir.c
+	item 31 key (276 EXTENT_DATA 0) itemoff 14015 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13713408 nr 16384
+		extent data offset 0 nr 16384 ram 16384
+		extent compression 0 (none)
+	item 32 key (277 INODE_ITEM 0) itemoff 13855 itemsize 160
+		generation 7 transid 7 size 1338 nbytes 1338
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1777127187.816468059 (2026-04-25 14:26:27)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 33 key (277 INODE_REF 258) itemoff 13841 itemsize 14
+		index 5 namelen 4 name: ir.h
+	item 34 key (277 EXTENT_DATA 0) itemoff 12482 itemsize 1359
+		generation 7 type 0 (inline)
+		inline extent data size 1338 ram_bytes 1338 compression 0 (none)
+	item 35 key (278 INODE_ITEM 0) itemoff 12322 itemsize 160
+		generation 7 transid 7 size 12344 nbytes 16384
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1778946055.511037584 (2026-05-16 15:40:55)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 36 key (278 INODE_REF 259) itemoff 12307 itemsize 15
+		index 3 namelen 5 name: ast.c
+	item 37 key (278 EXTENT_DATA 0) itemoff 12254 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13729792 nr 16384
+		extent data offset 0 nr 16384 ram 16384
+		extent compression 0 (none)
+	item 38 key (279 INODE_ITEM 0) itemoff 12094 itemsize 160
+		generation 7 transid 7 size 2094 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1778941663.886853847 (2026-05-16 14:27:43)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 39 key (279 INODE_REF 259) itemoff 12079 itemsize 15
+		index 5 namelen 5 name: ast.h
+	item 40 key (279 EXTENT_DATA 0) itemoff 12026 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13746176 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 41 key (280 INODE_ITEM 0) itemoff 11866 itemsize 160
+		generation 7 transid 7 size 1004 nbytes 1004
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1778946055.511734260 (2026-05-16 15:40:55)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 42 key (280 INODE_REF 259) itemoff 11845 itemsize 21
+		index 7 namelen 11 name: ast_maker.c
+	item 43 key (280 EXTENT_DATA 0) itemoff 10820 itemsize 1025
+		generation 7 type 0 (inline)
+		inline extent data size 1004 ram_bytes 1004 compression 0 (none)
+	item 44 key (281 INODE_ITEM 0) itemoff 10660 itemsize 160
+		generation 7 transid 7 size 297 nbytes 297
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 24 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1777127187.830564888 (2026-04-25 14:26:27)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 45 key (281 INODE_REF 259) itemoff 10639 itemsize 21
+		index 9 namelen 11 name: ast_maker.h
+	item 46 key (281 EXTENT_DATA 0) itemoff 10321 itemsize 318
+		generation 7 type 0 (inline)
+		inline extent data size 297 ram_bytes 297 compression 0 (none)
+	item 47 key (282 INODE_ITEM 0) itemoff 10161 itemsize 160
+		generation 7 transid 7 size 60252 nbytes 61440
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 68 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1778946164.961642980 (2026-05-16 15:42:44)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 48 key (282 INODE_REF 259) itemoff 10143 itemsize 18
+		index 11 namelen 8 name: lex.yy.c
+	item 49 key (282 EXTENT_DATA 0) itemoff 10090 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13750272 nr 61440
+		extent data offset 0 nr 61440 ram 61440
+		extent compression 0 (none)
+	item 50 key (283 INODE_ITEM 0) itemoff 9930 itemsize 160
+		generation 7 transid 7 size 5280 nbytes 8192
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 62 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1778946055.510593454 (2026-05-16 15:40:55)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 51 key (283 INODE_REF 259) itemoff 9913 itemsize 17
+		index 13 namelen 7 name: lexer.l
+	item 52 key (283 EXTENT_DATA 0) itemoff 9860 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13811712 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 53 key (284 INODE_ITEM 0) itemoff 9700 itemsize 160
+		generation 7 transid 7 size 90184 nbytes 94208
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 25 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.705732012 (2026-05-22 23:13:50)
+		mtime 1778946164.987236885 (2026-05-16 15:42:44)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 54 key (284 INODE_REF 259) itemoff 9677 itemsize 23
+		index 15 namelen 13 name: parser.output
+	item 55 key (284 EXTENT_DATA 0) itemoff 9624 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13819904 nr 94208
+		extent data offset 0 nr 94208 ram 94208
+		extent compression 0 (none)
+	item 56 key (285 INODE_ITEM 0) itemoff 9464 itemsize 160
+		generation 7 transid 7 size 136383 nbytes 139264
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 35 flags 0x0(none)
+		atime 1779491630.705732012 (2026-05-22 23:13:50)
+		ctime 1779491630.706732012 (2026-05-22 23:13:50)
+		mtime 1778946165.7903811 (2026-05-16 15:42:45)
+		otime 1779491630.705732012 (2026-05-22 23:13:50)
+	item 57 key (285 INODE_REF 259) itemoff 9442 itemsize 22
+		index 17 namelen 12 name: parser.tab.c
+	item 58 key (285 EXTENT_DATA 0) itemoff 9389 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 63963136 nr 139264
+		extent data offset 0 nr 139264 ram 139264
+		extent compression 0 (none)
+	item 59 key (286 INODE_ITEM 0) itemoff 9229 itemsize 160
+		generation 7 transid 7 size 3671 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 90 flags 0x0(none)
+		atime 1779491630.706732012 (2026-05-22 23:13:50)
+		ctime 1779491630.706732012 (2026-05-22 23:13:50)
+		mtime 1778946165.8527694 (2026-05-16 15:42:45)
+		otime 1779491630.706732012 (2026-05-22 23:13:50)
+	item 60 key (286 INODE_REF 259) itemoff 9207 itemsize 22
+		index 19 namelen 12 name: parser.tab.h
+	item 61 key (286 EXTENT_DATA 0) itemoff 9154 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13914112 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 62 key (287 INODE_ITEM 0) itemoff 8994 itemsize 160
+		generation 7 transid 7 size 15711 nbytes 16384
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 40 flags 0x0(none)
+		atime 1779491630.706732012 (2026-05-22 23:13:50)
+		ctime 1779491630.706732012 (2026-05-22 23:13:50)
+		mtime 1777127187.832734724 (2026-04-25 14:26:27)
+		otime 1779491630.706732012 (2026-05-22 23:13:50)
+	item 63 key (287 INODE_REF 259) itemoff 8976 itemsize 18
+		index 21 namelen 8 name: parser.y
+	item 64 key (287 EXTENT_DATA 0) itemoff 8923 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13918208 nr 16384
+		extent data offset 0 nr 16384 ram 16384
+		extent compression 0 (none)
+	item 65 key (288 INODE_ITEM 0) itemoff 8763 itemsize 160
+		generation 7 transid 7 size 54540 nbytes 57344
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 20 flags 0x0(none)
+		atime 1779491630.706732012 (2026-05-22 23:13:50)
+		ctime 1779491630.707732012 (2026-05-22 23:13:50)
+		mtime 1777127187.822051714 (2026-04-25 14:26:27)
+		otime 1779491630.706732012 (2026-05-22 23:13:50)
+	item 66 key (288 INODE_REF 260) itemoff 8748 itemsize 15
+		index 3 namelen 5 name: cfg.c
+	item 67 key (288 EXTENT_DATA 0) itemoff 8695 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13934592 nr 57344
+		extent data offset 0 nr 57344 ram 57344
+		extent compression 0 (none)
+	item 68 key (289 INODE_ITEM 0) itemoff 8535 itemsize 160
+		generation 7 transid 7 size 2785 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 20 flags 0x0(none)
+		atime 1779491630.707732012 (2026-05-22 23:13:50)
+		ctime 1779491630.707732012 (2026-05-22 23:13:50)
+		mtime 1777127187.823123236 (2026-04-25 14:26:27)
+		otime 1779491630.707732012 (2026-05-22 23:13:50)
+	item 69 key (289 INODE_REF 260) itemoff 8520 itemsize 15
+		index 5 namelen 5 name: cfg.h
+	item 70 key (289 EXTENT_DATA 0) itemoff 8467 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13991936 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 71 key (290 INODE_ITEM 0) itemoff 8307 itemsize 160
+		generation 7 transid 7 size 40556 nbytes 40960
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 25 flags 0x0(none)
+		atime 1779491630.707732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1777127187.820336179 (2026-04-25 14:26:27)
+		otime 1779491630.707732012 (2026-05-22 23:13:50)
+	item 72 key (290 INODE_REF 261) itemoff 8284 itemsize 23
+		index 3 namelen 13 name: linear_code.c
+	item 73 key (290 EXTENT_DATA 0) itemoff 8231 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 13996032 nr 40960
+		extent data offset 0 nr 40960 ram 40960
+		extent compression 0 (none)
+	item 74 key (291 INODE_ITEM 0) itemoff 8071 itemsize 160
+		generation 7 transid 7 size 980 nbytes 980
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 25 flags 0x0(none)
+		atime 1779491630.708732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1777127187.820694353 (2026-04-25 14:26:27)
+		otime 1779491630.708732012 (2026-05-22 23:13:50)
+	item 75 key (291 INODE_REF 261) itemoff 8048 itemsize 23
+		index 5 namelen 13 name: linear_code.h
+	item 76 key (291 EXTENT_DATA 0) itemoff 7047 itemsize 1001
+		generation 7 type 0 (inline)
+		inline extent data size 980 ram_bytes 980 compression 0 (none)
+	item 77 key (292 INODE_ITEM 0) itemoff 6887 itemsize 160
+		generation 7 transid 7 size 64 nbytes 64
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 65 flags 0x0(none)
+		atime 1779491630.708732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1778944866.795398892 (2026-05-16 15:21:06)
+		otime 1779491630.708732012 (2026-05-22 23:13:50)
+	item 78 key (292 INODE_REF 262) itemoff 6868 itemsize 19
+		index 3 namelen 9 name: small.txt
+	item 79 key (292 EXTENT_DATA 0) itemoff 6783 itemsize 85
+		generation 7 type 0 (inline)
+		inline extent data size 64 ram_bytes 64 compression 0 (none)
+	item 80 key (293 INODE_ITEM 0) itemoff 6623 itemsize 160
+		generation 7 transid 7 size 3835 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 25 flags 0x0(none)
+		atime 1779491630.708732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1779491531.753385948 (2026-05-22 23:12:11)
+		otime 1779491630.708732012 (2026-05-22 23:13:50)
+	item 81 key (293 INODE_REF 263) itemoff 6599 itemsize 24
+		index 3 namelen 14 name: btrfs_image.md
+	item 82 key (293 EXTENT_DATA 0) itemoff 6546 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14036992 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 83 key (294 INODE_ITEM 0) itemoff 6386 itemsize 160
+		generation 7 transid 7 size 200 nbytes 200
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 30 flags 0x0(none)
+		atime 1779491630.708732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1778944874.724702453 (2026-05-16 15:21:14)
+		otime 1779491630.708732012 (2026-05-22 23:13:50)
+	item 84 key (294 INODE_REF 264) itemoff 6347 itemsize 39
+		index 3 namelen 29 name: btrfs_ftp_commands.remote.txt
+	item 85 key (294 EXTENT_DATA 0) itemoff 6126 itemsize 221
+		generation 7 type 0 (inline)
+		inline extent data size 200 ram_bytes 200 compression 0 (none)
+	item 86 key (295 INODE_ITEM 0) itemoff 5966 itemsize 160
+		generation 7 transid 7 size 659 nbytes 659
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 30 flags 0x0(none)
+		atime 1779491630.708732012 (2026-05-22 23:13:50)
+		ctime 1779491630.708732012 (2026-05-22 23:13:50)
+		mtime 1778944890.594603234 (2026-05-16 15:21:30)
+		otime 1779491630.708732012 (2026-05-22 23:13:50)
+	item 87 key (295 INODE_REF 264) itemoff 5934 itemsize 32
+		index 5 namelen 22 name: btrfs_ftp_commands.txt
+	item 88 key (295 EXTENT_DATA 0) itemoff 5254 itemsize 680
+		generation 7 type 0 (inline)
+		inline extent data size 659 ram_bytes 659 compression 0 (none)
+	item 89 key (296 INODE_ITEM 0) itemoff 5094 itemsize 160
+		generation 7 transid 7 size 67216 nbytes 69632
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 30 flags 0x0(none)
+		atime 1779491630.708732012 (2026-05-22 23:13:50)
+		ctime 1779491630.709732012 (2026-05-22 23:13:50)
+		mtime 1779491543.907862775 (2026-05-22 23:12:23)
+		otime 1779491630.708732012 (2026-05-22 23:13:50)
+	item 90 key (296 INODE_REF 264) itemoff 5066 itemsize 28
+		index 7 namelen 18 name: btrfs_ftp_demo.asm
+	item 91 key (296 EXTENT_DATA 0) itemoff 5013 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14041088 nr 69632
+		extent data offset 0 nr 69632 ram 69632
+		extent compression 0 (none)
+	item 92 key (297 INODE_ITEM 0) itemoff 4853 itemsize 160
+		generation 7 transid 7 size 5214 nbytes 8192
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 30 flags 0x0(none)
+		atime 1779491630.709732012 (2026-05-22 23:13:50)
+		ctime 1779491630.709732012 (2026-05-22 23:13:50)
+		mtime 1778946055.510013696 (2026-05-16 15:40:55)
+		otime 1779491630.709732012 (2026-05-22 23:13:50)
+	item 93 key (297 INODE_REF 264) itemoff 4822 itemsize 31
+		index 9 namelen 21 name: btrfs_unsupported.asm
+leaf 30752768 items 70 free space 1957 generation 7 owner FS_TREE
+leaf 30752768 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (297 EXTENT_DATA 0) itemoff 16230 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14110720 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 1 key (298 INODE_ITEM 0) itemoff 16070 itemsize 160
+		generation 7 transid 7 size 1064 nbytes 1064
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 30 flags 0x0(none)
+		atime 1779491630.709732012 (2026-05-22 23:13:50)
+		ctime 1779491630.709732012 (2026-05-22 23:13:50)
+		mtime 1778941116.496168427 (2026-05-16 14:18:36)
+		otime 1779491630.709732012 (2026-05-22 23:13:50)
+	item 2 key (298 INODE_REF 264) itemoff 16045 itemsize 25
+		index 11 namelen 15 name: timer_probe.asm
+	item 3 key (298 EXTENT_DATA 0) itemoff 14960 itemsize 1085
+		generation 7 type 0 (inline)
+		inline extent data size 1064 ram_bytes 1064 compression 0 (none)
+	item 4 key (299 INODE_ITEM 0) itemoff 14800 itemsize 160
+		generation 7 transid 7 size 15789 nbytes 16384
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 31 flags 0x0(none)
+		atime 1779491630.709732012 (2026-05-22 23:13:50)
+		ctime 1779491630.709732012 (2026-05-22 23:13:50)
+		mtime 1777127187.815017404 (2026-04-25 14:26:27)
+		otime 1779491630.709732012 (2026-05-22 23:13:50)
+	item 5 key (299 INODE_REF 265) itemoff 14784 itemsize 16
+		index 3 namelen 6 name: asm.py
+	item 6 key (299 EXTENT_DATA 0) itemoff 14731 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14118912 nr 16384
+		extent data offset 0 nr 16384 ram 16384
+		extent compression 0 (none)
+	item 7 key (300 INODE_ITEM 0) itemoff 14571 itemsize 160
+		generation 7 transid 7 size 3058 nbytes 4096
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.709732012 (2026-05-22 23:13:50)
+		ctime 1779491630.709732012 (2026-05-22 23:13:50)
+		mtime 1779491400.674754446 (2026-05-22 23:10:00)
+		otime 1779491630.709732012 (2026-05-22 23:13:50)
+	item 8 key (300 INODE_REF 265) itemoff 14536 itemsize 35
+		index 5 namelen 25 name: check_btrfs_ftp_output.py
+	item 9 key (300 EXTENT_DATA 0) itemoff 14483 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14135296 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 10 key (301 INODE_ITEM 0) itemoff 14323 itemsize 160
+		generation 7 transid 7 size 1129 nbytes 1129
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.709732012 (2026-05-22 23:13:50)
+		ctime 1779491630.709732012 (2026-05-22 23:13:50)
+		mtime 1778946732.883656011 (2026-05-16 15:52:12)
+		otime 1779491630.709732012 (2026-05-22 23:13:50)
+	item 11 key (301 INODE_REF 265) itemoff 14287 itemsize 36
+		index 7 namelen 26 name: check_btrfs_unsupported.py
+	item 12 key (301 EXTENT_DATA 0) itemoff 13137 itemsize 1150
+		generation 7 type 0 (inline)
+		inline extent data size 1129 ram_bytes 1129 compression 0 (none)
+	item 13 key (302 INODE_ITEM 0) itemoff 12977 itemsize 160
+		generation 7 transid 7 size 3493 nbytes 4096
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.709732012 (2026-05-22 23:13:50)
+		ctime 1779491630.709732012 (2026-05-22 23:13:50)
+		mtime 1779490611.594321444 (2026-05-22 22:56:51)
+		otime 1779491630.709732012 (2026-05-22 23:13:50)
+	item 14 key (302 INODE_REF 265) itemoff 12941 itemsize 36
+		index 9 namelen 26 name: check_remote_ftp_client.sh
+	item 15 key (302 EXTENT_DATA 0) itemoff 12888 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14139392 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 16 key (303 INODE_ITEM 0) itemoff 12728 itemsize 160
+		generation 7 transid 7 size 2953 nbytes 4096
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.709732012 (2026-05-22 23:13:50)
+		ctime 1779491630.711732012 (2026-05-22 23:13:50)
+		mtime 1779490606.210879574 (2026-05-22 22:56:46)
+		otime 1779491630.709732012 (2026-05-22 23:13:50)
+	item 17 key (303 INODE_REF 265) itemoff 12692 itemsize 36
+		index 11 namelen 26 name: check_remote_ftp_report.sh
+	item 18 key (303 EXTENT_DATA 0) itemoff 12639 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14143488 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 19 key (304 INODE_ITEM 0) itemoff 12479 itemsize 160
+		generation 7 transid 7 size 18325 nbytes 20480
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.711732012 (2026-05-22 23:13:50)
+		ctime 1779491630.711732012 (2026-05-22 23:13:50)
+		mtime 1779491254.530700416 (2026-05-22 23:07:34)
+		otime 1779491630.711732012 (2026-05-22 23:13:50)
+	item 20 key (304 INODE_REF 265) itemoff 12451 itemsize 28
+		index 13 namelen 18 name: ftp_data_adapter.c
+	item 21 key (304 EXTENT_DATA 0) itemoff 12398 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14147584 nr 20480
+		extent data offset 0 nr 20480 ram 20480
+		extent compression 0 (none)
+	item 22 key (305 INODE_ITEM 0) itemoff 12238 itemsize 160
+		generation 7 transid 7 size 11971 nbytes 12288
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.711732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1778946055.509256229 (2026-05-16 15:40:55)
+		otime 1779491630.711732012 (2026-05-22 23:13:50)
+	item 23 key (305 INODE_REF 265) itemoff 12208 itemsize 30
+		index 15 namelen 20 name: gen_btrfs_ftp_asm.py
+	item 24 key (305 EXTENT_DATA 0) itemoff 12155 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14168064 nr 12288
+		extent data offset 0 nr 12288 ram 12288
+		extent compression 0 (none)
+	item 25 key (306 INODE_ITEM 0) itemoff 11995 itemsize 160
+		generation 7 transid 7 size 5269 nbytes 8192
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1778944030.302131914 (2026-05-16 15:07:10)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 26 key (306 INODE_REF 265) itemoff 11963 itemsize 32
+		index 17 namelen 22 name: prepare_btrfs_image.sh
+	item 27 key (306 EXTENT_DATA 0) itemoff 11910 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14180352 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 28 key (307 INODE_ITEM 0) itemoff 11750 itemsize 160
+		generation 7 transid 7 size 3225 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1778940220.510034791 (2026-05-16 14:03:40)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 29 key (307 INODE_REF 265) itemoff 11726 itemsize 24
+		index 19 namelen 14 name: run_remote.bat
+	item 30 key (307 EXTENT_DATA 0) itemoff 11673 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14188544 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 31 key (308 INODE_ITEM 0) itemoff 11513 itemsize 160
+		generation 7 transid 7 size 7161 nbytes 8192
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1778946073.97566337 (2026-05-16 15:41:13)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 32 key (308 INODE_REF 265) itemoff 11490 itemsize 23
+		index 21 namelen 13 name: run_remote.sh
+	item 33 key (308 EXTENT_DATA 0) itemoff 11437 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14192640 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 34 key (309 INODE_ITEM 0) itemoff 11277 itemsize 160
+		generation 7 transid 7 size 1805 nbytes 1805
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1779490590.951744090 (2026-05-22 22:56:30)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 35 key (309 INODE_REF 265) itemoff 11244 itemsize 33
+		index 23 namelen 23 name: run_remote_filezilla.sh
+	item 36 key (309 EXTENT_DATA 0) itemoff 9418 itemsize 1826
+		generation 7 type 0 (inline)
+		inline extent data size 1805 ram_bytes 1805 compression 0 (none)
+	item 37 key (310 INODE_ITEM 0) itemoff 9258 itemsize 160
+		generation 7 transid 7 size 5445 nbytes 8192
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1779490619.756393405 (2026-05-22 22:56:59)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 38 key (310 INODE_REF 265) itemoff 9223 itemsize 35
+		index 25 namelen 25 name: run_remote_interactive.sh
+	item 39 key (310 EXTENT_DATA 0) itemoff 9170 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14200832 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 40 key (311 INODE_ITEM 0) itemoff 9010 itemsize 160
+		generation 7 transid 7 size 528 nbytes 528
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127187.812763566 (2026-04-25 14:26:27)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 41 key (311 INODE_REF 265) itemoff 8991 itemsize 19
+		index 27 namelen 9 name: run_vm.sh
+	item 42 key (311 EXTENT_DATA 0) itemoff 8442 itemsize 549
+		generation 7 type 0 (inline)
+		inline extent data size 528 ram_bytes 528 compression 0 (none)
+	item 43 key (312 INODE_ITEM 0) itemoff 8282 itemsize 160
+		generation 7 transid 7 size 424 nbytes 424
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127187.815364870 (2026-04-25 14:26:27)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 44 key (312 INODE_REF 265) itemoff 8257 itemsize 25
+		index 29 namelen 15 name: run_vm_tests.sh
+	item 45 key (312 EXTENT_DATA 0) itemoff 7812 itemsize 445
+		generation 7 type 0 (inline)
+		inline extent data size 424 ram_bytes 424 compression 0 (none)
+	item 46 key (313 INODE_ITEM 0) itemoff 7652 itemsize 160
+		generation 7 transid 7 size 21724 nbytes 24576
+		block group 0 mode 100755 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1779491031.630324034 (2026-05-22 23:03:51)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 47 key (313 INODE_REF 265) itemoff 7637 itemsize 15
+		index 31 namelen 5 name: vm.py
+	item 48 key (313 EXTENT_DATA 0) itemoff 7584 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14209024 nr 24576
+		extent data offset 0 nr 24576 ram 24576
+		extent compression 0 (none)
+	item 49 key (314 INODE_ITEM 0) itemoff 7424 itemsize 160
+		generation 7 transid 7 size 5264 nbytes 8192
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127187.813379746 (2026-04-25 14:26:27)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 50 key (314 INODE_REF 265) itemoff 7399 itemsize 25
+		index 33 namelen 15 name: vm_inspector.py
+	item 51 key (314 EXTENT_DATA 0) itemoff 7346 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14233600 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 52 key (315 INODE_ITEM 0) itemoff 7186 itemsize 160
+		generation 7 transid 7 size 9683 nbytes 12288
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127187.828943397 (2026-04-25 14:26:27)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 53 key (315 INODE_REF 266) itemoff 7166 itemsize 20
+		index 3 namelen 10 name: cfg_dgml.c
+	item 54 key (315 EXTENT_DATA 0) itemoff 7113 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14241792 nr 12288
+		extent data offset 0 nr 12288 ram 12288
+		extent compression 0 (none)
+	item 55 key (316 INODE_ITEM 0) itemoff 6953 itemsize 160
+		generation 7 transid 7 size 324 nbytes 324
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127187.828659974 (2026-04-25 14:26:27)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 56 key (316 INODE_REF 266) itemoff 6933 itemsize 20
+		index 5 namelen 10 name: cfg_dgml.h
+	item 57 key (316 EXTENT_DATA 0) itemoff 6588 itemsize 345
+		generation 7 type 0 (inline)
+		inline extent data size 324 ram_bytes 324 compression 0 (none)
+	item 58 key (317 INODE_ITEM 0) itemoff 6428 itemsize 160
+		generation 7 transid 7 size 3531 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1778941683.349011080 (2026-05-16 14:28:03)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 59 key (317 INODE_REF 266) itemoff 6412 itemsize 16
+		index 7 namelen 6 name: dgml.c
+	item 60 key (317 EXTENT_DATA 0) itemoff 6359 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14254080 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+	item 61 key (318 INODE_ITEM 0) itemoff 6199 itemsize 160
+		generation 7 transid 7 size 1993 nbytes 1993
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1778941667.84013350 (2026-05-16 14:27:47)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 62 key (318 INODE_REF 266) itemoff 6183 itemsize 16
+		index 9 namelen 6 name: dgml.h
+	item 63 key (318 EXTENT_DATA 0) itemoff 4169 itemsize 2014
+		generation 7 type 0 (inline)
+		inline extent data size 1993 ram_bytes 1993 compression 0 (none)
+	item 64 key (319 INODE_ITEM 0) itemoff 4009 itemsize 160
+		generation 7 transid 7 size 5137 nbytes 8192
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 18 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1779491026.753108966 (2026-05-22 23:03:46)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 65 key (319 INODE_REF 267) itemoff 3990 itemsize 19
+		index 3 namelen 9 name: spec.json
+	item 66 key (319 EXTENT_DATA 0) itemoff 3937 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14258176 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+	item 67 key (320 INODE_ITEM 0) itemoff 3777 itemsize 160
+		generation 7 transid 7 size 2302 nbytes 4096
+		block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+		sequence 31 flags 0x0(none)
+		atime 1779491630.715732012 (2026-05-22 23:13:50)
+		ctime 1779491630.715732012 (2026-05-22 23:13:50)
+		mtime 1777127742.551979379 (2026-04-25 14:35:42)
+		otime 1779491630.715732012 (2026-05-22 23:13:50)
+	item 68 key (320 INODE_REF 267) itemoff 3760 itemsize 17
+		index 5 namelen 7 name: spec.md
+	item 69 key (320 EXTENT_DATA 0) itemoff 3707 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14266368 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+		extent compression 0 (none)
+checksum tree key (CSUM_TREE ROOT_ITEM 0) 
+leaf 30638080 items 7 free space 15348 generation 7 owner CSUM_TREE
+leaf 30638080 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (EXTENT_CSUM EXTENT_CSUM 13631488) itemoff 16275 itemsize 8
+		range start 13631488 end 13639680 length 8192
+	item 1 key (EXTENT_CSUM EXTENT_CSUM 13639680) itemoff 16251 itemsize 24
+		range start 13639680 end 13664256 length 24576
+	item 2 key (EXTENT_CSUM EXTENT_CSUM 13664256) itemoff 15887 itemsize 364
+		range start 13664256 end 14036992 length 372736
+	item 3 key (EXTENT_CSUM EXTENT_CSUM 14036992) itemoff 15779 itemsize 108
+		range start 14036992 end 14147584 length 110592
+	item 4 key (EXTENT_CSUM EXTENT_CSUM 14147584) itemoff 15739 itemsize 40
+		range start 14147584 end 14188544 length 40960
+	item 5 key (EXTENT_CSUM EXTENT_CSUM 14188544) itemoff 15659 itemsize 80
+		range start 14188544 end 14270464 length 81920
+	item 6 key (EXTENT_CSUM EXTENT_CSUM 63963136) itemoff 15523 itemsize 136
+		range start 63963136 end 64102400 length 139264
+uuid tree key (UUID_TREE ROOT_ITEM 0) 
+leaf 30539776 items 1 free space 16250 generation 5 owner UUID_TREE
+leaf 30539776 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (0x9e40267e879c8913 UUID_KEY_SUBVOL 0xbe37beb3e977f39f) itemoff 16275 itemsize 8
+		subvol_id 5
+free space tree key (FREE_SPACE_TREE ROOT_ITEM 0) 
+leaf 30687232 items 16 free space 15835 generation 7 owner FREE_SPACE_TREE
+leaf 30687232 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (1048576 FREE_SPACE_INFO 4194304) itemoff 16275 itemsize 8
+		free space info extent count 1 flags 0
+	item 1 key (1048576 FREE_SPACE_EXTENT 4194304) itemoff 16275 itemsize 0
+		free space extent
+	item 2 key (5242880 FREE_SPACE_INFO 8388608) itemoff 16267 itemsize 8
+		free space info extent count 1 flags 0
+	item 3 key (5242880 FREE_SPACE_EXTENT 8388608) itemoff 16267 itemsize 0
+		free space extent
+	item 4 key (13631488 FREE_SPACE_INFO 8388608) itemoff 16259 itemsize 8
+		free space info extent count 1 flags 0
+	item 5 key (14270464 FREE_SPACE_EXTENT 7749632) itemoff 16259 itemsize 0
+		free space extent
+	item 6 key (22020096 FREE_SPACE_INFO 8388608) itemoff 16251 itemsize 8
+		free space info extent count 2 flags 0
+	item 7 key (22020096 FREE_SPACE_EXTENT 32768) itemoff 16251 itemsize 0
+		free space extent
+	item 8 key (22069248 FREE_SPACE_EXTENT 8339456) itemoff 16251 itemsize 0
+		free space extent
+	item 9 key (30408704 FREE_SPACE_INFO 33554432) itemoff 16243 itemsize 8
+		free space info extent count 4 flags 0
+	item 10 key (30408704 FREE_SPACE_EXTENT 114688) itemoff 16243 itemsize 0
+		free space extent
+	item 11 key (30556160 FREE_SPACE_EXTENT 81920) itemoff 16243 itemsize 0
+		free space extent
+	item 12 key (30654464 FREE_SPACE_EXTENT 16384) itemoff 16243 itemsize 0
+		free space extent
+	item 13 key (30801920 FREE_SPACE_EXTENT 33161216) itemoff 16243 itemsize 0
+		free space extent
+	item 14 key (63963136 FREE_SPACE_INFO 16777216) itemoff 16235 itemsize 8
+		free space info extent count 1 flags 0
+	item 15 key (64102400 FREE_SPACE_EXTENT 16637952) itemoff 16235 itemsize 0
+		free space extent
+data reloc tree key (DATA_RELOC_TREE ROOT_ITEM 0) 
+leaf 30523392 items 2 free space 16061 generation 5 owner DATA_RELOC_TREE
+leaf 30523392 flags 0x1(WRITTEN) backref revision 1
+fs uuid 67d66816-c166-4f4a-837d-988f1ad1cd42
+chunk uuid 5a706beb-e078-4d07-a085-7ae92a694594
+	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+		generation 5 transid 0 size 0 nbytes 0
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 0 flags 0x0(none)
+		atime 1779491630.0 (2026-05-22 23:13:50)
+		ctime 1779491630.0 (2026-05-22 23:13:50)
+		mtime 1779491630.0 (2026-05-22 23:13:50)
+		otime 0.0 (1970-01-01 00:00:00)
+	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+		index 0 namelen 2 name: ..
+total bytes 167772160
+bytes used 974848
+uuid 67d66816-c166-4f4a-837d-988f1ad1cd42

@@ -13,7 +13,11 @@ set "Portable_RemoteTasks_Manager_Login=%LOGIN%"
 set "Portable_RemoteTasks_Manager_Password=%PASSWORD%"
 set "ARCH=vm32"
 set "TARGET_FILE=%PROJECT_DIR%\spo8.target.pdsl"
-set "DEVICES_FILE=%PROJECT_DIR%\devices.xml"
+if "%RT_DEVICES_FILE%"=="" (
+    set "DEVICES_FILE=%PROJECT_DIR%\devices.xml"
+) else (
+    set "DEVICES_FILE=%RT_DEVICES_FILE%"
+)
 if "%RT_REMOTE_FLAGS%"=="" set "RT_REMOTE_FLAGS=-sh 5.19.208.160 -sp 10001 -okssl"
 
 set "ASM_FILE=%~1"
@@ -52,7 +56,8 @@ if not defined ASM_ID (
 
 set "RUN_ID_FILE=%PROJECT_DIR%\results\remote_run_id.txt"
 if /I "%RUN_MODE%"=="exec" (
-    "%EXE%" %RT_REMOTE_FLAGS% -id -w -s ExecuteBinaryWithInput stdinRegStName rin_s stdoutRegStName rout_s inputFile "%INPUT_FILE%" definitionFile "%TARGET_FILE%" archName %ARCH% binaryFileToRun "%BIN_FILE%" codeRamBankName code ipRegStorageName ip_s finishMnemonicName ret devices.xml "%DEVICES_FILE%" > "%RUN_ID_FILE%"
+    "%EXE%" %RT_REMOTE_FLAGS% -ip -s ExecuteBinaryWithIo stdinRegStName rin_s stdoutRegStName rout_s definitionFile "%TARGET_FILE%" archName %ARCH% binaryFileToRun "%BIN_FILE%" codeRamBankName code ipRegStorageName ip_s finishMnemonicName ret devices.xml "%DEVICES_FILE%" < "%INPUT_FILE%" > "%STDOUT_FILE%"
+    echo interactive-pipe> "%RUN_ID_FILE%"
 ) else (
     "%EXE%" %RT_REMOTE_FLAGS% -id -w -s MachineDebugBinary definitionFile "%TARGET_FILE%" archName %ARCH% binaryFileToRun "%BIN_FILE%" codeRamBankName code ipRegStorageName ip_s finishMnemonicName ret devices.xml "%DEVICES_FILE%" > "%RUN_ID_FILE%"
 )
@@ -62,10 +67,10 @@ if not defined RUN_ID (
     exit /b 1
 )
 
-if /I "%RUN_MODE%"=="exec" (
+if /I "%RUN_MODE%"=="exec" if not "%RUN_ID%"=="interactive-pipe" (
     "%EXE%" %RT_REMOTE_FLAGS% -g "%RUN_ID%" -r trace.txt -o "%TRACE_FILE%" >nul 2>nul
 )
-"%EXE%" %RT_REMOTE_FLAGS% -g "%RUN_ID%" -r stdout.txt -o "%STDOUT_FILE%" >nul 2>nul
+if not "%RUN_ID%"=="interactive-pipe" "%EXE%" %RT_REMOTE_FLAGS% -g "%RUN_ID%" -r stdout.txt -o "%STDOUT_FILE%" >nul 2>nul
 if not exist "%STDOUT_FILE%" type nul > "%STDOUT_FILE%"
 
 if exist "%ASM_ID_FILE%" del "%ASM_ID_FILE%"

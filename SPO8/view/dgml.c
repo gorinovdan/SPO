@@ -31,7 +31,7 @@ static void add_link(void* src, void* dst, int is_dash) {
 	links_count++;
 }
 
-/* Print a node and return its ID; collect links for later printing */
+/* Печатает узел и возвращает его ID; связи собираются для последующей печати. */
 static void* print_node(FILE* f, AST_Node* node) {
 	int id = node_id_counter++;
 
@@ -93,13 +93,13 @@ void export_ast_dgml(AST_Node* root, const char* filename) {
 	}
 	fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 	fprintf(f, "<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">\n");
-	/* print nodes first */
+	/* Сначала печатаем узлы. */
 	fprintf(f, " <Nodes>\n");
 	node_id_counter = 0;
-	links_count = 0; /* reset collected links */
+	links_count = 0; /* Сбрасываем собранные связи. */
 	print_node(f, root);
 	fprintf(f, " </Nodes>\n");
-	/* then print links collected during traversal */
+	/* Затем печатаем связи, собранные при обходе. */
 	fprintf(f, " <Links>\n");
 	for (int i = 0; i < links_count; i++) {
 		fprintf(f, " <Link Source=\"%p\" Target=\"%p\" />\n", links[i].src, links[i].dst);
@@ -107,7 +107,7 @@ void export_ast_dgml(AST_Node* root, const char* filename) {
 	fprintf(f, " </Links>\n");
 	fprintf(f, "</DirectedGraph>\n");
 	fclose(f);
-	/* free link storage */
+	/* Освобождаем хранилище связей. */
 	free(links);
 	links = NULL;
 	links_capacity = 0;

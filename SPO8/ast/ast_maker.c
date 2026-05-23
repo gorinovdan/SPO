@@ -28,7 +28,7 @@ AST_Wrap* create_ast_wrap(const char* input_filename) {
 	wrap->filename = malloc(strlen(input_filename) + 1);
 	strcpy(wrap->filename, input_filename);
 
-	// Change later to actual warnings
+	// При необходимости заменить на полноценные предупреждения.
 	wrap->warning_count = 0;
 	wrap->warnings = NULL;
 

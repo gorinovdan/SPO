@@ -10,7 +10,7 @@ cnewline: DD 10
 
 [section code]
 main:
-  ; Kernel context used after SimplePic dispatches the clock interrupt.
+  ; Контекст ядра, используемый после отправки прерывания часов через SimplePic.
   PUSH_CONST c64
   POP_SYS 10
   PUSH_CONST c64
@@ -49,7 +49,7 @@ handler:
   PUSH_CONST cnewline
   OUT
 
-  ; Disable SimpleClock before returning to halt.
+  ; Отключаем SimpleClock перед возвратом к остановке.
   PUSH_CONST czero
   SET_PERIOD
   PUSH_CODE halt

@@ -52,7 +52,7 @@ char* dirname_from_path(const char* path) {
 		return dir;
 	}
 	size_t len = (size_t)(lastslash - path);
-	if (len == 0) len = 1; /* root */
+	if (len == 0) len = 1; /* корневой каталог */
 	char* dir = malloc(len + 1);
 	strncpy(dir, path, len);
 	dir[len] = '\0';
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (emit_cfg) {
-			/* AST export (as in SPO2Denis reference) */
+			/* Экспорт AST по образцу SPO2Denis. */
 			char* ast_source_name = filename_from_path(wrap->filename);
 			const char* ast_out_dir = cfg_dir;
 			char* ast_out_dir_owned = NULL;

@@ -5,7 +5,6 @@
   <DeviceType Name="SimplePipe" Id="3" />
   <DeviceType Name="BlockDevice" Id="4" />
 
-  <!-- PIC: состояние в pic_state (48 байт); таблица обработчиков в pic_handlers (16 слотов по 4 байта). -->
   <Device DeviceType="SimplePic" Name="pic" Id="1">
     <IoPortMap PortType="state" Id="0" BankName="pic_state" Mode="RAM">
       <InitialBinding StartAddress="0x0" Length="0x30" />
@@ -16,7 +15,6 @@
     <Parameter Name="HandlersTableEntrySize" Value="4" />
   </Device>
 
-  <!-- SimpleClock работает в RAM-режиме; сигнал on-cycles направлен на прерывание PIC с id 2. -->
   <Device DeviceType="SimpleClock" Name="clock" Id="2">
     <IoPortMap PortType="state" Id="0" BankName="clock_state" Mode="RAM">
       <InitialBinding StartAddress="0x0" Length="0x48" />
@@ -25,9 +23,11 @@
     <Signal Name="on-cycles" Id="2" Interrupt="2" />
   </Device>
 
-  <!-- Байтовый поток PipeDevice/FSPipe: stdio из RemoteTasks подключён к VM
-       через синхронные регистры SimplePipe, а не через обычные порты IN/OUT. -->
-  <Device DeviceType="SimplePipe" Name="stdio" Id="3">
+  <!-- Управляющее FTP-соединение: VM подключается к локальному адаптеру
+       на 127.0.0.1:3121. FileZilla подключается к внешнему порту адаптера
+       127.0.0.1:2121. Так RemoteTasks получает один последовательный
+       control-поток, а FileZilla может открывать повторные control-соединения. -->
+  <Device DeviceType="SimplePipe" Name="ftp-control" Id="3">
     <IoPortMap PortType="control" Id="0" BankName="pipe_control" Mode="RAM">
       <InitialBinding StartAddress="0x0" Length="0x48" />
     </IoPortMap>
@@ -37,17 +37,29 @@
     <IoPortMap PortType="outbox" Id="2" BankName="pipe_outbox" Mode="RAM">
       <InitialBinding StartAddress="0x0" Length="0x800" />
     </IoPortMap>
-    <Parameter Name="PipeSpec" Value="stdio" />
+    <Parameter Name="PipeSpec" Value="tcp://127.0.0.1:3121" />
     <Parameter Name="OperationMode" Value="ByteStream" />
   </Device>
 
-  <!-- Сценарная stdio-конфигурация намеренно выводит только управляющий поток FTP.
-       RemoteTasks не может подключить два SimplePipe к одному interaction pipe stdio.
-       Настоящий пассивный поток данных описан отдельно в devices_filezilla.xml. -->
+  <!-- Пассивный FTP-поток данных. VM подключается к тому же локальному
+       FTP-адаптеру на порту 3020; FileZilla подключается к пассивному
+       FTP-порту 2020, который возвращает команда PASV. Адаптер закрывает
+       сокеты отдельных передач: это не источник Btrfs-данных. -->
+  <Device DeviceType="SimplePipe" Name="ftp-data" Id="5">
+    <IoPortMap PortType="control" Id="0" BankName="data_pipe_control" Mode="RAM">
+      <InitialBinding StartAddress="0x0" Length="0x48" />
+    </IoPortMap>
+    <IoPortMap PortType="inbox" Id="1" BankName="data_pipe_inbox" Mode="RAM">
+      <InitialBinding StartAddress="0x0" Length="0x800" />
+    </IoPortMap>
+    <IoPortMap PortType="outbox" Id="2" BankName="data_pipe_outbox" Mode="RAM">
+      <InitialBinding StartAddress="0x0" Length="0x800" />
+    </IoPortMap>
+    <Parameter Name="PipeSpec" Value="tcp://127.0.0.1:3020" />
+    <Parameter Name="OperationMode" Value="ByteStream" />
+  </Device>
 
-  <!-- BackDevice: блочное хранилище настоящего Btrfs-образа spo8_btrfs_block.img.
-       Образ создаётся до запуска VM через mkfs.btrfs/mount/копирование SPO8/umount,
-       а VM читает superblock и содержимое файлов через регистры BlockDevice. -->
+  <!-- Блочный BackDevice с настоящим образом каталога SPO8. -->
   <Device DeviceType="BlockDevice" Name="btrfs-image" Id="4">
     <IoPortMap PortType="control" Id="0" BankName="block_control" Mode="RAM">
       <InitialBinding StartAddress="0x0" Length="0x24" />

@@ -1,14 +1,14 @@
 ; =====================================================================
-; SPO8 — чтение Btrfs-образа через PASSIVE FTP.
+; SPO8 — чтение Btrfs-образа через пассивный FTP.
 ; Вариант 4 практического задания №3 дисциплины СПО.
 ;
 ; Модель работы:
 ;   1) btrfs_mount проверяет superblock — пункт 1 общего алгоритма
 ;      задания «проверить, поддерживается ли FS». При неудаче выдаёт
 ;      ответ 500 и не входит в FTP-цикл.
-;   2) ftp_loop читает команды из byte stream stdin (port 0)
+;   2) ftp_loop читает команды из байтового потока SimplePipe (PIPE_IN)
 ;      и обрабатывает их через dispatch_command — пункт 2:
-;      диалоговый режим в стиле PASSIVE FTP.
+;      диалоговый режим в стиле пассивного FTP.
 ;   3) Команды LIST/RETR/COPY/CWD/PWD реализуют требования 2a/2b/2c.
 ;      Дополнительно поддержаны PASV, SYST, NOOP, HELP, TYPE и QUIT,
 ;      чтобы FTP-сценарий выглядел естественно.
@@ -23,35 +23,49 @@ k3:   DD 3
 k4:   DD 4
 k5:   DD 5
 k6:   DD 6
-k7:   DD 7        ; v_stream_window: каждые 7 байт фиксируем passive wait
-k8:   DD 8        ; размер очереди каталогов для COPY
+k7:   DD 7        ; v_stream_window: каждые 7 байт фиксируем пассивное ожидание
+k8:   DD 8
 k10:  DD 10       ; \n
 k13:  DD 13       ; \r
+k16:  DD 16
 k32:  DD 32       ; ' ' — разделитель между командой и аргументом
 k63:  DD 63       ; максимально допустимая длина команды (буфер 64 - 1)
-k4096: DD 4096    ; ожидаемый Btrfs nodesize
+k128: DD 128      ; размер порции outbox для пассивного канала данных
+k256: DD 256
+k512: DD 512
+k65536: DD 65536
+k16777216: DD 16777216
+k1000: DD 1000 ; стартовое окно для подключения FTP-адаптера к VM
+k4096: DD 4096
 k_btrfs_ft_reg: DD 1 ; BTRFS_FT_REG_FILE
 k_btrfs_ft_dir: DD 2 ; BTRFS_FT_DIR
+k_blk_magic_off: DD 65600    ; 0x10000 + 0x40: магическое значение суперблока Btrfs
+k_blk_root_off: DD 65664     ; 0x10000 + 0x80: root_dir objectid
+k_blk_nodesize_off: DD 65684 ; 0x10000 + 0x94: nodesize
+k_blk_readme_off: DD 131072
+k_blk_info_off: DD 131104
+k_blk_help_off: DD 131136
+k_blk_notes_off: DD 131168
 
 ; ASCII-литералы для типов записей DIR_ITEM в листинге.
 c_d:       DD 100   ; 'd' — каталог
 c_f:       DD 102   ; 'f' — обычный файл
+c_slash:   DD 47    ; '/' — разделитель пути
 c_ascii_0: DD 48    ; '0' — для печати чисел
 
 [section data_mem]
 ; ---------------------------------------------------------------------
-; Раздел 1. Состояние FTP-runtime.
+; Раздел 1. Состояние FTP во время выполнения.
 ; ---------------------------------------------------------------------
-; v_current_dir хранит inode текущего каталога из FS tree:
-;   256 — /, 258 — /docs, 260 — /pictures.
-; Путь для PWD восстанавливается из DIR_ITEM/INODE_ITEM образа.
+; v_current_dir хранит inode текущего каталога из дерева FS.
+; Путь для PWD ведётся отдельно и обновляется командами CWD/CDUP.
 v_current_dir:   DD 0
 
 ; v_cmd_count   — сколько FTP-команд обработано в этой сессии.
-; v_lookup_count — сколько обращений к FS-tree выполнили cmd_*.
-; v_stream_bytes — сколько байт передал sink в выходной поток.
-; v_stream_window — счётчик до следующего passive wait (см. SPO7).
-; v_group_waits  — сколько раз фиксировался passive wait.
+; v_lookup_count — сколько обращений к дереву FS выполнили cmd_*.
+; v_stream_bytes — сколько байт передал приёмник вывода в выходной поток.
+; v_stream_window — счётчик до следующего пассивного ожидания (см. SPO7).
+; v_group_waits  — сколько раз фиксировалось пассивное ожидание.
 v_cmd_count:     DD 0
 v_lookup_count:  DD 0
 v_stream_bytes:  DD 0
@@ -60,7 +74,7 @@ v_group_waits:   DD 0
 
 ; ---------------------------------------------------------------------
 ; Раздел 2. Скретч-переменные процедур.
-; Используются совместно — память кадров CALL у нас shared
+; Используются совместно: память кадров CALL общая
 ; (POP_SYS 19 в main выставляет df_size=0).
 ; ---------------------------------------------------------------------
 v_read_i:    DD 0
@@ -80,8 +94,10 @@ v_eq_cb: DD 0
 ; Аргумент команды: смещение в v_cmd_buf.
 v_arg_off: DD 0
 
-; Параметры sink stream_write_byte.
+; Параметры приёмника вывода stream_write_byte.
 v_stream_ch: DD 0
+v_sink:      DD 0      ; 0 = управляющий FTP-поток, 1 = пассивный поток данных
+v_data_len:  DD 0      ; сколько байт накоплено в data_pipe_outbox
 
 ; Параметры форматирования списка/файла.
 v_entry_type:  DD 0
@@ -94,7 +110,20 @@ v_file_inode: DD 0
 v_file_size:  DD 0
 v_file_data:  DD 0
 
-; Состояние сканирования Btrfs FS tree leaf.
+; Параметры BlockDevice/BackDevice.
+v_block_src:   DD 0
+v_block_dst:   DD 0
+v_block_len:   DD 0
+v_block_i:     DD 0
+v_block_j:     DD 0
+v_block_chunk: DD 0
+v_block_ch:    DD 0
+v_block_off:   DD 0
+v_block_value: DD 0
+v_mount_root:  DD 0
+v_mount_nodesize: DD 0
+
+; Состояние сканирования листа дерева FS в Btrfs.
 v_scan_i:        DD 0
 v_inode_i:       DD 0
 v_extent_i:      DD 0
@@ -103,21 +132,21 @@ v_found_inode:   DD 0
 v_found_size:    DD 0
 v_found_type:    DD 0
 v_found_data_id: DD 0
+v_found_block_off: DD 0
+v_found_extent_size: DD 0
 v_name_id:       DD 0
+v_name_off:      DD 0
+v_name_len:      DD 0
+v_find_parent:   DD 0
+v_arg_cmp_off:   DD 0
+v_arg_absolute:  DD 0
 
 ; Состояние COPY: очередь каталогов для рекурсивного обхода DIR_ITEM.
 v_copy_target: DD 0
 v_copy_dir:    DD 0
 v_copy_head:   DD 0
 v_copy_tail:   DD 0
-v_copy_queue:  DD 0
-v_copy_queue_1: DD 0
-v_copy_queue_2: DD 0
-v_copy_queue_3: DD 0
-v_copy_queue_4: DD 0
-v_copy_queue_5: DD 0
-v_copy_queue_6: DD 0
-v_copy_queue_7: DD 0
+v_copy_queue: RESB 1024
 
 ; ---------------------------------------------------------------------
 ; Раздел 3. Буферы.
@@ -129,150 +158,38 @@ v_cmd_buf: RESB 64
 ; v_digits — буфер для печати беззнаковых чисел в десятичной системе.
 v_digits: RESB 16
 
+; v_pwd_buf — текущий путь для PWD. Хранится без завершающего NUL,
+; длина лежит в v_pwd_len.
+v_pwd_len: DD 0
+v_pwd_buf: RESB 256
+
 ; ---------------------------------------------------------------------
 ; Раздел 4. Btrfs-образ варианта 4.
+; BEGIN GENERATED BTRFS TABLES
 ;
-; Образ хранится как compact FS-tree leaf с Btrfs key/value полями:
-; DIR_ITEM (parent directory objectid -> target inode/type/name),
-; INODE_ITEM (inode -> size/type) и EXTENT_DATA (inode -> inline data).
-; Сами поля описаны в docs/btrfs_image.md.
-;
-; Содержимое:
-;   /                      каталог (inode 256)
-;     docs/                каталог (inode 258)
-;       info.txt           inline-extent, 19 байт   (inode 259)
-;       help.txt           inline-extent, 12 байт   (inode 261)
-;     pictures/            каталог (inode 260)
-;       notes.txt          inline-extent, 17 байт   (inode 262)
-;     readme.txt           inline-extent, 19 байт   (inode 257)
+; Этот блок заменяется скриптом gen_btrfs_ftp_asm.py после сборки
+; настоящего Btrfs-образа каталога SPO8. Ниже оставлена минимальная
+; заглушка, чтобы шаблон оставался синтаксически полным.
 ; ---------------------------------------------------------------------
-
-; --- Btrfs superblock (упрощённая версия). ---
-; В реальном Btrfs superblock начинается с offset 0x10000, magic
-; находится по offset 0x40 относительно его начала. Здесь мы
-; храним только поля, нужные для mount-проверки.
-img_super_magic:        DB "_BHRfS_M"
-img_super_magic_z:      DB 0
-img_root_dir_objectid:  DD 6
-img_nodesize:           DD 4096
-img_root_tree_logical:  DD 4194304   ; 0x00400000
-img_chunk_tree_logical: DD 5242880   ; 0x00500000
-img_fs_tree_objectid:   DD 5
-img_fs_tree_leaf_logical: DD 6291456 ; 0x00600000
-
-; --- INODE_ITEM-номера. ---
-img_root_inode:     DD 256
-img_docs_inode:     DD 258
-img_pictures_inode: DD 260
-img_readme_inode:   DD 257
-img_info_inode:     DD 259
-img_help_inode:     DD 261
-img_notes_inode:    DD 262
-
-; --- размеры файлов (поле size INODE_ITEM). ---
-img_zero_size:   DD 0
-img_readme_size: DD 19
-img_info_size:   DD 19
-img_help_size:   DD 12
-img_notes_size:  DD 17
-
-; --- DIR_ITEM имена (NUL-терминированные ASCII). ---
-img_name_docs:     DB "docs"
-img_name_docs_z:   DB 0
-img_name_pictures: DB "pictures"
-img_name_pictures_z: DB 0
-img_name_readme:   DB "readme.txt"
-img_name_readme_z: DB 0
-img_name_info:     DB "info.txt"
-img_name_info_z:   DB 0
-img_name_help:     DB "help.txt"
-img_name_help_z:   DB 0
-img_name_notes:    DB "notes.txt"
-img_name_notes_z:  DB 0
-
-; --- inline EXTENT_DATA (тип = 0). ---
-img_data_readme:   DB "Hello from SPO8 FS"
-img_data_readme_lf: DB 10
-img_data_readme_z: DB 0
-img_data_info:     DB "BTRFS TREE WALK OK"
-img_data_info_lf:  DB 10
-img_data_info_z:   DB 0
-img_data_help:     DB "RETR works."
-img_data_help_lf:  DB 10
-img_data_help_z:   DB 0
-img_data_notes:    DB "subtree readable"
-img_data_notes_lf: DB 10
-img_data_notes_z:  DB 0
-
-; --- FS tree leaf: INODE_ITEM records. ---
-; type соответствует BTRFS_FT_*; size — поле INODE_ITEM.size.
-img_inode_count: DD 7
+img_root_inode: DD 256
+img_inode_count: DD 1
 img_inode_objectid: DD 256
-img_inode_objectid_1: DD 258
-img_inode_objectid_2: DD 260
-img_inode_objectid_3: DD 257
-img_inode_objectid_4: DD 259
-img_inode_objectid_5: DD 261
-img_inode_objectid_6: DD 262
 img_inode_type: DD 2
-img_inode_type_1: DD 2
-img_inode_type_2: DD 2
-img_inode_type_3: DD 1
-img_inode_type_4: DD 1
-img_inode_type_5: DD 1
-img_inode_type_6: DD 1
 img_inode_size: DD 0
-img_inode_size_1: DD 0
-img_inode_size_2: DD 0
-img_inode_size_3: DD 19
-img_inode_size_4: DD 19
-img_inode_size_5: DD 12
-img_inode_size_6: DD 17
-
-; --- FS tree leaf: DIR_ITEM records. ---
-; parent — objectid каталога, inode — location.objectid целевой записи,
-; name_id выбирает NUL-терминированное имя ниже через emit_name_by_id.
-img_dirent_count: DD 6
-img_dirent_parent: DD 256
-img_dirent_parent_1: DD 256
-img_dirent_parent_2: DD 256
-img_dirent_parent_3: DD 258
-img_dirent_parent_4: DD 258
-img_dirent_parent_5: DD 260
-img_dirent_inode: DD 258
-img_dirent_inode_1: DD 260
-img_dirent_inode_2: DD 257
-img_dirent_inode_3: DD 259
-img_dirent_inode_4: DD 261
-img_dirent_inode_5: DD 262
-img_dirent_type: DD 2
-img_dirent_type_1: DD 2
-img_dirent_type_2: DD 1
-img_dirent_type_3: DD 1
-img_dirent_type_4: DD 1
-img_dirent_type_5: DD 1
-img_dirent_name_id: DD 1
-img_dirent_name_id_1: DD 2
-img_dirent_name_id_2: DD 3
-img_dirent_name_id_3: DD 4
-img_dirent_name_id_4: DD 5
-img_dirent_name_id_5: DD 6
-
-; --- FS tree leaf: EXTENT_DATA records. ---
-; extent_type 0 означает inline extent; data_id выбирает byte payload.
-img_extent_count: DD 4
-img_extent_inode: DD 257
-img_extent_inode_1: DD 259
-img_extent_inode_2: DD 261
-img_extent_inode_3: DD 262
-img_extent_type: DD 0
-img_extent_type_1: DD 0
-img_extent_type_2: DD 0
-img_extent_type_3: DD 0
-img_extent_data_id: DD 1
-img_extent_data_id_1: DD 2
-img_extent_data_id_2: DD 3
-img_extent_data_id_3: DD 4
+img_dirent_count: DD 0
+img_dirent_parent: DD 0
+img_dirent_inode: DD 0
+img_dirent_type: DD 0
+img_dirent_name_id: DD 0
+img_extent_count: DD 0
+img_extent_inode: DD 0
+img_extent_block_off: DD 0
+img_extent_size: DD 0
+img_name_count: DD 0
+img_name_offset: DD 0
+img_name_len: DD 0
+img_name_pool: DB ""
+; END GENERATED BTRFS TABLES
 
 ; ---------------------------------------------------------------------
 ; Раздел 5. Эталонные имена для match-функций.
@@ -301,31 +218,41 @@ m_help:   DB "HELP"
 m_help_z: DB 0
 m_type:   DB "TYPE"
 m_type_z: DB 0
+m_user:   DB "USER"
+m_user_z: DB 0
+m_pass:   DB "PASS"
+m_pass_z: DB 0
+m_feat:   DB "FEAT"
+m_feat_z: DB 0
+m_opts:   DB "OPTS"
+m_opts_z: DB 0
+m_epsv:   DB "EPSV"
+m_epsv_z: DB 0
+m_nlst:   DB "NLST"
+m_nlst_z: DB 0
+m_size:   DB "SIZE"
+m_size_z: DB 0
+m_mdtm:   DB "MDTM"
+m_mdtm_z: DB 0
+m_cdup:   DB "CDUP"
+m_cdup_z: DB 0
+m_clnt:   DB "CLNT"
+m_clnt_z: DB 0
+m_auth:   DB "AUTH"
+m_auth_z: DB 0
+m_rest:   DB "REST"
+m_rest_z: DB 0
 
-; --- эталонные пути для CWD. ---
+; --- эталонные специальные пути для CWD/COPY. ---
 p_root:     DB "/"
 p_root_z:   DB 0
 p_dot:      DB "."
 p_dot_z:    DB 0
 p_dotdot:   DB ".."
 p_dotdot_z: DB 0
-p_docs:     DB "docs"
-p_docs_z:   DB 0
-p_pictures: DB "pictures"
-p_pictures_z: DB 0
-
-; --- эталонные имена файлов для RETR. ---
-n_readme: DB "readme.txt"
-n_readme_z: DB 0
-n_info:   DB "info.txt"
-n_info_z: DB 0
-n_help:   DB "help.txt"
-n_help_z: DB 0
-n_notes:  DB "notes.txt"
-n_notes_z: DB 0
 
 ; ---------------------------------------------------------------------
-; Раздел 6. Сообщения протокола PASSIVE FTP и баннеры.
+; Раздел 6. Сообщения протокола пассивного FTP и баннеры.
 ; ---------------------------------------------------------------------
 s_banner:    DB "SPO8 BTRFS FTP"
 s_banner_lf: DB 10
@@ -341,18 +268,15 @@ s_220_lf:    DB 10
 s_220_z:     DB 0
 s_prompt:    DB "> "
 s_prompt_z:  DB 0
-s_227:       DB "227 Entering Passive Mode (0,0,0,0,0,1)"
+s_227:       DB "227 Entering Passive Mode (127,0,0,1,7,228)"
 s_227_lf:    DB 10
 s_227_z:     DB 0
+s_229:       DB "229 Entering Extended Passive Mode (|||2020|)"
+s_229_lf:    DB 10
+s_229_z:     DB 0
 s_pwd_pre:   DB "257 "
 s_pwd_pre_quote: DB 34
 s_pwd_pre_z: DB 0
-s_pwd_root:  DB "/"
-s_pwd_root_z: DB 0
-s_pwd_docs:  DB "/docs"
-s_pwd_docs_z: DB 0
-s_pwd_pictures: DB "/pictures"
-s_pwd_pictures_z: DB 0
 s_pwd_post:  DB 34
 s_pwd_post_lf: DB 10
 s_pwd_post_z: DB 0
@@ -375,7 +299,7 @@ s_150_inode: DB "150 inode="
 s_150_inode_z: DB 0
 s_size:      DB " size="
 s_size_z:    DB 0
-s_extent:    DB " extent=inline"
+s_extent:    DB " extent=btrfs"
 s_extent_lf: DB 10
 s_extent_z:  DB 0
 s_150_copy_dir: DB "150 recursive directory copy follows"
@@ -395,12 +319,59 @@ s_200_noop_z: DB 0
 s_200_type:  DB "200 Type set"
 s_200_type_lf: DB 10
 s_200_type_z: DB 0
+s_200_ok:    DB "200 OK"
+s_200_ok_lf: DB 10
+s_200_ok_z:  DB 0
+s_213:       DB "213 "
+s_213_z:     DB 0
+s_mdtm:      DB "213 20260516000000"
+s_mdtm_lf:   DB 10
+s_mdtm_z:    DB 0
+s_230:       DB "230 Login successful"
+s_230_lf:    DB 10
+s_230_z:     DB 0
+s_331:       DB "331 User name okay, need password"
+s_331_lf:    DB 10
+s_331_z:     DB 0
+s_350:       DB "350 Restart position accepted"
+s_350_lf:    DB 10
+s_350_z:     DB 0
+s_150_file:  DB "150 opening data connection"
+s_150_file_lf: DB 10
+s_150_file_z: DB 0
+s_unix_dir:  DB "drwxr-xr-x 1 spo spo "
+s_unix_dir_z: DB 0
+s_unix_file: DB "-rw-r--r-- 1 spo spo "
+s_unix_file_z: DB 0
+s_unix_date: DB " Jan 01 00:00 "
+s_unix_date_z: DB 0
 s_help_1:    DB "214-Supported commands:"
 s_help_1_lf: DB 10
 s_help_1_z:  DB 0
-s_help_2:    DB "214 PASV PWD LIST CWD RETR COPY SYST NOOP HELP TYPE QUIT"
+s_help_2:    DB "214 USER PASS FEAT OPTS PASV EPSV PWD LIST NLST CWD CDUP RETR SIZE MDTM COPY SYST NOOP HELP TYPE QUIT"
 s_help_2_lf: DB 10
 s_help_2_z:  DB 0
+s_feat_1:    DB "211-Features:"
+s_feat_1_lf: DB 10
+s_feat_1_z:  DB 0
+s_feat_2:    DB " UTF8"
+s_feat_2_lf: DB 10
+s_feat_2_z:  DB 0
+s_feat_3:    DB " EPSV"
+s_feat_3_lf: DB 10
+s_feat_3_z:  DB 0
+s_feat_4:    DB " PASV"
+s_feat_4_lf: DB 10
+s_feat_4_z:  DB 0
+s_feat_5:    DB " SIZE"
+s_feat_5_lf: DB 10
+s_feat_5_z:  DB 0
+s_feat_6:    DB " MDTM"
+s_feat_6_lf: DB 10
+s_feat_6_z:  DB 0
+s_feat_end:  DB "211 End"
+s_feat_end_lf: DB 10
+s_feat_end_z: DB 0
 s_221:       DB "221 bye"
 s_221_lf:    DB 10
 s_221_z:     DB 0
@@ -426,14 +397,20 @@ s_magic_z:   DB 0
 ; main — точка входа.
 ; =====================================================================
 main:
-  ; SPO8 использует общий image data_mem для Btrfs-образа, FTP-runtime
+  ; SPO8 использует общий data_mem образа для Btrfs-образа, состояния FTP
   ; и состояния потока. Чтобы CALL не выделял отдельный кадр под каждую
   ; процедуру, выставляем df_size=0 (POP_SYS 19) — все процедуры будут
   ; работать с одной и той же памятью данных.
   PUSH_CONST k0
   POP_SYS 19
 
-  ; Сбрасываем счётчики FTP-runtime.
+  ; В TCP-конфигурации RemoteTasks подключает SimplePipe к локальному
+  ; FTP-адаптеру и сразу запускает VM. Небольшое стартовое окно даёт
+  ; адаптеру завершить сетевую стыковку до первого приветствия 220.
+  CALL ftp_boot_wait, 0
+  POP
+
+  ; Сбрасываем счётчики состояния FTP.
   LOAD img_root_inode
   STORE v_current_dir
   PUSH_CONST k0
@@ -446,30 +423,22 @@ main:
   STORE v_stream_window
   PUSH_CONST k0
   STORE v_group_waits
+  PUSH_CONST k0
+  STORE v_sink
+  PUSH_CONST k0
+  STORE v_data_len
+  CALL pwd_set_root, 0
+  POP
+
+  ; Блочный образ уже подготовлен локальной частью задания через
+  ; mkfs.btrfs, mount, копирование каталога SPO8 и umount. VM получает
+  ; этот файл как BlockDevice и читает его через BackDevice/read.
 
   ; --- Пункт 1 общего алгоритма: проверяем поддержку FS. ---
   CALL btrfs_mount, 0
   JZ main_mount_fail
 
-  ; FS поддерживается — печатаем баннер и сводку superblock.
-  PUSH_ADDR s_banner
-  CALL emit_ztext, 1
-  POP
-  PUSH_ADDR s_fs_ok_1
-  CALL emit_ztext, 1
-  POP
-  LOAD img_root_dir_objectid
-  CALL emit_uint, 1
-  POP
-  PUSH_ADDR s_fs_ok_2
-  CALL emit_ztext, 1
-  POP
-  LOAD img_nodesize
-  CALL emit_uint, 1
-  POP
-  PUSH_ADDR s_newline
-  CALL emit_ztext, 1
-  POP
+  ; FS поддерживается — первым ответом отдаём стандартное FTP-приветствие.
   PUSH_ADDR s_220
   CALL emit_ztext, 1
   POP
@@ -486,25 +455,203 @@ main_mount_fail:
   POP
   RET
 
+ftp_boot_wait:
+  ENTER 0
+  PUSH_CONST k0
+  STORE v_read_i
+ftp_boot_wait_loop:
+  LOAD v_read_i
+  PUSH_CONST k1000
+  LT
+  JZ ftp_boot_wait_done
+  LOAD v_read_i
+  PUSH_CONST k1
+  ADD
+  STORE v_read_i
+  JMP ftp_boot_wait_loop
+ftp_boot_wait_done:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; Вспомогательные процедуры BlockDevice.
+; block_prepare_image оставлен как совместимая заглушка. Реальный образ
+; теперь создаётся до запуска VM по схеме mkfs.btrfs/mount/copy/umount.
+; =====================================================================
+block_prepare_image:
+  ENTER 0
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; block_write_from_mem(src_addr, block_offset, len)
+block_write_from_mem:
+  STORE v_block_len
+  STORE v_block_dst
+  STORE v_block_src
+  ENTER 0
+  PUSH_CONST k0
+  STORE v_block_i
+block_write_from_mem_loop:
+  LOAD v_block_i
+  LOAD v_block_len
+  LT
+  JZ block_write_from_mem_done
+  LOAD v_block_dst
+  LOAD v_block_i
+  ADD
+  LOAD v_block_src
+  LOAD v_block_i
+  INDEXB
+  LOADB_IND
+  BLOCK_WRITE_BYTE
+  LOAD v_block_i
+  PUSH_CONST k1
+  ADD
+  STORE v_block_i
+  JMP block_write_from_mem_loop
+block_write_from_mem_done:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; block_write_u32(block_offset, value), порядок байтов little-endian
+block_write_u32:
+  STORE v_block_value
+  STORE v_block_off
+  ENTER 0
+  PUSH_CONST k0
+  STORE v_block_i
+block_write_u32_loop:
+  LOAD v_block_i
+  PUSH_CONST k4
+  LT
+  JZ block_write_u32_done
+  LOAD v_block_off
+  LOAD v_block_i
+  ADD
+  LOAD v_block_value
+  PUSH_CONST k256
+  REM
+  BLOCK_WRITE_BYTE
+  LOAD v_block_value
+  PUSH_CONST k256
+  DIV
+  STORE v_block_value
+  LOAD v_block_i
+  PUSH_CONST k1
+  ADD
+  STORE v_block_i
+  JMP block_write_u32_loop
+block_write_u32_done:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; block_read_u32(block_offset) -> value, порядок байтов little-endian
+block_read_u32:
+  STORE v_block_off
+  ENTER 0
+  LOAD v_block_off
+  BLOCK_READ_BYTE
+  STORE v_block_value
+  LOAD v_block_off
+  PUSH_CONST k1
+  ADD
+  BLOCK_READ_BYTE
+  PUSH_CONST k256
+  MUL
+  LOAD v_block_value
+  ADD
+  STORE v_block_value
+  LOAD v_block_off
+  PUSH_CONST k2
+  ADD
+  BLOCK_READ_BYTE
+  PUSH_CONST k65536
+  MUL
+  LOAD v_block_value
+  ADD
+  STORE v_block_value
+  LOAD v_block_off
+  PUSH_CONST k3
+  ADD
+  BLOCK_READ_BYTE
+  PUSH_CONST k16777216
+  MUL
+  LOAD v_block_value
+  ADD
+  STORE v_block_value
+  LOAD v_block_value
+  LEAVE
+  RETF
+
+; block_eq_mem(block_offset, addr, len) -> 1/0
+block_eq_mem:
+  STORE v_block_len
+  STORE v_block_src
+  STORE v_block_off
+  ENTER 0
+  PUSH_CONST k0
+  STORE v_block_i
+block_eq_mem_loop:
+  LOAD v_block_i
+  LOAD v_block_len
+  LT
+  JZ block_eq_mem_true
+  LOAD v_block_off
+  LOAD v_block_i
+  ADD
+  BLOCK_READ_BYTE
+  STORE v_block_ch
+  LOAD v_block_src
+  LOAD v_block_i
+  INDEXB
+  LOADB_IND
+  LOAD v_block_ch
+  EQ
+  JZ block_eq_mem_false
+  LOAD v_block_i
+  PUSH_CONST k1
+  ADD
+  STORE v_block_i
+  JMP block_eq_mem_loop
+block_eq_mem_true:
+  PUSH_CONST k1
+  LEAVE
+  RETF
+block_eq_mem_false:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
 ; =====================================================================
 ; btrfs_mount — проверяет, что образ соответствует Btrfs.
 ; Возвращает 1 при успехе, 0 при отказе.
 ; Условия поддержки:
 ;   1) magic совпадает с "_BHRfS_M";
-;   2) nodesize == 4096;
+;   2) nodesize > 0;
 ;   3) root_dir_objectid > 0.
 ; =====================================================================
 btrfs_mount:
   ENTER 0
-  PUSH_ADDR img_super_magic
+  PUSH_CONST k_blk_magic_off
   PUSH_ADDR s_magic
-  CALL ztext_eq, 2
+  PUSH_CONST k8
+  CALL block_eq_mem, 3
   JZ btrfs_mount_fail
-  LOAD img_nodesize
-  PUSH_CONST k4096
-  EQ
+  PUSH_CONST k_blk_nodesize_off
+  CALL block_read_u32, 1
+  STORE v_mount_nodesize
+  LOAD v_mount_nodesize
+  PUSH_CONST k0
+  GT
   JZ btrfs_mount_fail
-  LOAD img_root_dir_objectid
+  PUSH_CONST k_blk_root_off
+  CALL block_read_u32, 1
+  STORE v_mount_root
+  LOAD v_mount_root
   PUSH_CONST k0
   GT
   JZ btrfs_mount_fail
@@ -518,7 +665,7 @@ btrfs_mount_fail:
 
 ; =====================================================================
 ; ftp_loop — основной диалоговый цикл.
-; Читает строки команд из stdin, эхо-печатает их и диспатчит.
+; Читает строки команд из управляющего SimplePipe и диспатчит их.
 ; Завершается когда dispatch_command вернёт 0 (на QUIT) или
 ; когда read_line вернёт 0 (EOF на входе).
 ; =====================================================================
@@ -531,8 +678,6 @@ ftp_loop_next:
   PUSH_CONST k1
   ADD
   STORE v_cmd_count
-  CALL echo_command, 0
-  POP
   CALL dispatch_command, 0
   JZ ftp_loop_done
   JMP ftp_loop_next
@@ -548,14 +693,12 @@ ftp_loop_done:
 ; =====================================================================
 read_line:
   ENTER 0
-  ; port 0 — стандартный вход VM (rin_s).
-  PUSH_CONST k0
-  SET_PORT
+  ; Путь RemoteTasks использует SimplePipe SyncReceive через PIPE_IN.
   PUSH_CONST k0
   STORE v_read_i
 
 read_line_loop:
-  IN
+  PIPE_IN
   STORE v_read_ch
   ; ch == 0 — EOF. Возвращаем результат в зависимости от того,
   ; успели мы прочитать что-нибудь или нет.
@@ -617,7 +760,7 @@ read_line_terminate_success:
 
 ; =====================================================================
 ; echo_command — печатает "> " + содержимое v_cmd_buf + "\n".
-; Соответствует поведению PASSIVE FTP, когда сервер подтверждает
+; Соответствует поведению пассивного FTP, когда сервер подтверждает
 ; принятую команду в управляющем канале.
 ; =====================================================================
 echo_command:
@@ -651,7 +794,104 @@ dispatch_command:
   CALL compute_arg_offset, 0
   STORE v_arg_off
 
+  ; USER/PASS и совместимые команды, которые используют реальные FTP-клиенты.
+  PUSH_ADDR m_user
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_pass
+  PUSH_ADDR s_331
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_pass:
+  PUSH_ADDR m_pass
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_feat
+  PUSH_ADDR s_230
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_feat:
+  PUSH_ADDR m_feat
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_opts
+  CALL cmd_feat, 0
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_opts:
+  PUSH_ADDR m_opts
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_epsv
+  PUSH_ADDR s_200_ok
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_epsv:
+  PUSH_ADDR m_epsv
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_clnt
+  PUSH_ADDR s_229
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_clnt:
+  PUSH_ADDR m_clnt
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_auth
+  PUSH_ADDR s_200_ok
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_auth:
+  PUSH_ADDR m_auth
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_rest
+  ; Поддерживается только обычный FTP. FileZilla/curl переходят к нему после отказа AUTH TLS.
+  PUSH_ADDR s_502
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_rest:
+  PUSH_ADDR m_rest
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_quit
+  PUSH_ADDR s_350
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
   ; QUIT — завершение сессии.
+dispatch_check_quit:
   PUSH_ADDR m_quit
   PUSH_CONST k4
   CALL cmd_starts_with, 2
@@ -692,8 +932,19 @@ dispatch_check_list:
   PUSH_ADDR m_list
   PUSH_CONST k4
   CALL cmd_starts_with, 2
-  JZ dispatch_check_cwd
+  JZ dispatch_check_nlst
   CALL cmd_list, 0
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_nlst:
+  PUSH_ADDR m_nlst
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_cwd
+  CALL cmd_nlst, 0
   POP
   PUSH_CONST k1
   LEAVE
@@ -703,8 +954,19 @@ dispatch_check_cwd:
   PUSH_ADDR m_cwd
   PUSH_CONST k3
   CALL cmd_starts_with, 2
-  JZ dispatch_check_retr
+  JZ dispatch_check_cdup
   CALL cmd_cwd, 0
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_cdup:
+  PUSH_ADDR m_cdup
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_retr
+  CALL cmd_cdup, 0
   POP
   PUSH_CONST k1
   LEAVE
@@ -714,8 +976,30 @@ dispatch_check_retr:
   PUSH_ADDR m_retr
   PUSH_CONST k4
   CALL cmd_starts_with, 2
-  JZ dispatch_check_copy
+  JZ dispatch_check_size
   CALL cmd_retr, 0
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_size:
+  PUSH_ADDR m_size
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_mdtm
+  CALL cmd_size, 0
+  POP
+  PUSH_CONST k1
+  LEAVE
+  RETF
+
+dispatch_check_mdtm:
+  PUSH_ADDR m_mdtm
+  PUSH_CONST k4
+  CALL cmd_starts_with, 2
+  JZ dispatch_check_copy
+  CALL cmd_mdtm, 0
   POP
   PUSH_CONST k1
   LEAVE
@@ -793,7 +1077,7 @@ dispatch_unknown:
 
 ; =====================================================================
 ; cmd_starts_with(target_addr, n) — проверяет, что v_cmd_buf начинается
-; с target и за target идёт ровно один из терминаторов команды
+; с эталоном и за эталоном идёт ровно один из терминаторов команды
 ; (NUL, пробел, '\r', '\n'). Возвращает 1/0.
 ; =====================================================================
 cmd_starts_with:
@@ -833,7 +1117,7 @@ cmd_starts_with_loop:
   JMP cmd_starts_with_loop
 
 cmd_starts_with_check_end:
-  ; После target должен идти терминатор: 0, ' ', '\r' или '\n'.
+  ; После эталона должен идти терминатор: 0, ' ', '\r' или '\n'.
   PUSH_ADDR v_cmd_buf
   LOAD v_eq_n
   INDEXB
@@ -950,7 +1234,7 @@ compute_arg_done:
 
 ; =====================================================================
 ; arg_eq(target_addr) — сравнивает аргумент в v_cmd_buf
-; (по смещению v_arg_off) с NUL-терминированной строкой target.
+; (по смещению v_arg_off) с NUL-терминированной эталонной строкой.
 ; Аргумент завершается NUL/пробелом/'\r'/'\n'. Возвращает 1/0.
 ; =====================================================================
 arg_eq:
@@ -969,7 +1253,7 @@ arg_eq_start:
   STORE v_eq_i
 
 arg_eq_loop:
-  ; Берём очередной байт target и парный байт буфера команды.
+  ; Берём очередной байт эталона и парный байт буфера команды.
   LOAD v_eq_b
   LOAD v_eq_i
   INDEXB
@@ -982,13 +1266,13 @@ arg_eq_loop:
   INDEXB
   LOADB_IND
   STORE v_eq_ca
-  ; Если target дошёл до NUL — переходим к проверке терминатора в буфере.
+  ; Если эталон дошёл до NUL — переходим к проверке терминатора в буфере.
   ; Иначе — сравниваем символы.
   LOAD v_eq_cb
   PUSH_CONST k0
   EQ
   JZ arg_eq_compare
-  ; --- здесь cb == 0: target закончился, в буфере должен быть терминатор. ---
+  ; --- здесь cb == 0: эталон закончился, в буфере должен быть терминатор. ---
   LOAD v_eq_ca
   PUSH_CONST k0
   EQ
@@ -1039,6 +1323,36 @@ arg_eq_false:
   RETF
 
 ; =====================================================================
+; cmd_feat — список возможностей для стандартных FTP-клиентов.
+; =====================================================================
+cmd_feat:
+  ENTER 0
+  PUSH_ADDR s_feat_1
+  CALL emit_ztext, 1
+  POP
+  PUSH_ADDR s_feat_2
+  CALL emit_ztext, 1
+  POP
+  PUSH_ADDR s_feat_3
+  CALL emit_ztext, 1
+  POP
+  PUSH_ADDR s_feat_4
+  CALL emit_ztext, 1
+  POP
+  PUSH_ADDR s_feat_5
+  CALL emit_ztext, 1
+  POP
+  PUSH_ADDR s_feat_6
+  CALL emit_ztext, 1
+  POP
+  PUSH_ADDR s_feat_end
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
 ; emit_pwd — печатает текущий каталог в формате 257 "<path>".
 ; =====================================================================
 emit_pwd:
@@ -1046,26 +1360,9 @@ emit_pwd:
   PUSH_ADDR s_pwd_pre
   CALL emit_ztext, 1
   POP
-  LOAD v_current_dir
-  LOAD img_root_inode
-  EQ
-  JZ emit_pwd_check_docs
-  PUSH_ADDR s_pwd_root
-  CALL emit_ztext, 1
-  POP
-  JMP emit_pwd_close
-emit_pwd_check_docs:
-  LOAD v_current_dir
-  LOAD img_docs_inode
-  EQ
-  JZ emit_pwd_pictures
-  PUSH_ADDR s_pwd_docs
-  CALL emit_ztext, 1
-  POP
-  JMP emit_pwd_close
-emit_pwd_pictures:
-  PUSH_ADDR s_pwd_pictures
-  CALL emit_ztext, 1
+  PUSH_ADDR v_pwd_buf
+  LOAD v_pwd_len
+  CALL emit_bytes, 2
   POP
 emit_pwd_close:
   PUSH_ADDR s_pwd_post
@@ -1076,9 +1373,117 @@ emit_pwd_close:
   RETF
 
 ; =====================================================================
+; pwd_set_root / pwd_append_name / pwd_pop — поддержка текущего пути
+; для PWD. Имена берутся из DIR_ITEM, поэтому путь соответствует
+; просканированному Btrfs-дереву, а не заранее заданному примеру.
+; =====================================================================
+pwd_set_root:
+  ENTER 0
+  PUSH_CONST k1
+  STORE v_pwd_len
+  PUSH_ADDR v_pwd_buf
+  PUSH_CONST k0
+  INDEXB
+  PUSH_CONST c_slash
+  STOREB_IND
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+pwd_append_name:
+  STORE v_name_id
+  ENTER 0
+  LOAD v_name_id
+  CALL name_load_info, 1
+  POP
+  LOAD v_pwd_len
+  PUSH_CONST k1
+  GT
+  JZ pwd_append_copy
+  PUSH_ADDR v_pwd_buf
+  LOAD v_pwd_len
+  INDEXB
+  PUSH_CONST c_slash
+  STOREB_IND
+  LOAD v_pwd_len
+  PUSH_CONST k1
+  ADD
+  STORE v_pwd_len
+pwd_append_copy:
+  PUSH_CONST k0
+  STORE v_eq_i
+pwd_append_loop:
+  LOAD v_eq_i
+  LOAD v_name_len
+  LT
+  JZ pwd_append_done
+  PUSH_ADDR v_pwd_buf
+  LOAD v_pwd_len
+  LOAD v_eq_i
+  ADD
+  INDEXB
+  PUSH_ADDR img_name_pool
+  LOAD v_name_off
+  LOAD v_eq_i
+  ADD
+  INDEXB
+  LOADB_IND
+  STOREB_IND
+  LOAD v_eq_i
+  PUSH_CONST k1
+  ADD
+  STORE v_eq_i
+  JMP pwd_append_loop
+pwd_append_done:
+  LOAD v_pwd_len
+  LOAD v_name_len
+  ADD
+  STORE v_pwd_len
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+pwd_pop:
+  ENTER 0
+  LOAD v_pwd_len
+  PUSH_CONST k1
+  LE
+  JZ pwd_pop_loop
+  CALL pwd_set_root, 0
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+pwd_pop_loop:
+  LOAD v_pwd_len
+  PUSH_CONST k1
+  SUB
+  STORE v_pwd_len
+  LOAD v_pwd_len
+  PUSH_CONST k1
+  LE
+  JZ pwd_pop_check_slash
+  CALL pwd_set_root, 0
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+pwd_pop_check_slash:
+  PUSH_ADDR v_pwd_buf
+  LOAD v_pwd_len
+  INDEXB
+  LOADB_IND
+  PUSH_CONST c_slash
+  EQ
+  JZ pwd_pop_loop
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
 ; cmd_cwd — изменяет текущий каталог.
 ; Аргументы: "/", ".", ".." или имя DIR_ITEM в текущем каталоге.
-; Поиск выполняется сканированием Btrfs DIR_ITEM records.
+; Поиск выполняется сканированием записей Btrfs DIR_ITEM.
 ; =====================================================================
 cmd_cwd:
   ENTER 0
@@ -1087,12 +1492,14 @@ cmd_cwd:
   ADD
   STORE v_lookup_count
 
-  ; arg == "/" -> root
+  ; arg == "/" означает переход в корень.
   PUSH_ADDR p_root
   CALL arg_eq, 1
   JZ cmd_cwd_check_dot
   LOAD img_root_inode
   STORE v_current_dir
+  CALL pwd_set_root, 0
+  POP
   JMP cmd_cwd_ok
 
 cmd_cwd_check_dot:
@@ -1108,6 +1515,8 @@ cmd_cwd_check_dotdot:
   JZ cmd_cwd_lookup_dir
   CALL fs_parent_of_current, 0
   STORE v_current_dir
+  CALL pwd_pop, 0
+  POP
   JMP cmd_cwd_ok
 
 cmd_cwd_lookup_dir:
@@ -1119,6 +1528,16 @@ cmd_cwd_lookup_dir:
   JZ cmd_cwd_missing
   LOAD v_found_inode
   STORE v_current_dir
+  LOAD v_arg_absolute
+  PUSH_CONST k1
+  EQ
+  JZ cmd_cwd_append
+  CALL pwd_set_root, 0
+  POP
+cmd_cwd_append:
+  LOAD v_name_id
+  CALL pwd_append_name, 1
+  POP
   JMP cmd_cwd_ok
 
 cmd_cwd_ok:
@@ -1131,6 +1550,26 @@ cmd_cwd_ok:
 
 cmd_cwd_missing:
   PUSH_ADDR s_550
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; cmd_cdup — стандартный FTP-синоним CWD ...
+; =====================================================================
+cmd_cdup:
+  ENTER 0
+  LOAD v_lookup_count
+  PUSH_CONST k1
+  ADD
+  STORE v_lookup_count
+  CALL fs_parent_of_current, 0
+  STORE v_current_dir
+  CALL pwd_pop, 0
+  POP
+  PUSH_ADDR s_250
   CALL emit_ztext, 1
   POP
   PUSH_CONST k0
@@ -1151,8 +1590,10 @@ cmd_list:
   PUSH_ADDR s_150_list
   CALL emit_ztext, 1
   POP
+  PUSH_CONST k1
+  STORE v_sink
 
-  ; Сканируем FS tree DIR_ITEM: parent == v_current_dir.
+  ; Сканируем DIR_ITEM дерева FS: parent == v_current_dir.
   PUSH_CONST k0
   STORE v_scan_i
 
@@ -1218,6 +1659,68 @@ cmd_list_next:
   JMP cmd_list_loop
 
 cmd_list_done:
+  CALL data_stream_flush, 0
+  POP
+  PUSH_CONST k0
+  STORE v_sink
+  PUSH_ADDR s_226
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; cmd_nlst — список одних имён через пассивный поток данных.
+; =====================================================================
+cmd_nlst:
+  ENTER 0
+  LOAD v_lookup_count
+  PUSH_CONST k1
+  ADD
+  STORE v_lookup_count
+  PUSH_ADDR s_150_list
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k1
+  STORE v_sink
+
+  PUSH_CONST k0
+  STORE v_scan_i
+
+cmd_nlst_loop:
+  LOAD v_scan_i
+  LOAD img_dirent_count
+  LT
+  JZ cmd_nlst_done
+  PUSH_ADDR img_dirent_parent
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  LOAD v_current_dir
+  EQ
+  JZ cmd_nlst_next
+  PUSH_ADDR img_dirent_name_id
+  LOAD v_scan_i
+  INDEX
+  LOAD_IND
+  CALL emit_name_by_id, 1
+  POP
+  PUSH_ADDR s_newline
+  CALL emit_ztext, 1
+  POP
+cmd_nlst_next:
+  LOAD v_scan_i
+  PUSH_CONST k1
+  ADD
+  STORE v_scan_i
+  JMP cmd_nlst_loop
+
+cmd_nlst_done:
+  CALL data_stream_flush, 0
+  POP
+  PUSH_CONST k0
+  STORE v_sink
   PUSH_ADDR s_226
   CALL emit_ztext, 1
   POP
@@ -1228,7 +1731,7 @@ cmd_list_done:
 ; =====================================================================
 ; emit_list_entry(type, inode, size, name_id) — печатает строку LIST.
 ; Аргументы извлекаются в обратном порядке (CALL заталкивает их слева
-; направо, callee снимает в порядке, обратном объявлению).
+; направо, вызываемая процедура снимает их в порядке, обратном объявлению).
 ; =====================================================================
 emit_list_entry:
   STORE v_entry_name
@@ -1237,22 +1740,24 @@ emit_list_entry:
   STORE v_entry_type
   ENTER 0
   LOAD v_entry_type
-  CALL stream_write_byte, 1
+  PUSH_CONST c_d
+  EQ
+  JZ emit_list_entry_file
+  PUSH_ADDR s_unix_dir
+  CALL emit_ztext, 1
   POP
-  PUSH_CONST k32
-  CALL stream_write_byte, 1
+  JMP emit_list_entry_common
+emit_list_entry_file:
+  PUSH_ADDR s_unix_file
+  CALL emit_ztext, 1
   POP
-  LOAD v_entry_inode
-  CALL emit_uint, 1
-  POP
-  PUSH_CONST k32
-  CALL stream_write_byte, 1
-  POP
+emit_list_entry_common:
+  ; Формат Unix LIST: тип/права, владелец/группа, размер, дата, имя.
   LOAD v_entry_size
   CALL emit_uint, 1
   POP
-  PUSH_CONST k32
-  CALL stream_write_byte, 1
+  PUSH_ADDR s_unix_date
+  CALL emit_ztext, 1
   POP
   LOAD v_entry_name
   CALL emit_name_by_id, 1
@@ -1265,8 +1770,8 @@ emit_list_entry:
   RETF
 
 ; =====================================================================
-; cmd_retr — извлекает inline-extent файла по имени.
-; DIR_ITEM выбирает inode, INODE_ITEM даёт размер, EXTENT_DATA даёт payload.
+; cmd_retr — извлекает встроенный extent файла по имени.
+; DIR_ITEM выбирает inode, INODE_ITEM даёт размер, EXTENT_DATA даёт содержимое.
 ; =====================================================================
 cmd_retr:
   ENTER 0
@@ -1291,7 +1796,7 @@ cmd_retr:
 
   LOAD v_found_inode
   LOAD v_file_size
-  LOAD v_found_data_id
+  LOAD v_found_block_off
   CALL emit_file, 3
   POP
   PUSH_CONST k0
@@ -1299,6 +1804,71 @@ cmd_retr:
   RETF
 
 cmd_retr_missing:
+  PUSH_ADDR s_550
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; cmd_size — возвращает размер файла для FTP-клиентов перед RETR.
+; =====================================================================
+cmd_size:
+  ENTER 0
+  LOAD v_lookup_count
+  PUSH_CONST k1
+  ADD
+  STORE v_lookup_count
+  CALL fs_find_dirent_by_arg, 0
+  JZ cmd_size_missing
+  LOAD v_found_type
+  PUSH_CONST k_btrfs_ft_reg
+  EQ
+  JZ cmd_size_missing
+  LOAD v_found_inode
+  CALL fs_load_inode_size, 1
+  STORE v_file_size
+  PUSH_ADDR s_213
+  CALL emit_ztext, 1
+  POP
+  LOAD v_file_size
+  CALL emit_uint, 1
+  POP
+  PUSH_ADDR s_newline
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+cmd_size_missing:
+  PUSH_ADDR s_550
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; cmd_mdtm — детерминированная временная метка для всех файлов тестового образа.
+; =====================================================================
+cmd_mdtm:
+  ENTER 0
+  LOAD v_lookup_count
+  PUSH_CONST k1
+  ADD
+  STORE v_lookup_count
+  CALL fs_find_dirent_by_arg, 0
+  JZ cmd_mdtm_missing
+  PUSH_ADDR s_mdtm
+  CALL emit_ztext, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+cmd_mdtm_missing:
   PUSH_ADDR s_550
   CALL emit_ztext, 1
   POP
@@ -1330,9 +1900,16 @@ emit_file:
   PUSH_ADDR s_extent
   CALL emit_ztext, 1
   POP
+  PUSH_CONST k1
+  STORE v_sink
   LOAD v_file_data
-  CALL emit_data_by_id, 1
+  LOAD v_file_size
+  CALL emit_block_data, 2
   POP
+  CALL data_stream_flush, 0
+  POP
+  PUSH_CONST k0
+  STORE v_sink
   PUSH_ADDR s_226
   CALL emit_ztext, 1
   POP
@@ -1444,7 +2021,7 @@ copy_dir_tree:
   PUSH_CONST k0
   STORE v_copy_tail
 
-  ; queue[tail++] = root_inode
+  ; Кладём root_inode в хвост очереди.
   PUSH_ADDR v_copy_queue
   LOAD v_copy_tail
   INDEX
@@ -1531,7 +2108,7 @@ copy_dir_check_subdir:
   EQ
   JZ copy_dir_next
   LOAD v_copy_tail
-  PUSH_CONST k8
+  PUSH_CONST k256
   LT
   JZ copy_dir_next
   PUSH_ADDR v_copy_queue
@@ -1561,7 +2138,7 @@ copy_dir_done:
 
 ; =====================================================================
 ; copy_emit_inode_file(inode) — копирует обычный файл по inode.
-; Возвращает 1, если inline extent найден, иначе 0.
+; Возвращает 1, если встроенный extent найден, иначе 0.
 ; =====================================================================
 copy_emit_inode_file:
   STORE v_file_inode
@@ -1574,7 +2151,7 @@ copy_emit_inode_file:
   JZ copy_emit_inode_file_missing
   LOAD v_file_inode
   LOAD v_file_size
-  LOAD v_found_data_id
+  LOAD v_found_block_off
   CALL emit_file, 3
   POP
   PUSH_CONST k1
@@ -1593,6 +2170,38 @@ copy_emit_inode_file_missing:
 ; =====================================================================
 fs_find_dirent_by_arg:
   ENTER 0
+  LOAD v_arg_off
+  PUSH_CONST k0
+  EQ
+  JZ fs_find_dirent_prepare
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+fs_find_dirent_prepare:
+  PUSH_CONST k0
+  STORE v_arg_absolute
+  LOAD v_current_dir
+  STORE v_find_parent
+  LOAD v_arg_off
+  STORE v_arg_cmp_off
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_off
+  INDEXB
+  LOADB_IND
+  PUSH_CONST c_slash
+  EQ
+  JZ fs_find_dirent_scan_start
+  PUSH_CONST k1
+  STORE v_arg_absolute
+  LOAD img_root_inode
+  STORE v_find_parent
+  LOAD v_arg_off
+  PUSH_CONST k1
+  ADD
+  STORE v_arg_cmp_off
+
+fs_find_dirent_scan_start:
   PUSH_CONST k0
   STORE v_scan_i
 
@@ -1606,7 +2215,7 @@ fs_find_dirent_loop:
   LOAD v_scan_i
   INDEX
   LOAD_IND
-  LOAD v_current_dir
+  LOAD v_find_parent
   EQ
   JZ fs_find_dirent_next
 
@@ -1614,6 +2223,8 @@ fs_find_dirent_loop:
   LOAD v_scan_i
   INDEX
   LOAD_IND
+  STORE v_name_id
+  LOAD v_name_id
   CALL fs_arg_eq_name, 1
   JZ fs_find_dirent_next
 
@@ -1759,8 +2370,9 @@ fs_load_inode_missing:
   RETF
 
 ; =====================================================================
-; fs_find_extent_data(inode) — ищет inline EXTENT_DATA для inode.
-; При успехе v_found_data_id указывает на payload.
+; fs_find_extent_data(inode) — ищет EXTENT_DATA для inode.
+; При успехе v_found_block_off указывает на физическое смещение
+; данных в настоящем Btrfs-образе, подключённом как BlockDevice.
 ; =====================================================================
 fs_find_extent_data:
   STORE v_found_inode
@@ -1782,19 +2394,16 @@ fs_find_extent_loop:
   EQ
   JZ fs_find_extent_next
 
-  PUSH_ADDR img_extent_type
+  PUSH_ADDR img_extent_block_off
   LOAD v_extent_i
   INDEX
   LOAD_IND
-  PUSH_CONST k0
-  EQ
-  JZ fs_find_extent_next
-
-  PUSH_ADDR img_extent_data_id
+  STORE v_found_block_off
+  PUSH_ADDR img_extent_size
   LOAD v_extent_i
   INDEX
   LOAD_IND
-  STORE v_found_data_id
+  STORE v_found_extent_size
   PUSH_CONST k1
   LEAVE
   RETF
@@ -1810,6 +2419,10 @@ fs_find_extent_missing:
   PUSH_CONST k0
   STORE v_found_data_id
   PUSH_CONST k0
+  STORE v_found_block_off
+  PUSH_CONST k0
+  STORE v_found_extent_size
+  PUSH_CONST k0
   LEAVE
   RETF
 
@@ -1821,120 +2434,131 @@ fs_arg_eq_name:
   STORE v_name_id
   ENTER 0
   LOAD v_name_id
+  CALL name_load_info, 1
+  POP
+  PUSH_CONST k0
+  STORE v_eq_i
+
+fs_arg_name_loop:
+  LOAD v_eq_i
+  LOAD v_name_len
+  LT
+  JZ fs_arg_name_check_end
+  PUSH_ADDR img_name_pool
+  LOAD v_name_off
+  LOAD v_eq_i
+  ADD
+  INDEXB
+  LOADB_IND
+  STORE v_eq_cb
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_cmp_off
+  LOAD v_eq_i
+  ADD
+  INDEXB
+  LOADB_IND
+  STORE v_eq_ca
+  LOAD v_eq_ca
+  LOAD v_eq_cb
+  EQ
+  JZ fs_arg_name_false
+  LOAD v_eq_i
   PUSH_CONST k1
+  ADD
+  STORE v_eq_i
+  JMP fs_arg_name_loop
+
+fs_arg_name_check_end:
+  PUSH_ADDR v_cmd_buf
+  LOAD v_arg_cmp_off
+  LOAD v_name_len
+  ADD
+  INDEXB
+  LOADB_IND
+  STORE v_eq_ca
+  LOAD v_eq_ca
+  PUSH_CONST k0
   EQ
-  JZ fs_arg_name_2
-  PUSH_ADDR img_name_docs
-  CALL arg_eq, 1
+  JZ fs_arg_name_check_space
+  PUSH_CONST k1
   LEAVE
   RETF
-fs_arg_name_2:
-  LOAD v_name_id
-  PUSH_CONST k2
+fs_arg_name_check_space:
+  LOAD v_eq_ca
+  PUSH_CONST k32
   EQ
-  JZ fs_arg_name_3
-  PUSH_ADDR img_name_pictures
-  CALL arg_eq, 1
+  JZ fs_arg_name_check_cr
+  PUSH_CONST k1
   LEAVE
   RETF
-fs_arg_name_3:
-  LOAD v_name_id
-  PUSH_CONST k3
+fs_arg_name_check_cr:
+  LOAD v_eq_ca
+  PUSH_CONST k13
   EQ
-  JZ fs_arg_name_4
-  PUSH_ADDR img_name_readme
-  CALL arg_eq, 1
+  JZ fs_arg_name_check_lf
+  PUSH_CONST k1
   LEAVE
   RETF
-fs_arg_name_4:
-  LOAD v_name_id
-  PUSH_CONST k4
+fs_arg_name_check_lf:
+  LOAD v_eq_ca
+  PUSH_CONST k10
   EQ
-  JZ fs_arg_name_5
-  PUSH_ADDR img_name_info
-  CALL arg_eq, 1
+  JZ fs_arg_name_false
+  PUSH_CONST k1
   LEAVE
   RETF
-fs_arg_name_5:
-  LOAD v_name_id
-  PUSH_CONST k5
-  EQ
-  JZ fs_arg_name_6
-  PUSH_ADDR img_name_help
-  CALL arg_eq, 1
-  LEAVE
-  RETF
-fs_arg_name_6:
-  LOAD v_name_id
-  PUSH_CONST k6
-  EQ
-  JZ fs_arg_name_missing
-  PUSH_ADDR img_name_notes
-  CALL arg_eq, 1
-  LEAVE
-  RETF
-fs_arg_name_missing:
+fs_arg_name_false:
   PUSH_CONST k0
   LEAVE
   RETF
 
 ; =====================================================================
-; emit_name_by_id(name_id) — печатает имя DIR_ITEM через stream sink.
+; name_load_info(name_id) — загружает offset/len имени из сгенерированной
+; таблицы, полученной из реального дерева Btrfs.
+; =====================================================================
+name_load_info:
+  STORE v_name_id
+  ENTER 0
+  LOAD v_name_id
+  LOAD img_name_count
+  LT
+  JZ name_load_missing
+  PUSH_ADDR img_name_offset
+  LOAD v_name_id
+  INDEX
+  LOAD_IND
+  STORE v_name_off
+  PUSH_ADDR img_name_len
+  LOAD v_name_id
+  INDEX
+  LOAD_IND
+  STORE v_name_len
+  PUSH_CONST k1
+  LEAVE
+  RETF
+name_load_missing:
+  PUSH_CONST k0
+  STORE v_name_off
+  PUSH_CONST k0
+  STORE v_name_len
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; emit_name_by_id(name_id) — печатает имя DIR_ITEM через потоковый приёмник вывода.
 ; =====================================================================
 emit_name_by_id:
   STORE v_name_id
   ENTER 0
   LOAD v_name_id
-  PUSH_CONST k1
-  EQ
-  JZ emit_name_2
-  PUSH_ADDR img_name_docs
-  CALL emit_ztext, 1
+  CALL name_load_info, 1
   POP
-  JMP emit_name_done
-emit_name_2:
-  LOAD v_name_id
-  PUSH_CONST k2
-  EQ
-  JZ emit_name_3
-  PUSH_ADDR img_name_pictures
-  CALL emit_ztext, 1
-  POP
-  JMP emit_name_done
-emit_name_3:
-  LOAD v_name_id
-  PUSH_CONST k3
-  EQ
-  JZ emit_name_4
-  PUSH_ADDR img_name_readme
-  CALL emit_ztext, 1
-  POP
-  JMP emit_name_done
-emit_name_4:
-  LOAD v_name_id
-  PUSH_CONST k4
-  EQ
-  JZ emit_name_5
-  PUSH_ADDR img_name_info
-  CALL emit_ztext, 1
-  POP
-  JMP emit_name_done
-emit_name_5:
-  LOAD v_name_id
-  PUSH_CONST k5
-  EQ
-  JZ emit_name_6
-  PUSH_ADDR img_name_help
-  CALL emit_ztext, 1
-  POP
-  JMP emit_name_done
-emit_name_6:
-  LOAD v_name_id
-  PUSH_CONST k6
-  EQ
-  JZ emit_name_done
-  PUSH_ADDR img_name_notes
-  CALL emit_ztext, 1
+  PUSH_ADDR img_name_pool
+  LOAD v_name_off
+  INDEXB
+  LOAD v_name_len
+  CALL emit_bytes, 2
   POP
 emit_name_done:
   PUSH_CONST k0
@@ -1942,51 +2566,12 @@ emit_name_done:
   RETF
 
 ; =====================================================================
-; emit_data_by_id(data_id) — печатает inline EXTENT_DATA payload.
-; Размер берётся из v_file_size, полученного из INODE_ITEM.
+; emit_data_by_id оставлен только как совместимая заглушка: теперь RETR/COPY
+; читают данные напрямую из физического смещения BlockDevice.
 ; =====================================================================
 emit_data_by_id:
   STORE v_file_data
   ENTER 0
-  LOAD v_file_data
-  PUSH_CONST k1
-  EQ
-  JZ emit_data_2
-  PUSH_ADDR img_data_readme
-  LOAD v_file_size
-  CALL emit_bytes, 2
-  POP
-  JMP emit_data_done
-emit_data_2:
-  LOAD v_file_data
-  PUSH_CONST k2
-  EQ
-  JZ emit_data_3
-  PUSH_ADDR img_data_info
-  LOAD v_file_size
-  CALL emit_bytes, 2
-  POP
-  JMP emit_data_done
-emit_data_3:
-  LOAD v_file_data
-  PUSH_CONST k3
-  EQ
-  JZ emit_data_4
-  PUSH_ADDR img_data_help
-  LOAD v_file_size
-  CALL emit_bytes, 2
-  POP
-  JMP emit_data_done
-emit_data_4:
-  LOAD v_file_data
-  PUSH_CONST k4
-  EQ
-  JZ emit_data_done
-  PUSH_ADDR img_data_notes
-  LOAD v_file_size
-  CALL emit_bytes, 2
-  POP
-emit_data_done:
   PUSH_CONST k0
   LEAVE
   RETF
@@ -2031,7 +2616,7 @@ emit_stats:
   RETF
 
 ; =====================================================================
-; emit_ztext(addr) — печатает NUL-терминированную строку через sink.
+; emit_ztext(addr) — печатает NUL-терминированную строку через приёмник вывода.
 ; =====================================================================
 emit_ztext:
   STORE v_emit_addr
@@ -2063,7 +2648,7 @@ emit_ztext_emit:
   JMP emit_ztext_loop
 
 ; =====================================================================
-; emit_bytes(addr, n) — печатает n байт начиная с addr через sink.
+; emit_bytes(addr, n) — печатает n байт начиная с addr через приёмник вывода.
 ; =====================================================================
 emit_bytes:
   STORE v_file_size
@@ -2093,7 +2678,88 @@ emit_bytes_done:
   RETF
 
 ; =====================================================================
-; emit_uint(n) — печатает беззнаковое десятичное число через sink.
+; emit_block_data(block_offset, n) — читает n байт из BlockDevice и
+; печатает через приёмник вывода. Для пассивного FTP-канала данные идут
+; порциями: BackDevice/read заполняет block_buffer, а DATA_COPY_BLOCK
+; переносит эту порцию в FSPipe. Побайтовый путь оставлен только как
+; совместимый вариант для управляющего потока.
+; =====================================================================
+emit_block_data:
+  STORE v_block_len
+  STORE v_block_off
+  ENTER 0
+  PUSH_CONST k0
+  STORE v_block_i
+emit_block_data_loop:
+  LOAD v_block_i
+  LOAD v_block_len
+  LT
+  JZ emit_block_data_done
+  LOAD v_block_len
+  LOAD v_block_i
+  SUB
+  STORE v_block_chunk
+  LOAD v_block_chunk
+  PUSH_CONST k512
+  LE
+  JZ emit_block_data_limit_512
+  JMP emit_block_data_chunk_ready
+emit_block_data_limit_512:
+  PUSH_CONST k512
+  STORE v_block_chunk
+emit_block_data_chunk_ready:
+  LOAD v_block_off
+  LOAD v_block_i
+  ADD
+  LOAD v_block_chunk
+  BLOCK_READ_BUF
+  LOAD v_sink
+  PUSH_CONST k1
+  EQ
+  JZ emit_block_data_control_loop
+  LOAD v_stream_bytes
+  LOAD v_block_chunk
+  ADD
+  STORE v_stream_bytes
+  LOAD v_group_waits
+  LOAD v_block_chunk
+  PUSH_CONST k7
+  DIV
+  ADD
+  STORE v_group_waits
+  LOAD v_block_chunk
+  DATA_COPY_BLOCK
+  JMP emit_block_data_chunk_done
+emit_block_data_control_loop:
+  PUSH_CONST k0
+  STORE v_block_j
+emit_block_data_chunk_loop:
+  LOAD v_block_j
+  LOAD v_block_chunk
+  LT
+  JZ emit_block_data_chunk_done
+  LOAD v_block_j
+  BLOCK_BUF_BYTE
+  CALL stream_write_byte, 1
+  POP
+  LOAD v_block_j
+  PUSH_CONST k1
+  ADD
+  STORE v_block_j
+  JMP emit_block_data_chunk_loop
+emit_block_data_chunk_done:
+  LOAD v_block_i
+  LOAD v_block_chunk
+  ADD
+  STORE v_block_i
+  JMP emit_block_data_loop
+emit_block_data_done:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; emit_uint(n) — печатает беззнаковое десятичное число через приёмник вывода.
 ; Используем v_digits как стек цифр.
 ; =====================================================================
 emit_uint:
@@ -2157,7 +2823,7 @@ emit_uint_done:
 
 ; =====================================================================
 ; ztext_eq(a, b) — сравнивает две NUL-терминированные строки байт-в-байт.
-; Используется только в btrfs_mount для сверки superblock magic.
+; Используется в btrfs_mount для сверки магического значения суперблока.
 ; =====================================================================
 ztext_eq:
   STORE v_eq_b
@@ -2199,12 +2865,12 @@ ztext_eq_false:
   RETF
 
 ; =====================================================================
-; stream_write_byte(byte) — единая точка вывода (sink).
-; Соответствует sink stream-pipeline’а из SPO7:
+; stream_write_byte(byte) — единая точка вывода, то есть приёмник потока.
+; Соответствует приёмнику потокового конвейера из SPO7:
 ;   - увеличивает счётчик переданных байтов v_stream_bytes;
-;   - после каждых v_stream_window=7 байт фиксирует passive
-;     GROUP_WAIT (v_group_waits++) — модель «synchronous non-blocking»;
-;   - затем дописывает байт в port 1 (rout_s).
+;   - после каждых v_stream_window=7 байт фиксирует пассивное
+;     GROUP_WAIT (v_group_waits++) — модель синхронных неблокирующих операций;
+;   - затем дописывает байт в SimplePipe SyncSend через PIPE_OUT.
 ; =====================================================================
 stream_write_byte:
   STORE v_stream_ch
@@ -2221,7 +2887,7 @@ stream_write_byte:
   PUSH_CONST k0
   EQ
   JZ stream_write_out
-  ; passive GROUP_WAIT — sink сообщает планировщику, что окно
+  ; Пассивное GROUP_WAIT: приёмник сообщает планировщику, что окно
   ; неблокирующих операций исчерпано, и сбрасывает его на 7.
   LOAD v_group_waits
   PUSH_CONST k1
@@ -2230,10 +2896,56 @@ stream_write_byte:
   PUSH_CONST k7
   STORE v_stream_window
 stream_write_out:
-  PUSH_CONST k1
-  SET_PORT
   LOAD v_stream_ch
-  OUT
+  LOAD v_sink
+  PUSH_CONST k1
+  EQ
+  JZ stream_write_control
+  CALL data_stream_write_byte, 1
+  POP
+  PUSH_CONST k0
+  LEAVE
+  RETF
+stream_write_control:
+  PIPE_OUT
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+; =====================================================================
+; data_stream_write_byte(byte) / data_stream_flush()
+; Отдельный пассивный канал данных. Для RemoteTasks SimplePipe это
+; быстрее и ближе к реальному FTP, чем отправлять каждый байт через
+; control[0] SyncSend: байты копятся в outbox, затем отправляются
+; одной операцией Sending.
+; =====================================================================
+data_stream_write_byte:
+  STORE v_stream_ch
+  ENTER 0
+  LOAD v_data_len
+  LOAD v_stream_ch
+  DATA_BUF_BYTE
+  LOAD v_data_len
+  PUSH_CONST k1
+  ADD
+  STORE v_data_len
+  LOAD v_data_len
+  PUSH_CONST k512
+  EQ
+  JZ data_stream_write_done
+  CALL data_stream_flush, 0
+  POP
+data_stream_write_done:
+  PUSH_CONST k0
+  LEAVE
+  RETF
+
+data_stream_flush:
+  ENTER 0
+  LOAD v_data_len
+  DATA_FLUSH
+  PUSH_CONST k0
+  STORE v_data_len
   PUSH_CONST k0
   LEAVE
   RETF

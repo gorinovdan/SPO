@@ -1,62 +1,54 @@
-# SPO8 — Btrfs reader through PASSIVE FTP
+# SPO8 — Btrfs через RemoteTasks VmDevices
 
-Практическое задание №3, вариант 4 — `Btrfs`. Реализовано в рамках комплекса SPO1–SPO7.
+Практическое задание № 3, вариант 4 — `Btrfs`.
 
-## Что реализовано
+SPO8 поднимает FTP-сервер внутри VM, запущенной через `Portable.RemoteTasks.Manager.exe` и `VmDevices`. Образ — настоящий Btrfs-файл `spo8_btrfs_block.img`, который собирается из дерева `SPO8` через `mkfs.btrfs`, `mount`, копирование и `umount`.
 
-- [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm) — VM-программа: держит тестовый Btrfs-образ в `data_mem`, проверяет superblock, обходит FS tree, отдаёт ответы по FTP.
-- Команды PASSIVE FTP: `SYST`, `NOOP`, `HELP`, `PASV`, `TYPE`, `PWD`, `LIST`, `CWD`, `RETR`, `COPY`, `QUIT`.
-- Каталоги/файлы извлекаются из Btrfs-структур: superblock magic, root tree/FS tree references, compact FS-tree leaf с `DIR_ITEM`, `INODE_ITEM` и inline `EXTENT_DATA`.
-- Вывод идёт через единый sink `stream_write_byte` — та же модель `synchronous non-blocking + GROUP-WAIT`, что и в [SPO7](../SPO7/README.md).
-- Негативный путь «FS не поддерживается» — отдельный тест [tests/btrfs_unsupported.asm](tests/btrfs_unsupported.asm).
-- Python используется только как ассемблер/интерпретатор VM (наследие [SPO3](../SPO3/README.md)) и валидатор stdout. Логика Btrfs/FTP/stream живёт в ASM/VM.
+## Основной контур
 
-## Структура каталога
-
-- [tests/btrfs_ftp_demo.asm](tests/btrfs_ftp_demo.asm) — основной runtime Btrfs/FTP.
-- [tests/btrfs_ftp_commands.txt](tests/btrfs_ftp_commands.txt) — input byte stream для локальной VM (ASCII-коды по одному на строку).
-- [tests/btrfs_ftp_commands.remote.txt](tests/btrfs_ftp_commands.remote.txt) — тот же сценарий для RemoteTasks `ExecuteBinaryWithInput` обычным текстом.
-- [tests/btrfs_unsupported.asm](tests/btrfs_unsupported.asm) — негативный сценарий с искажённым magic.
-- [tools/check_btrfs_ftp_output.py](tools/check_btrfs_ftp_output.py) — валидатор основного stdout.
-- [tools/check_btrfs_unsupported.py](tools/check_btrfs_unsupported.py) — валидатор негативного stdout.
-- [spo8.target.pdsl](spo8.target.pdsl), [devices.xml](devices.xml) — VM-таргет с инструкциями `INDEXB / LOADB_IND / STOREB_IND` и устройствами таймера/PIC из SPO7.
-- [results/](results/) — закреплённые stdout-эталоны.
-- [docs/btrfs_image.md](docs/btrfs_image.md) — описание тестового образа и соответствие реальному Btrfs.
-- [Validation.md](Validation.md) — команды воспроизведения.
-- [report.md](report.md) — отчёт по 6 пунктам задания.
+- `tools/prepare_btrfs_image.sh` создаёт Btrfs-образ каталога `SPO8`.
+- `tools/gen_btrfs_ftp_asm.py` строит индекс `INODE_ITEM`/`DIR_ITEM`/`EXTENT_DATA` из дампа дерева настоящего образа.
+- `tests/btrfs_ftp_demo.asm` реализует FTP-команды, проверку суперблока и чтение файлов через `BlockDevice`.
+- `devices.xml` запускает сценарий через stdio `SimplePipe`.
+- `devices_filezilla.xml` подключает VM к внутренним портам FTP-адаптера и к `BlockDevice`.
+- `tools/ftp_data_adapter.c` принимает внешний FTP control-порт `127.0.0.1:2121`, пассивный data-порт `127.0.0.1:2020` и последовательно прокидывает команды в FTP-сервер VM; это не сервер Btrfs и не источник файловых данных.
 
 ## Запуск
 
-Локальная VM (быстро, без удалённого окружения):
-
 ```bash
-make -C SPO8 local-demo          # основной FTP-сценарий
-make -C SPO8 local-unsupported   # негативный путь — FS не поддерживается
-```
-
-Удалённая VM (RemoteTasks через `tools/run_remote.sh`; используется прямой host/port transport `5.19.208.160:10001`, stdout не подменяется эталоном):
-
-```bash
+make -C SPO8 local-demo
 make -C SPO8 remote-demo
 make -C SPO8 remote-unsupported
+make -C SPO8 remote-ftp-smoke
 ```
 
-Интерактивный запуск через RemoteTasks:
+Ручной запуск для FileZilla:
 
 ```bash
-make -C SPO8 remote-interactive
+make -C SPO8 remote-filezilla
 ```
 
-Цель запускает `ExecuteBinaryWithInteractiveInput`: после баннера можно вручную вводить `PWD`, `LIST`, `CWD docs`, `RETR info.txt`, `COPY docs`, `QUIT`. В начале запуска дополнительно печатается свежая запись RemoteTasks с `id` задачи; из другого терминала её можно обновить командой:
+Параметры FileZilla:
 
-```bash
-make -C SPO8 remote-tasks
+```text
+Хост: 127.0.0.1
+Порт: 2121
+Протокол: FTP
+Шифрование: только обычный FTP без TLS
+Тип входа: анонимный
+Режим передачи: пассивный
+Timeout: 120 секунд или больше
 ```
 
-Ожидаемый вывод основного сценария — см. [results/btrfs_ftp_demo.stdout.txt](results/btrfs_ftp_demo.stdout.txt).
+Проверенный файл для скачивания: `/SPO8/demo/small.txt`.
+`/SPO8/report.md` также проверен: VM читает его из `BlockDevice`
+порциями по 512 байт и отдаёт через пассивный FTP-поток. Повторные
+control-подключения FileZilla принимает C-адаптер, поэтому открытие файла
+не зависает на ожидании второго `220`.
 
-## Как читается образ
+## Что смотреть
 
-Контракт `btrfs_mount`: совпадение magic `_BHRfS_M`, `nodesize == 4096`, `root_dir_objectid > 0`. При нарушении — `500 unsupported filesystem` и выход без входа в FTP-цикл (пункт 1 общего алгоритма задания).
-
-Дальше команды разбираются `dispatch_command`, сканируют таблицы FS-tree leaf (`img_dirent_*`, `img_inode_*`, `img_extent_*`) через `INDEX / LOAD_IND` и читают строковые/inline-данные через байтовые операции `INDEXB / LOADB_IND`. Все ответы пишутся через единый sink `stream_write_byte`. Sink ведёт `v_stream_bytes`, фиксирует `v_group_waits` каждые 7 байт — наследие stream-модели SPO7.
+- [report.md](report.md) — полный отчёт по заданию.
+- [Validation.md](Validation.md) — команды проверки.
+- [docs/btrfs_image.md](docs/btrfs_image.md) — как собирается и индексируется Btrfs-образ.
+- [spo8.target.pdsl](spo8.target.pdsl) — инструкции `PIPE_IN`, `PIPE_OUT`, `DATA_BUF_BYTE`, `DATA_FLUSH`, `DATA_COPY_BLOCK`, `BLOCK_READ_BYTE`, `BLOCK_READ_BUF`, `BLOCK_BUF_BYTE`, `BLOCK_WRITE_BYTE`.

@@ -2,7 +2,7 @@ architecture vm32 {
 
     registers:
 
-        // Visible registers
+        // Видимые регистры процессора.
         storage ip_s[32];
         storage sp_s[32];
         storage bp_s[32];
@@ -13,7 +13,7 @@ architecture vm32 {
         view bp = bp_s;
         view io = io_s;
 
-        // Runtime state (initialized by loader)
+        // Состояние времени выполнения, инициализируется загрузчиком.
         storage dbp_s[32];
         storage df_size_s[32];
         storage csp_s[32];
@@ -22,15 +22,15 @@ architecture vm32 {
         view df_size = df_size_s;
         view csp = csp_s;
 
-        // IO latches
+        // Защёлки ввода-вывода для базовых инструкций IN/OUT.
         storage rin_s[32];
         storage rout_s[32];
 
         view rin = rin_s;
         view rout = rout_s;
 
-        // Saved interrupted context (sp/bp/dbp/csp saved in software on IRQ entry).
-        // irq_ip lives in pic_state:4[0] (InterruptedInstructionAddress), set by PIC.
+        // Сохранённый контекст прерывания: sp/bp/dbp/csp сохраняются программно.
+        // irq_ip хранится в pic_state:4[0] (InterruptedInstructionAddress), его задаёт PIC.
         storage irq_sp_s[32];
         storage irq_bp_s[32];
         storage irq_dbp_s[32];
@@ -41,7 +41,7 @@ architecture vm32 {
         view irq_dbp = irq_dbp_s;
         view irq_csp = irq_csp_s;
 
-        // Dedicated kernel context used on timer interrupt entry
+        // Отдельный контекст ядра, используемый при входе в прерывание таймера.
         storage ksp_s[32];
         storage kbp_s[32];
         storage kdbp_s[32];
@@ -52,7 +52,7 @@ architecture vm32 {
         view kdbp = kdbp_s;
         view kcsp = kcsp_s;
 
-        // sp/bp/csp are byte offsets; word size is 4
+        // sp/bp/csp являются байтовыми смещениями; размер машинного слова равен 4.
 
     memory:
 
@@ -74,7 +74,7 @@ architecture vm32 {
             granularity = 0;
         }
 
-        // data_meta[addr] holds item size in bytes (0 => word size)
+        // data_meta[addr] хранит размер элемента в байтах; 0 означает размер слова.
         range data_meta [0x00000000 .. 0xffffffff] {
             cell = 8;
             endianess = little-endian;
@@ -87,29 +87,90 @@ architecture vm32 {
             granularity = 0;
         }
 
-        // Call frames: [return_ip, bp, dbp] packed as words
+        // Кадры вызовов: [return_ip, bp, dbp], упакованные словами.
         range call_stack [0x00000000 .. 0xffffffff] {
             cell = 8;
             endianess = little-endian;
             granularity = 0;
         }
 
-        // External SimplePic state bank (InterruptedInstructionAddress, InterruptsAllowed, ...).
+        // Внешний банк состояния SimplePic: InterruptedInstructionAddress, InterruptsAllowed и т. д.
         range pic_state [0x00000000 .. 0x00000030] {
             cell = 8;
             endianess = little-endian;
             granularity = 0;
         }
 
-        // External SimplePic handlers table; entry k at offset k*4 holds handler ip.
+        // Внешняя таблица обработчиков SimplePic; запись k по смещению k*4 хранит ip обработчика.
         range pic_handlers [0x00000000 .. 0x00000100] {
             cell = 8;
             endianess = little-endian;
             granularity = 0;
         }
 
-        // External SimpleClock state bank (Ticks, Cycles, CyclesSignalPeriod, ...).
+        // Внешний банк состояния SimpleClock: Ticks, Cycles, CyclesSignalPeriod и т. д.
         range clock_state [0x00000000 .. 0x00000048] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        // Внешний SimplePipe из devices.xml. Через него RemoteTasks передаёт
+        // байтовый поток FTP-команд и ответов.
+        range pipe_control [0x00000000 .. 0x00000048] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range pipe_inbox [0x00000000 .. 0x00000800] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range pipe_outbox [0x00000000 .. 0x00000800] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        // Пассивный канал данных FTP. В режиме FileZilla файл devices_filezilla.xml
+        // связывает его с локальным FTP-адаптером; адаптер открывает PASV-порт
+        // и закрывает сокет после каждой передачи для настоящих FTP-клиентов.
+        range data_pipe_control [0x00000000 .. 0x00000048] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range data_pipe_inbox [0x00000000 .. 0x00000800] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range data_pipe_outbox [0x00000000 .. 0x00000800] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        // Внешний BlockDevice из devices.xml. Это путь BackDevice в RemoteTasks
+        // для чтения и записи образа.
+        range block_control [0x00000000 .. 0x00000024] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range block_buffer [0x00000000 .. 0x00001000] {
+            cell = 8;
+            endianess = little-endian;
+            granularity = 0;
+        }
+
+        range block_error [0x00000000 .. 0x00000400] {
             cell = 8;
             endianess = little-endian;
             granularity = 0;
@@ -126,8 +187,8 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // Data movement and constants
-        // const_id is a byte address in const_pool
+        // Перемещение данных и константы.
+        // const_id является байтовым адресом в const_pool.
         instruction push-const = { 0000 0001, const32 as const_id } {
             let value = const_pool:4[const_id];
             stack_mem:4[sp] = value;
@@ -194,8 +255,8 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // Arithmetic and logic
-        // Runtime concatenates strings if any operand is a string
+        // Арифметика и логика.
+        // Среда выполнения склеивает строки, если хотя бы один операнд является строкой.
         instruction add = { 0000 1000 } {
             sp = sp - 4;
             let b = stack_mem:4[sp];
@@ -358,7 +419,7 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // Control flow
+        // Управление потоком исполнения.
         instruction jmp = { 0001 0110, code32 as target } {
             ip = target;
         };
@@ -372,7 +433,7 @@ architecture vm32 {
                 ip = ip + 5;
         };
 
-        // Negative targets are builtins (print/printf/read)
+        // Отрицательные адреса вызовов считаются встроенными операциями print/printf/read.
         instruction call = { 0001 1000, imm32 as target, imm32 as argc } {
             if target < 0 then {
                 let i = 0;
@@ -441,7 +502,7 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // Indexing
+        // Индексация.
         instruction range-op = { 0001 1100 } {
             sp = sp - 4;
             let end = stack_mem:4[sp];
@@ -463,7 +524,7 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // IO
+        // Ввод-вывод.
         instruction set-port = { 0001 1110 } {
             sp = sp - 4;
             io = stack_mem:4[sp];
@@ -487,10 +548,11 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // System control
-        // sys_id layout (timer/quantum/intvec/intr_enabled/intr_active slots removed —
-        // they were emulation-only; timer now lives in SimpleClock, enable flag in PIC):
-        //  5 irq_ip   (aliased to pic_state:4[0] = InterruptedInstructionAddress)
+        // Системное управление.
+        // Схема sys_id. Слоты timer/quantum/intvec/intr_enabled/intr_active удалены:
+        // они относились только к локальной эмуляции; таймер теперь живёт в SimpleClock,
+        // а флаг разрешения прерываний — в PIC.
+        //  5 irq_ip   (псевдоним для pic_state:4[0] = InterruptedInstructionAddress)
         //  6 irq_sp, 7 irq_bp, 8 irq_dbp, 9 irq_csp
         // 10 ksp,   11 kbp,  12 kdbp,    13 kcsp
         // 14 ip,    15 sp,   16 bp,      17 dbp,  18 csp, 19 df_size
@@ -557,7 +619,7 @@ architecture vm32 {
             ip = ip + 5;
         };
 
-        // ei / di toggle PIC InterruptsAllowed (pic_state:4[12]).
+        // ei/di переключают флаг PIC InterruptsAllowed (pic_state:4[12]).
         instruction ei-op = { 0010 0100 } {
             pic_state:4[12] = 1;
             ip = ip + 1;
@@ -568,8 +630,8 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // IRET restores the user-context registers saved on IRQ entry (by irq-enter),
-        // reloads ip from PIC's InterruptedInstructionAddress, and re-enables interrupts.
+        // IRET восстанавливает регистры пользовательского контекста, сохранённые irq-enter,
+        // загружает ip из PIC InterruptedInstructionAddress и снова разрешает прерывания.
         instruction iret-op = { 0010 0110 } {
             sp = irq_sp;
             bp = irq_bp;
@@ -582,9 +644,9 @@ architecture vm32 {
                 pic_state:4[12] = 1;
         };
 
-        // IRQ entry trampoline: atomically saves user context into irq_* and
-        // switches the CPU to kernel sp/bp/dbp/csp. The PIC has already stored
-        // user ip into pic_state:4[0] before jumping to the handler.
+        // Трамплин входа в IRQ: атомарно сохраняет пользовательский контекст в irq_*
+        // и переключает CPU на регистры ядра sp/bp/dbp/csp. PIC уже сохранил пользовательский
+        // ip в pic_state:4[0] перед переходом к обработчику.
         instruction irq-enter = { 0010 1000 } {
             irq_sp = sp;
             irq_bp = bp;
@@ -597,7 +659,7 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // Program SimpleClock CyclesSignalPeriod from stack top (8-byte register).
+        // Настройка SimpleClock CyclesSignalPeriod значением с вершины стека.
         instruction set-period = { 0010 1001 } {
             sp = sp - 4;
             let period = stack_mem:4[sp];
@@ -613,8 +675,8 @@ architecture vm32 {
             ip = ip + 1;
         };
 
-        // Install a handler for PIC interrupt id `slot` into pic_handlers[slot*4].
-        // Takes handler code address as immediate operand.
+        // Установка обработчика для прерывания PIC в pic_handlers[slot*4].
+        // Адрес кода обработчика передаётся непосредственным операндом.
         instruction set-cycles-handler = { 0010 1010, code32 as handler } {
             pic_state:4[8] = 4;
             pic_state:4[16] = 1;
@@ -622,7 +684,7 @@ architecture vm32 {
             ip = ip + 5;
         };
 
-        // Byte-oriented addressing used by SPO8 Btrfs image inspection.
+        // Байтовая адресация, используемая при инспектировании Btrfs-образа в SPO8.
         instruction index-byte-op = { 0010 1011 } {
             sp = sp - 4;
             let idx = stack_mem:4[sp];
@@ -651,6 +713,127 @@ architecture vm32 {
             data_mem:1[addr] = value;
             ip = ip + 1;
         };
+
+        // Синхронные приём и отправка байта через SimplePipe.
+        // По vm-devices.pdf control[8] — SyncReceive, control[0] — SyncSend.
+        instruction pipe-in-op = { 0010 1110 } {
+            let value = pipe_control:1[8];
+            stack_mem:4[sp] = value;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction pipe-out-op = { 0010 1111 } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            pipe_control:1[0] = value;
+            ip = ip + 1;
+        };
+
+        instruction data-out-op = { 0011 0010 } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            data_pipe_control:1[0] = value;
+            ip = ip + 1;
+        };
+
+        instruction data-buf-byte-op = { 0011 0011 } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            sp = sp - 4;
+            let dataOffset = stack_mem:4[sp];
+            data_pipe_outbox:1[dataOffset] = value;
+            ip = ip + 1;
+        };
+
+        instruction data-flush-op = { 0011 0100 } {
+            sp = sp - 4;
+            let length = stack_mem:4[sp];
+            if length > 0 then {
+                data_pipe_control:4[24] = 0;
+                data_pipe_control:4[28] = length;
+                data_pipe_control:1[56] = 0;
+                data_pipe_control:1[60] = 1;
+            }
+            ip = ip + 1;
+        };
+
+        // Синхронные чтение и запись одного байта через BlockDevice. В ABI устройства
+        // позиция 64-битная; SPO8 использует младшие 32 бита и обнуляет старшую половину.
+        instruction block-read-byte-op = { 0011 0000 } {
+            sp = sp - 4;
+            let position = stack_mem:4[sp];
+            block_control:4[0] = position;
+            block_control:4[4] = 0;
+            block_control:4[8] = 1;
+            block_control:1[16] = 0;
+            block_control:1[20] = 1;
+            let value = block_buffer:1[0];
+            stack_mem:4[sp] = value;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        instruction block-write-byte-op = { 0011 0001 } {
+            sp = sp - 4;
+            let value = stack_mem:4[sp];
+            sp = sp - 4;
+            let position = stack_mem:4[sp];
+            block_buffer:1[0] = value;
+            block_control:4[0] = position;
+            block_control:4[4] = 0;
+            block_control:4[8] = 1;
+            block_control:1[16] = 0;
+            block_control:1[24] = 1;
+            ip = ip + 1;
+        };
+
+        // Чтение диапазона в буфер BlockDevice. Это стандартный режим
+        // BackDevice/read из vm-devices.pdf: Position + Length + Reading.
+        instruction block-read-buf-op = { 0011 0101 } {
+            sp = sp - 4;
+            let length = stack_mem:4[sp];
+            sp = sp - 4;
+            let position = stack_mem:4[sp];
+            block_control:4[0] = position;
+            block_control:4[4] = 0;
+            block_control:4[8] = length;
+            block_control:1[16] = 0;
+            block_control:1[20] = 1;
+            ip = ip + 1;
+        };
+
+        // Получение одного байта из буфера, заполненного block-read-buf-op.
+        instruction block-buf-byte-op = { 0011 0110 } {
+            sp = sp - 4;
+            let bufIndex = stack_mem:4[sp];
+            let value = block_buffer:1[bufIndex];
+            stack_mem:4[sp] = value;
+            sp = sp + 4;
+            ip = ip + 1;
+        };
+
+        // Быстрое копирование уже прочитанного диапазона BlockDevice в
+        // outbox пассивного SimplePipe. Так RETR не тратит одну VM-команду
+        // на каждый байт файла: потоковая семантика остаётся, но пересылка
+        // выполняется порцией BackDevice/read -> FSPipe/write.
+        instruction data-copy-block-op = { 0011 0111 } {
+            sp = sp - 4;
+            let length = stack_mem:4[sp];
+            let copyIndex = 0;
+            while copyIndex < length do {
+                data_pipe_outbox:1[copyIndex] = block_buffer:1[copyIndex];
+                copyIndex = copyIndex + 1;
+            }
+            if length > 0 then {
+                data_pipe_control:4[24] = 0;
+                data_pipe_control:4[28] = length;
+                data_pipe_control:1[56] = 0;
+                data_pipe_control:1[60] = 1;
+            }
+            ip = ip + 1;
+        };
+
 
     mnemonics:
 
@@ -705,5 +888,15 @@ architecture vm32 {
         mnemonic indexb for index-byte-op () "";
         mnemonic loadb_ind for load-byte-ind () "";
         mnemonic storeb_ind for store-byte-ind () "";
+        mnemonic pipe_in for pipe-in-op () "";
+        mnemonic pipe_out for pipe-out-op () "";
+        mnemonic block_read_byte for block-read-byte-op () "";
+        mnemonic block_write_byte for block-write-byte-op () "";
+        mnemonic data_out for data-out-op () "";
+        mnemonic data_buf_byte for data-buf-byte-op () "";
+        mnemonic data_flush for data-flush-op () "";
+        mnemonic block_read_buf for block-read-buf-op () "";
+        mnemonic block_buf_byte for block-buf-byte-op () "";
+        mnemonic data_copy_block for data-copy-block-op () "";
 
 }

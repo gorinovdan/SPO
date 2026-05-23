@@ -36,7 +36,7 @@ typedef enum {
 	AST_MEMBER_ACCESS,
 
 	AST_UMINUS,
-	// AST_NOT (!) can be added
+	// При необходимости можно добавить AST_NOT (!).
 
 	AST_ASSIG_EQUAL,
 	AST_MUL,

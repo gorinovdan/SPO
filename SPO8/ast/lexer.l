@@ -8,10 +8,10 @@
 #include "ast.h"
 #include "parser.tab.h"
 
-extern YYLTYPE yylloc;  /* Bison location for current token */
-int yycolumn = 1;       /* column number (1-based) */
+extern YYLTYPE yylloc;  /* Позиция текущего токена для Bison. */
+int yycolumn = 1;       /* Номер колонки, начиная с 1. */
 
-/* helper to fill yylloc and advance column */
+/* Вспомогательная функция для заполнения yylloc и сдвига колонки. */
 #define SET_YYLOC do {                       \
     yylloc.first_line   = yylineno;          \
     yylloc.first_column = yycolumn;          \
@@ -116,9 +116,9 @@ newline             [\n]
 "%"					{ SET_YYLOC; return('%'); }
 "/"					{ SET_YYLOC; return('/'); }
 
-{newline}           { yycolumn = 1; /* newline — reset column */ }
+{newline}           { yycolumn = 1; /* Новая строка сбрасывает колонку. */ }
 
-{tabulation}		{ yycolumn += yyleng; /* spaces update column only */ }
+{tabulation}		{ yycolumn += yyleng; /* Пробельные символы только двигают колонку. */ }
 .					{ SET_YYLOC; showError(); return(OTHER);}
 
 %%

@@ -1,4 +1,4 @@
-.PHONY: build asm remote-demo remote-unsupported remote-interactive remote-tasks local-demo local-unsupported probe-timer clean
+.PHONY: build prepare-image asm remote-demo remote-unsupported remote-interactive remote-filezilla remote-ftp-smoke remote-ftp-report-smoke remote-tasks local-demo local-unsupported probe-timer clean
 
 build:
 	cd ./ast && flex -l ./lexer.l
@@ -6,12 +6,15 @@ build:
 	gcc -g -O0 -o ./app ./main.c ./ast/ast_maker.c ./analysis/ir.c ./cfg/cfg.c \
 	./codegen/linear_code.c ./ast/parser.tab.c ./ast/lex.yy.c ./ast/ast.c ./view/dgml.c ./view/cfg_dgml.c
 
-asm:
-	cp ./tests/btrfs_ftp_demo.asm ./results/btrfs_ftp_demo.asm
+prepare-image:
+	./tools/prepare_btrfs_image.sh
+
+asm: prepare-image
+	python3 ./tools/gen_btrfs_ftp_asm.py --template ./tests/btrfs_ftp_demo.asm --chunk ./results/btrfs_real_chunk.txt --tree ./results/btrfs_real_tree.txt --output ./results/btrfs_ftp_demo.asm
 	cp ./tests/btrfs_unsupported.asm ./results/btrfs_unsupported.asm
 
 remote-demo: asm
-	./tools/run_remote.sh ./results/btrfs_ftp_demo.asm ./tests/btrfs_ftp_commands.remote.txt exec ./results/btrfs_ftp_demo.ptptb ./results/btrfs_ftp_demo.stdout.txt ./results/btrfs_ftp_demo.trace.txt
+	RT_TIMEOUT=420 ./tools/run_remote.sh ./results/btrfs_ftp_demo.asm ./tests/btrfs_ftp_commands.remote.txt exec ./results/btrfs_ftp_demo.ptptb ./results/btrfs_ftp_demo.stdout.txt ./results/btrfs_ftp_demo.trace.txt
 	python3 ./tools/check_btrfs_ftp_output.py ./results/btrfs_ftp_demo.stdout.txt
 
 remote-unsupported: asm
@@ -21,12 +24,23 @@ remote-unsupported: asm
 remote-interactive: asm
 	./tools/run_remote_interactive.sh ./results/btrfs_ftp_demo.asm ./results/btrfs_ftp_demo.ptptb
 
+remote-filezilla: asm
+	@printf '%s\n' 'Запуск FTP-сервера RemoteTasks для FileZilla: host 127.0.0.1, управляющий порт 2121, пассивный порт данных 2020.'
+	./tools/run_remote_filezilla.sh ./results/btrfs_ftp_demo.asm ./results/btrfs_ftp_demo.ptptb
+
+remote-ftp-smoke: asm
+	./tools/check_remote_ftp_client.sh
+
+remote-ftp-report-smoke: asm
+	./tools/check_remote_ftp_report.sh
+
 remote-tasks:
 	./tools/run_remote_interactive.sh --list
 
 local-demo:
-	python3 ./tools/asm.py -s ./vm/spec.json -i ./tests/btrfs_ftp_demo.asm -o ./results/btrfs_ftp_demo.local.ptptb
-	python3 ./tools/vm.py -s ./vm/spec.json -i ./results/btrfs_ftp_demo.local.ptptb --max-steps 200000 < ./tests/btrfs_ftp_commands.txt > ./results/btrfs_ftp_demo.local.stdout.txt
+	$(MAKE) asm
+	python3 ./tools/asm.py -s ./vm/spec.json -i ./results/btrfs_ftp_demo.asm -o ./results/btrfs_ftp_demo.local.ptptb
+	python3 ./tools/vm.py -s ./vm/spec.json -i ./results/btrfs_ftp_demo.local.ptptb --block-image ./spo8_btrfs_block.img --max-steps 10000000 < ./tests/btrfs_ftp_commands.remote.txt > ./results/btrfs_ftp_demo.local.stdout.txt
 	python3 ./tools/check_btrfs_ftp_output.py ./results/btrfs_ftp_demo.local.stdout.txt
 
 local-unsupported:
@@ -39,4 +53,7 @@ probe-timer:
 
 clean:
 	rm -f ./app ./app.exe
+	rm -f ./spo8_btrfs_block.img
+	rm -f ./results/ftp_data_adapter ./results/ftp_data_adapter.log ./results/remote_filezilla_*
+	rm -f ./results/btrfs_real_super.txt ./results/btrfs_real_chunk.txt ./results/btrfs_real_tree.txt ./results/btrfs_source_files.txt
 	rm -rf ./app.dSYM

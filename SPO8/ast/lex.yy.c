@@ -588,10 +588,10 @@ char *yytext_ptr;
 #include "ast.h"
 #include "parser.tab.h"
 
-extern YYLTYPE yylloc;  /* Bison location for current token */
-int yycolumn = 1;       /* column number (1-based) */
+extern YYLTYPE yylloc;  /* Позиция текущего токена для Bison. */
+int yycolumn = 1;       /* Номер колонки, начиная с 1. */
 
-/* helper to fill yylloc and advance column */
+/* Вспомогательная функция для заполнения yylloc и сдвига колонки. */
 #define SET_YYLOC do {                       \
     yylloc.first_line   = yylineno;          \
     yylloc.first_column = yycolumn;          \
@@ -1188,12 +1188,12 @@ case 59:
 /* rule 59 can match eol */
 YY_RULE_SETUP
 #line 119 "./lexer.l"
-{ yycolumn = 1; /* newline — reset column */ }
+{ yycolumn = 1; /* Новая строка сбрасывает колонку. */ }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
 #line 121 "./lexer.l"
-{ yycolumn += yyleng; /* spaces update column only */ }
+{ yycolumn += yyleng; /* Пробельные символы только двигают колонку. */ }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP

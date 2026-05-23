@@ -7,6 +7,7 @@ ROOT_DIR=$(CDPATH= cd -- "$PROJECT_DIR/.." && pwd)
 
 EXE="$ROOT_DIR/tools/Portable.RemoteTasks.Manager.exe"
 TARGET_FILE="$PROJECT_DIR/spo8.target.pdsl"
+DEVICES_FILE="${RT_DEVICES_FILE:-$PROJECT_DIR/devices.xml}"
 ARCH="${RT_ARCH:-vm32}"
 LOGIN="${RT_LOGIN:-338960}"
 PASSWORD="${RT_PASSWORD:-550fdf73-65b4-4e66-a0b6-6579cb1336a4}"
@@ -20,18 +21,18 @@ export Portable_RemoteTasks_Manager_Login="$LOGIN"
 export Portable_RemoteTasks_Manager_Password="$PASSWORD"
 
 if ! command -v mono >/dev/null 2>&1; then
-    echo "mono not found; install Mono to run Portable.RemoteTasks.Manager.exe" >&2
+    echo "mono не найден; установите Mono для запуска Portable.RemoteTasks.Manager.exe" >&2
     exit 1
 fi
 
 if [ ! -f "$EXE" ]; then
-    echo "RemoteTasks executable not found: $EXE" >&2
+    echo "Исполняемый файл RemoteTasks не найден: $EXE" >&2
     exit 1
 fi
 
 rt_manager() {
-    # RT_REMOTE_FLAGS is intentionally word-split: callers may pass
-    # several CLI switches, e.g. "-ws -wsslib" or "-sh host -sp 10001 -okssl".
+    # RT_REMOTE_FLAGS намеренно разбивается shell на слова: так можно передать
+    # несколько ключей CLI, например "-ws -wsslib" или "-sh host -sp 10001 -okssl".
     mono "$EXE" $RT_REMOTE_FLAGS "$@"
 }
 
@@ -48,7 +49,7 @@ run_with_timeout() {
             sleep 1
             kill -9 "$pid" 2>/dev/null || true
             wait "$pid" 2>/dev/null || true
-            echo "RemoteTasks command timed out after ${RT_TIMEOUT}s: $*" >&2
+            echo "Команда RemoteTasks превысила лимит ${RT_TIMEOUT} с: $*" >&2
             if [ -s "$out_file" ]; then
                 cat "$out_file" >&2
             fi
@@ -63,7 +64,7 @@ run_with_timeout() {
 print_recent_interactive_task() {
     rt_manager -l "$RT_TASK_LIST_RANGE" | awk '
         BEGIN { keep = 0; printed = 0 }
-        /^[0-9]+: task ExecuteBinaryWithInteractiveInput id / && printed == 0 {
+        /^[0-9]+: task ExecuteBinaryWithIo id / && printed == 0 {
             keep = 1
             printed = 1
             print
@@ -107,7 +108,7 @@ ASM_OUTPUT=$(cat "$ASM_OUTPUT_FILE")
 ASM_ID=$(printf '%s' "$ASM_OUTPUT" | grep -Eo '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' | head -n 1)
 
 if [ -z "$ASM_ID" ]; then
-    echo "Assemble task failed" >&2
+    echo "Задача Assemble завершилась с ошибкой" >&2
     exit 1
 fi
 
@@ -119,22 +120,29 @@ run_with_timeout "$GET_OUTPUT_FILE" \
 
 echo "assemble=$ASM_ID" >&2
 echo "binary=$BIN_FILE" >&2
-echo "RemoteTasks interactive task will be listed below after startup." >&2
-echo "Wait for 'RemoteTasks task entry' if you need to show the task id." >&2
-echo "Then type FTP commands: PWD, LIST, CWD docs, RETR info.txt, COPY docs, QUIT." >&2
+echo "devices=$DEVICES_FILE" >&2
+echo "Задача RemoteTasks ExecuteBinaryWithIo с pipe будет показана ниже после запуска." >&2
+echo "Дождитесь строки 'Запись задачи RemoteTasks', если нужно показать id задачи." >&2
+if [ "$(basename -- "$DEVICES_FILE")" = "devices_filezilla.xml" ]; then
+    echo "Подключите FTP-клиент к 127.0.0.1:2121: обычный FTP без TLS, пассивный режим. PASV-порт данных: 2020." >&2
+    echo "Управляющий SimplePipe VM подключён к внутреннему порту адаптера 3121; повторные control-сеансы FileZilla принимает адаптер." >&2
+    echo "Для больших файлов задайте timeout FileZilla не меньше 120 секунд." >&2
+else
+    echo "Затем вводите FTP-команды через SimplePipe: USER anonymous, PASS x, PWD, LIST, CWD docs, RETR info.txt, COPY docs, QUIT." >&2
+fi
 echo >&2
 
 (
     sleep "$RT_TASK_ID_DELAY"
     echo >&2
-    echo "RemoteTasks task entry:" >&2
+    echo "Запись задачи RemoteTasks:" >&2
     print_recent_interactive_task >&2 || true
-    echo "Use 'make remote-tasks' in another terminal to refresh the task id/state." >&2
+    echo "Для обновления id/состояния задачи выполните 'make remote-tasks' в другом терминале." >&2
     echo >&2
 ) &
 TASK_LIST_PID=$!
 
-rt_manager -il -s ExecuteBinaryWithInteractiveInput \
+rt_manager -ip -s ExecuteBinaryWithIo \
     stdinRegStName rin_s \
     stdoutRegStName rout_s \
     definitionFile "$TARGET_FILE" \
@@ -142,7 +150,8 @@ rt_manager -il -s ExecuteBinaryWithInteractiveInput \
     binaryFileToRun "$BIN_FILE" \
     codeRamBankName code \
     ipRegStorageName ip_s \
-    finishMnemonicName ret
+    finishMnemonicName ret \
+    devices.xml "$DEVICES_FILE"
 RUN_STATUS=$?
 
 wait "$TASK_LIST_PID" 2>/dev/null || true

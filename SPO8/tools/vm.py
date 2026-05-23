@@ -62,7 +62,7 @@ def parse_binary(path, spec_by_opcode):
     off += 1
     _word_size = data[off]
     off += 1
-    off += 2  # reserved
+    off += 2  # зарезервировано
 
     const_count, off = read_u32(data, off)
     data_size, off = read_u32(data, off)
@@ -278,7 +278,7 @@ def frame_write_word(frame, addr, value):
     write_mem_word(frame.mem, addr, to_int(value))
 
 
-def run_vm(binary, spec, spec_by_opcode, max_steps, dump_state_path=None):
+def run_vm(binary, spec, spec_by_opcode, max_steps, dump_state_path=None, block_image_path=None):
     code = binary["code"]
     consts = binary["consts"]
     data_template = bytes(binary["data_mem"])
@@ -293,6 +293,13 @@ def run_vm(binary, spec, spec_by_opcode, max_steps, dump_state_path=None):
     bp = 0
     call_stack = []
     data_frames = [DataFrame(bytearray(data_template))]
+    if block_image_path:
+        with open(block_image_path, "rb") as f:
+            block_device = bytearray(f.read())
+    else:
+        block_device = bytearray(1024 * 1024)
+    block_buffer = bytearray(4096)
+    data_pipe_buffer = bytearray(2048)
     io_port = 0
     flat_data = False
     steps = 0
@@ -529,9 +536,77 @@ def run_vm(binary, spec, spec_by_opcode, max_steps, dump_state_path=None):
         elif mnemonic == "OUT":
             val = to_int(stack_pop())
             if io_port == 1:
-                # Port 1 models raw byte output from the VM.
+                # Порт 1 моделирует сырой байтовый вывод из VM.
                 sys.stdout.buffer.write(bytes([val & 0xFF]))
                 sys.stdout.buffer.flush()
+            ip += 1
+        elif mnemonic == "PIPE_IN":
+            raw = sys.stdin.buffer.read(1)
+            stack_push(raw[0] if raw else 0)
+            ip += 1
+        elif mnemonic == "PIPE_OUT":
+            val = to_int(stack_pop())
+            sys.stdout.buffer.write(bytes([val & 0xFF]))
+            sys.stdout.buffer.flush()
+            ip += 1
+        elif mnemonic == "DATA_OUT":
+            val = to_int(stack_pop())
+            sys.stdout.buffer.write(bytes([val & 0xFF]))
+            sys.stdout.buffer.flush()
+            ip += 1
+        elif mnemonic == "DATA_BUF_BYTE":
+            val = to_int(stack_pop())
+            pos = to_int(stack_pop())
+            if pos < 0:
+                raise ValueError("negative data pipe buffer offset")
+            if pos >= len(data_pipe_buffer):
+                data_pipe_buffer.extend(b"\x00" * (pos + 1 - len(data_pipe_buffer)))
+            data_pipe_buffer[pos] = val & 0xFF
+            ip += 1
+        elif mnemonic == "DATA_FLUSH":
+            length = to_int(stack_pop())
+            if length < 0:
+                raise ValueError("negative data pipe flush length")
+            sys.stdout.buffer.write(bytes(data_pipe_buffer[:length]))
+            sys.stdout.buffer.flush()
+            ip += 1
+        elif mnemonic == "BLOCK_READ_BYTE":
+            pos = to_int(stack_pop())
+            if pos < 0:
+                raise ValueError("negative block device offset")
+            stack_push(block_device[pos] if pos < len(block_device) else 0)
+            ip += 1
+        elif mnemonic == "BLOCK_WRITE_BYTE":
+            val = to_int(stack_pop())
+            pos = to_int(stack_pop())
+            if pos < 0:
+                raise ValueError("negative block device offset")
+            if pos >= len(block_device):
+                block_device.extend(b"\x00" * (pos + 1 - len(block_device)))
+            block_device[pos] = val & 0xFF
+            ip += 1
+        elif mnemonic == "BLOCK_READ_BUF":
+            length = to_int(stack_pop())
+            pos = to_int(stack_pop())
+            if pos < 0 or length < 0:
+                raise ValueError("negative block device range")
+            if length > len(block_buffer):
+                block_buffer.extend(b"\x00" * (length - len(block_buffer)))
+            data = bytes(block_device[pos:pos + length])
+            block_buffer[:length] = data + b"\x00" * (length - len(data))
+            ip += 1
+        elif mnemonic == "BLOCK_BUF_BYTE":
+            pos = to_int(stack_pop())
+            if pos < 0:
+                raise ValueError("negative block buffer offset")
+            stack_push(block_buffer[pos] if pos < len(block_buffer) else 0)
+            ip += 1
+        elif mnemonic == "DATA_COPY_BLOCK":
+            length = to_int(stack_pop())
+            if length < 0:
+                raise ValueError("negative data pipe block copy length")
+            sys.stdout.buffer.write(bytes(block_buffer[:length]))
+            sys.stdout.buffer.flush()
             ip += 1
         elif mnemonic == "POP_SYS":
             sys_id = operands[0]
@@ -553,12 +628,13 @@ def main():
     parser.add_argument("-i", "--input", required=True, help="Input .bin file")
     parser.add_argument("--max-steps", type=int, default=1000000, help="Max VM steps")
     parser.add_argument("--dump-state", help="Write final VM frame state to JSON")
+    parser.add_argument("--block-image", help="Path to BlockDevice image for local emulation")
     args = parser.parse_args()
 
     try:
         spec, by_opcode = load_spec(args.spec)
         binary = parse_binary(args.input, by_opcode)
-        return run_vm(binary, spec, by_opcode, args.max_steps, args.dump_state)
+        return run_vm(binary, spec, by_opcode, args.max_steps, args.dump_state, args.block_image)
     except Exception as exc:
         print(f"vm error: {exc}", file=sys.stderr)
         return 1

@@ -1,82 +1,39 @@
-SPO8 BTRFS FTP
-FS OK magic=_BHRfS_M root_dir=6 nodesize=4096
 220 SPO8 Btrfs image ready
-> SYST
 215 UNIX Type: L8
-> NOOP
 200 NOOP ok
-> HELP
 214-Supported commands:
-214 PASV PWD LIST CWD RETR COPY SYST NOOP HELP TYPE QUIT
-> PASV
-227 Entering Passive Mode (0,0,0,0,0,1)
-> TYPE I
+214 USER PASS FEAT OPTS PASV EPSV PWD LIST NLST CWD CDUP RETR SIZE MDTM COPY SYST NOOP HELP TYPE QUIT
+227 Entering Passive Mode (127,0,0,1,7,228)
 200 Type set
-> PWD
 257 "/"
-> LIST
 150 directory stream follows
-d 258 0 docs
-d 260 0 pictures
-f 257 19 readme.txt
 226 transfer complete
-> CWD docs
 250 CWD ok
-> PWD
-257 "/docs"
-> LIST
+257 "/SPO8"
 150 directory stream follows
-f 259 19 info.txt
-f 261 12 help.txt
 226 transfer complete
-> RETR info.txt
-150 inode=259 size=19 extent=inline
-BTRFS TREE WALK OK
-226 transfer complete
-> RETR help.txt
-150 inode=261 size=12 extent=inline
-RETR works.
-226 transfer complete
-> CWD ..
 250 CWD ok
-> PWD
-257 "/"
-> COPY docs
+150 directory stream follows
+226 transfer complete
+150 inode=292 size=64 extent=btrfs
+226 transfer complete
+250 CWD ok
 150 recursive directory copy follows
-COPY file info.txt
-150 inode=259 size=19 extent=inline
-BTRFS TREE WALK OK
-226 transfer complete
-COPY file help.txt
-150 inode=261 size=12 extent=inline
-RETR works.
+COPY file small.txt
+150 inode=292 size=64 extent=btrfs
 226 transfer complete
 226 copy complete
-> CWD pictures
 250 CWD ok
-> LIST
 150 directory stream follows
-f 262 17 notes.txt
 226 transfer complete
-> RETR notes.txt
-150 inode=262 size=17 extent=inline
-subtree readable
+213 424
+150 inode=312 size=424 extent=btrfs
 226 transfer complete
-> CWD /
 250 CWD ok
-> RETR readme.txt
-150 inode=257 size=19 extent=inline
-Hello from SPO8 FS
+150 directory stream follows
 226 transfer complete
-> COPY readme.txt
-150 inode=257 size=19 extent=inline
-Hello from SPO8 FS
-226 transfer complete
-> RETR missing.txt
 550 not found
-> CWD ghost
 550 not found
-> QUIT
 221 bye
-STATS cmd=24 lookup=15 stream=1518 gw=218
+STATS cmd=24 lookup=16 stream=3349 gw=478
 OK
