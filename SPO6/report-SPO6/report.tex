@@ -1,0 +1,113 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{longtable}
+\geometry{margin=2.5cm}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+{\large Национальный исследовательский университет ИТМО\par}
+{\large Факультет программной инженерии и компьютерной техники\par}
+\vspace{4cm}
+{\large Отчёт к практическому заданию №1\par}
+{\large по дисциплине «Системное программное обеспечение 2»\par}
+\vfill
+\begin{flushright}
+Студент: Горинов Даниил Андреевич\\
+Группа: P4116
+\end{flushright}
+\vfill
+{Санкт-Петербург}\par
+{2025/2026 учебный год\par}
+\end{titlepage}
+
+\clearpage
+\pagenumbering{arabic}
+
+\section{Цели}
+Реализовать алгоритмы планирования задач в многопоточной среде на базе комплекса программ, разработанного в первом семестре, и показать различия в ходе выполнения тестовой программы при разных дисциплинах планирования.
+
+Для варианта 4 реализованы алгоритмы \texttt{FCFS} и \texttt{SPN}. Критерий сравнения для чётного варианта — минимальное среднее время ожидания.
+
+\section{Задачи}
+\begin{enumerate}
+\item Изучить работу таймера и прерываний в целевой виртуальной машине.
+\item Добавить сохранение и восстановление контекста CPU для логических потоков.
+\item Реализовать планировщики \texttt{FCFS} и \texttt{SPN}.
+\item Подготовить одинаковую вычислительную нагрузку для двух алгоритмов.
+\item Запустить тестовую программу через RemoteTasks и собрать метрики.
+\item Сравнить среднее время ожидания, среднее время оборота и контрольные суммы потоков.
+\end{enumerate}
+
+\section{Описание работы}
+Тестовая программа находится в \texttt{tests/scheduler\_demo.asm}. Она создаёт шесть логических потоков с одинаковым набором времён поступления и длительностей для двух запусков планировщика:
+\begin{lstlisting}
+arrivals = 0 3 6 9 12 15
+bursts   = 4 4 7 7 4 4
+\end{lstlisting}
+
+Все длительности входят в диапазон варианта \texttt{3..7}, средний интервал поступления равен \texttt{3}.
+
+Запуск выполняется командой:
+\begin{lstlisting}
+make -C SPO6 remote-demo
+\end{lstlisting}
+
+Команда собирает проект, копирует \texttt{tests/scheduler\_demo.asm} в \texttt{results/scheduler\_demo.asm}, запускает программу через \texttt{Portable.RemoteTasks.Manager.exe} и проверяет \texttt{results/scheduler\_demo.stdout.txt} скриптом \texttt{tools/check\_scheduler\_output.py}.
+
+Основные артефакты:
+\begin{itemize}
+\item \texttt{spo6.target.pdsl} — описание целевой VM;
+\item \texttt{devices.xml} — подключение \texttt{SimplePic} и \texttt{SimpleClock};
+\item \texttt{tests/scheduler\_demo.asm} — демонстрация планировщиков;
+\item \texttt{tests/timer\_probe.asm} — минимальная проверка таймера;
+\item \texttt{results/scheduler\_demo.stdout.txt} — метрики выполнения.
+\end{itemize}
+
+\section{Аспекты реализации}
+Таймер реализован через внешние устройства RemoteTasks. \texttt{SimpleClock} обновляет счётчик \texttt{Cycles} и формирует сигнал \texttt{on-cycles}; \texttt{SimplePic} принимает этот сигнал как прерывание 2, сохраняет адрес прерванной инструкции в \texttt{pic\_state} и передаёт управление обработчику из таблицы \texttt{pic\_handlers}.
+
+В \texttt{spo6.target.pdsl} добавлены инструкции \texttt{SET\_CYCLES\_HANDLER}, \texttt{SET\_PERIOD}, \texttt{EI}, \texttt{DI}, \texttt{irq\_enter} и \texttt{iret}. Первая инструкция обработчика сохраняет \texttt{sp}, \texttt{bp}, \texttt{dbp} и \texttt{csp} в служебные ячейки \texttt{irq\_*}, затем переключает машину на kernel-context. \texttt{iret} восстанавливает сохранённые регистры и возвращает управление в поток.
+
+Контекст каждого логического потока хранится в PCB. В PCB входят сохранённые регистры, время поступления, длительность, оставшееся время, состояние, время старта и завершения, а также контрольная сумма вычислений. Поверх PCB реализованы процедуры \texttt{create\_thread(entry\_ip, stack\_top, task\_end)} и \texttt{on\_thread\_interrupt(handler\_ip)}. Первая создаёт поток, вторая регистрирует пользовательский обработчик события перед возвратом из прерывания.
+
+\texttt{FCFS} использует FIFO-очередь готовых задач. \texttt{SPN} при освобождении CPU выбирает готовую задачу с минимальной длительностью; при равенстве длительностей сохраняется порядок поступления. Оба алгоритма невытесняющие: таймер вызывает обработчик регулярно, но смена выполняемого потока происходит только в корректной точке завершения задачи или при простое CPU.
+
+\section{Результаты}
+Последний зафиксированный RemoteTasks-прогон:
+\begin{lstlisting}
+assemble = 231b82d3-5319-4f72-9a15-704ca2827dd4
+run      = d561c55b-dc04-4d59-9c71-55c2d3d80530
+\end{lstlisting}
+
+\begin{center}
+\begin{tabular}{|l|r|r|}
+\hline
+Метрика & FCFS & SPN \\
+\hline
+Среднее время ожидания \texttt{AW} & 5 & 4 \\
+Среднее время оборота \texttt{AT} & 10 & 9 \\
+Число dispatch-событий \texttt{D} & 6 & 6 \\
+Число вызовов обработчика \texttt{I} & 30 & 30 \\
+Число пользовательских хуков \texttt{H} & 30 & 30 \\
+\hline
+\end{tabular}
+\end{center}
+
+Контрольные суммы совпали для обоих запусков:
+\begin{lstlisting}
+406 806 2121 2821 2006 2406
+\end{lstlisting}
+
+Совпадение контрольных сумм показывает, что различается только порядок планирования, а не вычисления внутри потоков.
+
+\section{Выводы}
+Таймер, прерывания и переключение контекста реализованы на уровне целевой VM и runtime-обработчика. Тестовая программа показала различие дисциплин планирования на одной нагрузке: \texttt{SPN} уменьшил среднее время ожидания с \texttt{5} до \texttt{4} и среднее время оборота с \texttt{10} до \texttt{9}, но увеличил ожидание длинной четвёртой задачи. Для чётного варианта по критерию среднего времени ожидания предпочтителен \texttt{SPN}.
+
+\end{document}

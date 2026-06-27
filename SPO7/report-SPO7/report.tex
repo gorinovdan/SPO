@@ -1,0 +1,128 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{longtable}
+\geometry{margin=2.5cm}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+{\large Национальный исследовательский университет ИТМО\par}
+{\large Факультет программной инженерии и компьютерной техники\par}
+\vspace{4cm}
+{\large Отчёт к практическому заданию №2\par}
+{\large по дисциплине «Системное программное обеспечение 2»\par}
+\vfill
+\begin{flushright}
+Студент: Горинов Даниил Андреевич\\
+Группа: P4116
+\end{flushright}
+\vfill
+{Санкт-Петербург}\par
+{2025/2026 учебный год\par}
+\end{titlepage}
+
+\clearpage
+\pagenumbering{arabic}
+
+\section{Цели}
+Изучить механизмы синхронизации, реализовать объект последовательного потока данных и показать корректность его работы на тестовой программе по варианту.
+
+Для варианта 4 используются SQL-выборки лабораторной работы №3, режим потоков — синхронный неблокирующий. Выборки представлены как map-reduce pipeline из независимых обработчиков, связанных последовательными byte streams.
+
+\section{Задачи}
+\begin{enumerate}
+\item Изучить внутреннюю логику синхронных потоков и пассивного ожидания.
+\item Модифицировать планировщик из SPO6 для поддержки ожидания готовности группы потоковых событий.
+\item Описать SQL-выборки варианта и проверить их на базе PostgreSQL \texttt{ucheb}.
+\item Разложить каждую выборку на этапы \texttt{source}, \texttt{filter}, \texttt{join}, \texttt{group/aggregate} и \texttt{formatter}.
+\item Реализовать VM-демонстрацию конкурентного выполнения обработчиков.
+\item Сравнить результаты VM-демонстрации с количеством строк, полученным SQL-запросами.
+\end{enumerate}
+
+\section{Описание работы}
+Точные SQL-запросы находятся в \texttt{sql/variant\_lab3.sql}. Проверка выполнялась на базе \texttt{ucheb}; снимок результата сохранён в \texttt{sql/validation\_snapshot.md}.
+
+VM-демонстрация находится в \texttt{tests/sql\_pipeline\_demo.asm}. В ней каждая выборка представлена набором обработчиков. Обработчики получают элементы через входные byte streams и пишут результат в выходные byte streams. Неблокирующая операция чтения или записи при отсутствии готового события возвращает состояние \texttt{would-block}; после этого обработчик переводится в \texttt{GROUP\_WAIT}, а планировщик отдаёт квант другому обработчику.
+
+Запуск:
+\begin{lstlisting}
+make -C SPO7 remote-demo
+\end{lstlisting}
+
+Команда запускает \texttt{Portable.RemoteTasks.Manager.exe} через \texttt{ExecuteBinaryWithIo}, чтобы работали \texttt{SimpleClock} и \texttt{SimplePic}, затем проверяет \texttt{results/sql\_pipeline\_demo.stdout.txt} скриптом \texttt{tools/check\_sql\_pipeline\_output.py}.
+
+Основные файлы:
+\begin{itemize}
+\item \texttt{tests/sql\_pipeline\_demo.asm} — модель SQL map-reduce pipeline;
+\item \texttt{sql/variant\_lab3.sql} — запросы варианта;
+\item \texttt{sql/validation\_snapshot.md} — проверенные количества строк;
+\item \texttt{spo7.target.pdsl} и \texttt{devices.xml} — целевая VM и устройства таймера;
+\item \texttt{Validation.md} — команды проверки.
+\end{itemize}
+
+\section{Аспекты реализации}
+Синхронный stream не хранит большую очередь данных: передача элемента считается выполненной, когда producer и consumer согласованы. В неблокирующем режиме потоковая операция не занимает CPU в ожидании. Если вход пуст или выходной stream не готов, обработчик фиксирует \texttt{GROUP\_WAIT}, сохраняет своё состояние и возвращает управление scheduler runtime.
+
+Планировщик использует схему из SPO6: \texttt{SimpleClock} формирует timer IRQ, \texttt{SimplePic} передаёт управление обработчику, а обработчик выполняет один шаг текущего processor stage. За счёт этого разные этапы одной выборки продвигаются независимо, а ожидание готовности stream-событий остаётся пассивным.
+
+Декомпозиция выборок построена в терминах map-reduce:
+\begin{itemize}
+\item parser/source читает таблицу;
+\item filter пропускает записи по условию;
+\item join соединяет два входных потока по ключу;
+\item group/aggregate считает \texttt{COUNT}, \texttt{AVG}, \texttt{HAVING} и устраняет дубликаты через группировку;
+\item formatter пишет итоговый поток результата.
+\end{itemize}
+
+Количество обработчиков и ожидаемых \texttt{GROUP\_WAIT} задаётся таблицами в VM-программе. Поэтому степень параллелизма меняется данными сценария, а не переписыванием логики планировщика.
+
+\section{Результаты}
+Последний зафиксированный RemoteTasks-прогон:
+\begin{lstlisting}
+assemble = d0526229-a670-42b0-ae59-19c34a10bea0
+run      = 0937d3a3-2dfd-4e25-b476-12d35df3b053
+\end{lstlisting}
+
+Результат VM-демонстрации:
+\begin{lstlisting}
+SPO7 SQLMR
+MODE SYNC-NB GROUP-WAIT
+Q1 R=1 P=5 W=1
+Q2 R=0 P=5 W=1
+Q3 R=5004 P=4 W=1
+Q4 R=40 P=6 W=2
+Q5 R=85 P=7 W=2
+Q6 R=0 P=8 W=2
+Q7 R=0 P=5 W=1
+IRQ=48 GW=10
+OK
+\end{lstlisting}
+
+Обозначения: \texttt{R} — число строк результата SQL-запроса в PostgreSQL, \texttt{P} — число обработчиков в pipeline, \texttt{W} — число событий группового ожидания. Суммарно выполнено \texttt{48} timer-driven шагов и \texttt{10} passive group waits.
+
+\begin{center}
+\begin{tabular}{|l|p{9cm}|r|}
+\hline
+Запрос & Смысл & Строк \\
+\hline
+Q1 & \texttt{RIGHT JOIN} типов ведомостей и ведомостей & 1 \\
+Q2 & \texttt{INNER JOIN} людей, обучений и учеников & 0 \\
+Q3 & число пар фамилия-имя после группировки & 5004 \\
+Q4 & планы с двумя группами на кафедре ВТ & 40 \\
+Q5 & студенты группы 4100 со средней оценкой выше средней группы 1101 & 85 \\
+Q6 & студенты первого курса заочной формы до 2012-09-01 & 0 \\
+Q7 & число отличников группы 3100 & 0 \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Выводы}
+Последовательные byte streams и групповое пассивное ожидание позволяют представить SQL-выборки как набор конкурентных обработчиков. VM-демонстрация воспроизводит количества строк, полученные PostgreSQL-запросами, и показывает, что при \texttt{would-block} обработчик не ждёт активно, а уступает квант другим этапам pipeline. Это соответствует требуемому синхронному неблокирующему режиму варианта.
+
+\end{document}

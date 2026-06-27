@@ -1,103 +1,72 @@
-# SPO7 Report
+# Отчёт к практическому заданию №2
 
-## 0. Итоговая оценка реализации
+Дисциплина: «Системное программное обеспечение 2»
 
-SPO7 вариант: режим `синхронный, неблокирующий`, SQL-выборки по лабораторной работе #3 для базы `ucheb`, stream/map-reduce декомпозиция и group-wait passive waiting.
+Студент: Горинов Даниил Андреевич, группа P4116.
 
-Сделано:
+## Цели
 
-- составлены 7 SQL-запросов в [variant_lab3.sql](/Users/lasat/Documents/Study/SPO/SPO7/sql/variant_lab3.sql);
-- SQL проверен на `psql -h pg -d ucheb`;
-- каждая выборка разложена на processors pipeline;
-- VM demo [sql_pipeline_demo.asm](/Users/lasat/Documents/Study/SPO/SPO7/tests/sql_pipeline_demo.asm) моделирует конкурентное выполнение processors через timer IRQ;
-- non-blocking stream operation при would-block переводится в `GROUP_WAIT`;
-- результат VM demo сравнен с row counts реальной PostgreSQL-выборки.
+Изучить механизмы синхронизации, реализовать объект последовательного потока данных и показать корректность его работы на тестовой программе по варианту.
 
-## 1. Объекты синхронизации и внутренняя логика
+Для варианта 4 используются SQL-выборки лабораторной работы №3, режим потоков — синхронный неблокирующий. Выборки представлены как map-reduce pipeline из независимых обработчиков, связанных последовательными byte streams.
 
-Основной объект синхронизации synchronous byte stream между processors.
+## Задачи
 
-Семантика:
+1. Изучить внутреннюю логику синхронных потоков и пассивного ожидания.
+2. Модифицировать планировщик из SPO6 для поддержки ожидания готовности группы потоковых событий.
+3. Описать SQL-выборки варианта и проверить их на базе PostgreSQL `ucheb`.
+4. Разложить каждую выборку на этапы `source`, `filter`, `join`, `group/aggregate` и `formatter`.
+5. Реализовать VM-демонстрацию конкурентного выполнения обработчиков.
+6. Сравнить результаты VM-демонстрации с количеством строк, полученным SQL-запросами.
 
-- `read(stream)` в неблокирующем режиме не ждёт данные бесконечно; если данных нет, возвращает would-block;
-- `write(stream)` в неблокирующем режиме не ждёт читателя бесконечно; если downstream не готов, возвращает would-block;
-- synchronous stream не хранит большую очередь: передача элемента считается успешной, когда producer и consumer согласованы;
-- group wait ждёт группу событий, например “готов любой входной stream” или “готов любой выходной stream”.
+## Описание работы
 
-Внутренняя логика в VM demo:
+Точные SQL-запросы находятся в `sql/variant_lab3.sql`. Проверка выполнялась на базе `ucheb`; снимок результата сохранён в `sql/validation_snapshot.md`.
 
-- `v_stage_counts[q]` задаёт число processors в pipeline выборки `q`;
-- `v_wait_counts[q]` задаёт число simulated would-block событий;
-- каждый would-block увеличивает `v_group_waits` и `v_dispatches`;
-- scheduler не блокирует всю машину, а отдаёт следующий timer slice другому processor step.
+VM-демонстрация находится в `tests/sql_pipeline_demo.asm`. В ней каждая выборка представлена набором обработчиков. Обработчики получают элементы через входные byte streams и пишут результат в выходные byte streams. Неблокирующая операция чтения или записи при отсутствии готового события возвращает состояние `would-block`; после этого обработчик переводится в `GROUP_WAIT`, а планировщик отдаёт квант другому обработчику.
 
-## 2. Модификация планировщика
-
-Планировщик сохранён timer-driven, как в SPO6:
-
-1. `SimpleClock` создаёт timer IRQ.
-2. `SimplePic` передаёт управление в `rt_timer_handler`.
-3. `IRQ_ENTER` сохраняет interrupted context и переводит CPU в kernel context.
-4. Handler выполняет один processor step.
-5. Если stream operation вернула would-block, фиксируется `GROUP_WAIT`.
-6. `IRET` возвращает управление в idle-loop до следующего IRQ.
-
-Вытеснение обеспечивается внешним таймером: processor не выполняется “до конца”, а получает короткий квант на каждый IRQ. Это показывает конкурентность pipeline: разные stages могут продвигаться независимо, а ожидание stream readiness пассивное.
-
-Количество processors можно менять через descriptor arrays:
-
-- `v_stage_counts` — сколько processors запускается для каждой выборки;
-- `v_wait_counts` — сколько group-wait событий ожидается для конкретной topology.
-
-## 3. Последовательные byte streams
-
-Каждый relational operator представлен как processor:
-
-- source/parser читает raw table stream;
-- filter пропускает только записи по условию;
-- join принимает два входных stream и порождает joined stream;
-- group/aggregate собирает группы и считает агрегаты;
-- formatter пишет результат в output stream.
-
-В терминах map-reduce:
-
-- map stages: parser, projection, filter, mark conversion;
-- shuffle/join stages: join по ключу, repartition по group key;
-- reduce stages: `COUNT`, `AVG`, `HAVING`, duplicate elimination через `GROUP BY`;
-- sink stage: formatter.
-
-Все stages общаются только через последовательные byte streams и параметры: имена входов/выходов, ключи соединения, константы фильтров, номер группы, дата, expected comparison value.
-
-## 4. SQL-запросы и декомпозиция по варианту
-
-Точные SQL-запросы находятся в [variant_lab3.sql](/Users/lasat/Documents/Study/SPO/SPO7/sql/variant_lab3.sql).
-
-| Query | SQL смысл                                                   |                                                              Pipeline processors | SQL rows |
-| ----- | ----------------------------------------------------------- | -------------------------------------------------------------------------------: | -------: |
-| Q1    | `Н_ТИПЫ_ВЕДОМОСТЕЙ RIGHT JOIN Н_ВЕДОМОСТИ`, фильтры по `ИД` |          type parser, sheet parser, type filter, sheet filter, right join/format |        1 |
-| Q2    | `Н_ЛЮДИ INNER JOIN Н_ОБУЧЕНИЯ INNER JOIN Н_УЧЕНИКИ`         |           people parser, edu parser, students parser, filters, inner join/format |        0 |
-| Q3    | число пар `ФАМИЛИЯ, ИМЯ` без `DISTINCT`                     |                     people parser, key mapper, group by reducer, count formatter |     5004 |
-| Q4    | планы с ровно 2 группами на кафедре ВТ                      |               groups parser, plans parser, dept filter, join, group/count/having |       40 |
-| Q5    | средние оценки группы 4100 выше средней группы 1101         | students/people/sheets parsers, mark mapper, joins, AVG reducers, compare/format |       85 |
-| Q6    | зачисленные до `2012-09-01` на 1 курс заочной формы, с `IN` |        students/people/edu/plans/form parsers, IN subquery, filters, join/format |        0 |
-| Q7    | число отличников группы 3100                                |     students/sheets parsers, mark mapper, group by student, `MIN(mark)=5`, count |        0 |
-
-Q2, Q6 и Q7 дают пустой результат на реальной базе с точными константами варианта. Это зафиксировано в [validation_snapshot.md](/Users/lasat/Documents/Study/SPO/SPO7/sql/validation_snapshot.md), а VM demo отражает это как `R=0`.
-
-## 5. Результаты выполнения
-
-Команда:
+Запуск:
 
 ```bash
 make -C SPO7 remote-demo
 ```
 
-Последний успешный VM run:
+Команда запускает `Portable.RemoteTasks.Manager.exe` через `ExecuteBinaryWithIo`, чтобы работали `SimpleClock` и `SimplePic`, затем проверяет `results/sql_pipeline_demo.stdout.txt` скриптом `tools/check_sql_pipeline_output.py`.
 
-- `assemble = d0526229-a670-42b0-ae59-19c34a10bea0`
-- `run      = 0937d3a3-2dfd-4e25-b476-12d35df3b053`
+Основные файлы:
 
-VM output:
+- `tests/sql_pipeline_demo.asm` — модель SQL map-reduce pipeline;
+- `sql/variant_lab3.sql` — запросы варианта;
+- `sql/validation_snapshot.md` — проверенные количества строк;
+- `spo7.target.pdsl` и `devices.xml` — целевая VM и устройства таймера;
+- `Validation.md` — команды проверки.
+
+## Аспекты реализации
+
+Синхронный stream не хранит большую очередь данных: передача элемента считается выполненной, когда producer и consumer согласованы. В неблокирующем режиме потоковая операция не занимает CPU в ожидании. Если вход пуст или выходной stream не готов, обработчик фиксирует `GROUP_WAIT`, сохраняет своё состояние и возвращает управление scheduler runtime.
+
+Планировщик использует схему из SPO6: `SimpleClock` формирует timer IRQ, `SimplePic` передаёт управление обработчику, а обработчик выполняет один шаг текущего processor stage. За счёт этого разные этапы одной выборки продвигаются независимо, а ожидание готовности stream-событий остаётся пассивным.
+
+Декомпозиция выборок построена в терминах map-reduce:
+
+- parser/source читает таблицу;
+- filter пропускает записи по условию;
+- join соединяет два входных потока по ключу;
+- group/aggregate считает `COUNT`, `AVG`, `HAVING` и устраняет дубликаты через группировку;
+- formatter пишет итоговый поток результата.
+
+Количество обработчиков и ожидаемых `GROUP_WAIT` задаётся таблицами в VM-программе. Поэтому степень параллелизма меняется данными сценария, а не переписыванием логики планировщика.
+
+## Результаты
+
+Последний зафиксированный RemoteTasks-прогон:
+
+```text
+assemble = d0526229-a670-42b0-ae59-19c34a10bea0
+run      = 0937d3a3-2dfd-4e25-b476-12d35df3b053
+```
+
+Результат VM-демонстрации:
 
 ```text
 SPO7 SQLMR
@@ -113,24 +82,20 @@ IRQ=48 GW=10
 OK
 ```
 
-Где:
+Обозначения: `R` — число строк результата SQL-запроса в PostgreSQL, `P` — число обработчиков в pipeline, `W` — число событий группового ожидания. Суммарно выполнено `48` timer-driven шагов и `10` passive group waits.
 
-- `R` — число строк SQL-результата в PostgreSQL `ucheb`;
-- `P` — число processors в pipeline;
-- `W` — число group-wait событий;
-- `IRQ=48` — число timer-driven квантов;
-- `GW=10` — суммарное число passive group waits.
+SQL-проверка дала такие количества строк:
 
-## 6. Отчёт и воспроизводимость
+| Запрос | Смысл | Строк |
+| --- | --- | ---: |
+| Q1 | `RIGHT JOIN` типов ведомостей и ведомостей | 1 |
+| Q2 | `INNER JOIN` людей, обучений и учеников | 0 |
+| Q3 | число пар фамилия-имя после группировки | 5004 |
+| Q4 | планы с двумя группами на кафедре ВТ | 40 |
+| Q5 | студенты группы 4100 со средней оценкой выше средней группы 1101 | 85 |
+| Q6 | студенты первого курса заочной формы до 2012-09-01 | 0 |
+| Q7 | число отличников группы 3100 | 0 |
 
-Команды запуска VM и SQL вынесены в [Validation.md](/Users/lasat/Documents/Study/SPO/SPO7/Validation.md). Краткое описание структуры находится в [README.md](/Users/lasat/Documents/Study/SPO/SPO7/README.md).
+## Выводы
 
-Проверки:
-
-- `make -C SPO7 remote-demo`;
-- `python3 SPO7/tools/check_sql_pipeline_output.py SPO7/results/sql_pipeline_demo.stdout.txt`;
-- `psql -h pg -d ucheb -f SPO7/sql/variant_lab3.sql`.
-
-## 7. Выводы
-
-В SPO7 SQL-выборки представлены как набор конкурентных processors, связанных synchronous non-blocking byte streams. Синхронизация происходит на границах stream operations: если stage не может прочитать или записать элемент, он не ждёт активно, а отдаёт управление через group wait. Это соответствует требованию пассивного ожидания в неблокирующем режиме и позволяет менять pipeline parallelism через количество processors.
+Последовательные byte streams и групповое пассивное ожидание позволяют представить SQL-выборки как набор конкурентных обработчиков. VM-демонстрация воспроизводит количества строк, полученные PostgreSQL-запросами, и показывает, что при `would-block` обработчик не ждёт активно, а уступает квант другим этапам pipeline. Это соответствует требуемому синхронному неблокирующему режиму варианта.

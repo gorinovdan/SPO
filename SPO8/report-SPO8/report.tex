@@ -1,0 +1,138 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{listings}
+\geometry{margin=2.5cm}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+{\large Национальный исследовательский университет ИТМО\par}
+{\large Факультет программной инженерии и компьютерной техники\par}
+\vspace{4cm}
+{\large Отчёт к практическому заданию №3\par}
+{\large по дисциплине «Системное программное обеспечение 2»\par}
+\vfill
+\begin{flushright}
+Студент: Горинов Даниил Андреевич\\
+Группа: P4116
+\end{flushright}
+\vfill
+{Санкт-Петербург}\par
+{2025/2026 учебный год\par}
+\end{titlepage}
+
+\clearpage
+\pagenumbering{arabic}
+
+\section{Цели}
+Реализовать поддержку операций извлечения данных для структуры данных по варианту с использованием комплекса программ первого семестра.
+
+Для варианта 4 структура данных — файловая система Btrfs. Программа должна определить поддержку файловой системы, перейти в диалоговый режим PASSIVE FTP и поддержать просмотр директорий, переход по каталогам и копирование файлов или директорий из образа.
+
+\section{Задачи}
+\begin{enumerate}
+\item Изучить on-disk формат Btrfs и способы инспектирования образа.
+\item Подготовить настоящий Btrfs-образ с тестовым деревом файлов.
+\item Сформировать таблицы inode, dirent и extent для VM-программы.
+\item Подключить образ к VM через \texttt{BlockDevice}.
+\item Реализовать FTP-команды \texttt{PWD}, \texttt{CWD}, \texttt{LIST}, \texttt{NLST}, \texttt{SIZE}, \texttt{RETR}, \texttt{COPY} и служебные команды клиента.
+\item Проверить положительный сценарий, отрицательный сценарий с неподдержанной ФС и подключение обычного FTP-клиента.
+\end{enumerate}
+
+\section{Описание работы}
+Образ создаётся скриптом \texttt{tools/prepare\_btrfs\_image.sh}. На Linux он использует локальные \texttt{btrfs-progs}; на macOS запускает контейнер Alpine с \texttt{mkfs.btrfs} и \texttt{mount}. В образ копируется дерево \texttt{SPO8}, исключая генерируемые результаты, бинарники, \texttt{.git} и сам образ.
+
+Схема подготовки:
+\begin{lstlisting}
+dd if=/dev/zero of=spo8_btrfs_block.img bs=1M count=160
+mkfs.btrfs -f -L SPO8_REAL spo8_btrfs_block.img
+mount -o loop spo8_btrfs_block.img /mnt/spo8
+rsync ./SPO8/ /mnt/spo8/SPO8/
+umount /mnt/spo8
+\end{lstlisting}
+
+После размонтирования сохраняются дампы:
+\begin{itemize}
+\item \texttt{results/btrfs\_real\_super.txt};
+\item \texttt{results/btrfs\_real\_chunk.txt};
+\item \texttt{results/btrfs\_real\_tree.txt};
+\item \texttt{results/btrfs\_source\_files.txt}.
+\end{itemize}
+
+По этим дампам \texttt{tools/gen\_btrfs\_ftp\_asm.py} генерирует таблицы для \texttt{results/btrfs\_ftp\_demo.asm}. Байты файлов в ASM не вшиваются: при \texttt{RETR} и \texttt{COPY} VM читает данные из настоящего \texttt{spo8\_btrfs\_block.img} через \texttt{BlockDevice}.
+
+Запуск основного сценария:
+\begin{lstlisting}
+make -C SPO8 remote-demo
+\end{lstlisting}
+
+Проверка FTP-клиента:
+\begin{lstlisting}
+make -C SPO8 remote-ftp-smoke
+\end{lstlisting}
+
+Для ручной проверки используется FileZilla с параметрами \texttt{127.0.0.1:2121}, обычный FTP без TLS, пассивный режим, анонимный вход.
+
+\section{Аспекты реализации}
+В \texttt{spo8.target.pdsl} добавлены инструкции для взаимодействия с устройствами:
+\begin{itemize}
+\item \texttt{PIPE\_IN} и \texttt{PIPE\_OUT} — управляющий FTP-поток;
+\item \texttt{DATA\_BUF\_BYTE}, \texttt{DATA\_FLUSH}, \texttt{DATA\_COPY\_BLOCK} — пассивный поток данных;
+\item \texttt{BLOCK\_READ\_BYTE}, \texttt{BLOCK\_READ\_BUF}, \texttt{BLOCK\_BUF\_BYTE}, \texttt{BLOCK\_WRITE\_BYTE} — чтение и запись блока образа.
+\end{itemize}
+
+\texttt{devices.xml} подключает \texttt{SimplePipe} для управляющего канала, \texttt{BlockDevice} для файла \texttt{spo8\_btrfs\_block.img}, а также \texttt{SimplePic} и \texttt{SimpleClock}. Для FileZilla используется \texttt{devices\_filezilla.xml}: C-адаптер прокидывает TCP control-порт \texttt{2121} и data-порт \texttt{2020} в два \texttt{SimplePipe} VM. Адаптер не хранит состояние FTP-сессии и не читает файловую систему; команды, текущий каталог и чтение файлов реализованы внутри VM-программы.
+
+При старте \texttt{btrfs\_mount} читает суперблок по смещению \texttt{0x10000}, проверяет магическое значение \texttt{\_BHRfS\_M}, извлекает параметры корня и готовит таблицы для поиска. Для переходов по каталогам используется \texttt{fs\_resolve\_arg\_path}, поддерживающий абсолютные и относительные пути, \texttt{.} и \texttt{..}.
+
+\texttt{LIST} и \texttt{NLST} обходят записи \texttt{DIR\_ITEM} текущего каталога. \texttt{RETR} находит inode файла, получает размер из \texttt{INODE\_ITEM}, физическое смещение extent из \texttt{EXTENT\_DATA} и отправляет байты в пассивный FTP-поток. \texttt{COPY} для файла работает как \texttt{RETR}, а для директории рекурсивно проходит очередь подкаталогов. Передача данных выполняется блоками до 512 байт через \texttt{BLOCK\_READ\_BUF} и \texttt{DATA\_COPY\_BLOCK}, без побайтного чтения образа.
+
+\section{Результаты}
+Проверенные команды:
+\begin{lstlisting}
+make -C SPO8 local-demo
+make -C SPO8 local-unsupported
+make -C SPO8 remote-demo
+make -C SPO8 remote-unsupported
+make -C SPO8 remote-ftp-smoke
+make -C SPO8 remote-ftp-report-smoke
+\end{lstlisting}
+
+Положительный сценарий проверяет \texttt{SYST}, \texttt{NOOP}, \texttt{HELP}, \texttt{PASV}, \texttt{TYPE I}, \texttt{PWD}, \texttt{LIST}, \texttt{CWD}, \texttt{RETR}, \texttt{COPY}, \texttt{SIZE}, ошибочные \texttt{CWD}/\texttt{RETR} и \texttt{QUIT}.
+
+Окончание положительного сценария содержит:
+\begin{lstlisting}
+150 recursive directory copy follows
+COPY file small.txt
+150 inode=292 size=64 extent=btrfs
+226 transfer complete
+226 copy complete
+550 not found
+550 not found
+221 bye
+STATS cmd=24 lookup=16 stream=3281 gw=469
+OK
+\end{lstlisting}
+
+Негативный сценарий с неподдержанной файловой системой завершается так:
+\begin{lstlisting}
+SPO8 BTRFS FTP
+500 unsupported filesystem
+OK_NEG
+\end{lstlisting}
+
+Smoke-тест FTP-клиента подтвердил, что листинг корня содержит \texttt{SPO8}, а \texttt{RETR /SPO8/demo/small.txt} возвращает содержимое файла:
+\begin{lstlisting}
+SPO8 Btrfs FTP demo file.
+Read through RemoteTasks BlockDevice.
+\end{lstlisting}
+
+\section{Выводы}
+Реализована работа с Btrfs-образом на уровне VM-программы: проверка суперблока, разрешение путей, обход каталогов, чтение extent и передача данных через пассивный FTP. Проверки через локальную VM, RemoteTasks и обычный FTP-клиент показали, что данные читаются из настоящего Btrfs-образа через \texttt{BlockDevice}, а не из файлов host-системы напрямую. Негативный сценарий подтверждает корректную обработку неподдержанной файловой системы.
+
+\end{document}
