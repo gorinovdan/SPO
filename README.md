@@ -18,11 +18,11 @@
 
 ## Ссылки на папки текущего семестра
 
-| Задание | Папка в GitLab | Получить только эту папку |
+| Задание | Папка в GitHub | Получить только эту папку |
 | --- | --- | --- |
-| SPO6 | <https://gitlab.se.ifmo.ru/Lasat/spo/-/tree/main/SPO6> | `git clone --filter=blob:none --sparse https://gitlab.se.ifmo.ru/Lasat/spo.git SPO6 && cd SPO6 && git sparse-checkout set SPO6` |
-| SPO7 | <https://gitlab.se.ifmo.ru/Lasat/spo/-/tree/main/SPO7> | `git clone --filter=blob:none --sparse https://gitlab.se.ifmo.ru/Lasat/spo.git SPO7 && cd SPO7 && git sparse-checkout set SPO7` |
-| SPO8 | <https://gitlab.se.ifmo.ru/Lasat/spo/-/tree/main/SPO8> | `git clone --filter=blob:none --sparse https://gitlab.se.ifmo.ru/Lasat/spo.git SPO8 && cd SPO8 && git sparse-checkout set SPO8` |
+| SPO6 | <https://github.com/gorinovdan/SPO/tree/main/SPO6> | `git clone --filter=blob:none --sparse https://github.com/gorinovdan/SPO.git SPO6 && cd SPO6 && git sparse-checkout set SPO6` |
+| SPO7 | <https://github.com/gorinovdan/SPO/tree/main/SPO7> | `git clone --filter=blob:none --sparse https://github.com/gorinovdan/SPO.git SPO7 && cd SPO7 && git sparse-checkout set SPO7` |
+| SPO8 | <https://github.com/gorinovdan/SPO/tree/main/SPO8> | `git clone --filter=blob:none --sparse https://github.com/gorinovdan/SPO.git SPO8 && cd SPO8 && git sparse-checkout set SPO8` |
 
 ## Проверка текущего семестра
 
